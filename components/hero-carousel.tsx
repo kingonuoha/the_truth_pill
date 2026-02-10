@@ -1,56 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
-
-interface HeroItem {
-    id: string;
-    title: string;
-    excerpt: string;
-    image: string;
-    category: string;
-    slug: string;
-}
-
-const MOCK_ITEMS: HeroItem[] = [
-    {
-        id: "1",
-        title: "The Unseen Power: How Observation Can Save and Guide You",
-        excerpt: "Discover the psychological weight of truly seeing the world around you and how it shapes your intuition.",
-        image: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=2000",
-        category: "Life Lessons",
-        slug: "the-unseen-power",
-    },
-    {
-        id: "2",
-        title: "Stop Rushing Your Journey: The Path of a Lifetime",
-        excerpt: "In a world obsessed with speed, we explore the mental health benefits of slowing down and embracing the path.",
-        image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=2000",
-        category: "Personal Growth",
-        slug: "stop-rushing",
-    },
-    {
-        id: "3",
-        title: "The Power of Vulnerability in Modern Relationships",
-        excerpt: "Why opening up is the strongest thing you can do for your emotional intelligence.",
-        image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=2000",
-        category: "Relationships",
-        slug: "power-of-vulnerability",
-    }
-];
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 
 export function HeroCarousel() {
+    const featuredArticles = useQuery(api.articles.getFeatured, { limit: 5 });
     const [current, setCurrent] = useState(0);
 
-    const next = () => setCurrent((prev) => (prev + 1) % MOCK_ITEMS.length);
-    const prev = () => setCurrent((prev) => (prev - 1 + MOCK_ITEMS.length) % MOCK_ITEMS.length);
+    const next = useCallback(() => {
+        if (!featuredArticles) return;
+        setCurrent((prevIdx) => (prevIdx + 1) % featuredArticles.length);
+    }, [featuredArticles]);
+
+    const prev = useCallback(() => {
+        if (!featuredArticles) return;
+        setCurrent((prevIdx) => (prevIdx - 1 + featuredArticles.length) % featuredArticles.length);
+    }, [featuredArticles]);
 
     useEffect(() => {
+        if (!featuredArticles || featuredArticles.length <= 1) return;
         const timer = setInterval(next, 6000);
         return () => clearInterval(timer);
-    }, []);
+    }, [featuredArticles, next]);
+
+    if (featuredArticles === undefined) {
+        return (
+            <div className="h-[95vh] w-full flex items-center justify-center bg-zinc-900">
+                <Loader2 className="w-8 h-8 text-white animate-spin opacity-50" />
+            </div>
+        );
+    }
+
+    if (!featuredArticles || featuredArticles.length === 0) {
+        return null;
+    }
+
+    const currentItem = featuredArticles[current];
 
     return (
         <div className="relative h-[95vh] w-full overflow-hidden bg-zinc-900">
@@ -65,7 +54,7 @@ export function HeroCarousel() {
                 >
                     <div
                         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] scale-105"
-                        style={{ backgroundImage: `url(${MOCK_ITEMS[current].image})` }}
+                        style={{ backgroundImage: `url(${currentItem.coverImage})` }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent" />
                 </motion.div>
@@ -81,7 +70,7 @@ export function HeroCarousel() {
                         className="mb-6"
                     >
                         <span className="category-badge">
-                            {MOCK_ITEMS[current].category}
+                            Featured Article
                         </span>
                     </motion.div>
 
@@ -92,7 +81,7 @@ export function HeroCarousel() {
                         transition={{ delay: 0.4 }}
                         className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white mb-6 leading-tight tracking-tight"
                     >
-                        {MOCK_ITEMS[current].title}
+                        {currentItem.title}
                     </motion.h1>
 
                     <motion.p
@@ -102,7 +91,7 @@ export function HeroCarousel() {
                         transition={{ delay: 0.6 }}
                         className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl font-light leading-relaxed border-l-2 border-sky-blue pl-6"
                     >
-                        {MOCK_ITEMS[current].excerpt}
+                        {currentItem.excerpt}
                     </motion.p>
 
                     <motion.div
@@ -112,7 +101,7 @@ export function HeroCarousel() {
                         transition={{ delay: 0.8 }}
                     >
                         <Link
-                            href={`/articles/${MOCK_ITEMS[current].slug}`}
+                            href={`/articles/${currentItem.slug}`}
                             className="btn-gradient inline-block shadow-2xl"
                         >
                             Discover the Truth
@@ -122,33 +111,39 @@ export function HeroCarousel() {
             </div>
 
             {/* Navigation Dots */}
-            <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-3">
-                {MOCK_ITEMS.map((_, idx) => (
-                    <button
-                        key={idx}
-                        onClick={() => setCurrent(idx)}
-                        className={cn(
-                            "w-2 h-2 rounded-full transition-all duration-300",
-                            current === idx ? "bg-white w-8" : "bg-white/40"
-                        )}
-                        style={current === idx ? { background: 'var(--primary-gradient)' } : {}}
-                    />
-                ))}
-            </div>
+            {featuredArticles.length > 1 && (
+                <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-3">
+                    {featuredArticles.map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setCurrent(idx)}
+                            className={cn(
+                                "w-2 h-2 rounded-full transition-all duration-300",
+                                current === idx ? "bg-white w-8" : "bg-white/40"
+                            )}
+                            style={current === idx ? { background: 'var(--primary-gradient)' } : {}}
+                        />
+                    ))}
+                </div>
+            )}
 
             {/* Side Arrows */}
-            <button
-                onClick={prev}
-                className="absolute left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all backdrop-blur-sm hidden md:block"
-            >
-                <ChevronLeft size={24} />
-            </button>
-            <button
-                onClick={next}
-                className="absolute right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all backdrop-blur-sm hidden md:block"
-            >
-                <ChevronRight size={24} />
-            </button>
+            {featuredArticles.length > 1 && (
+                <>
+                    <button
+                        onClick={prev}
+                        className="absolute left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all backdrop-blur-sm hidden md:block"
+                    >
+                        <ChevronLeft size={24} />
+                    </button>
+                    <button
+                        onClick={next}
+                        className="absolute right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all backdrop-blur-sm hidden md:block"
+                    >
+                        <ChevronRight size={24} />
+                    </button>
+                </>
+            )}
         </div>
     );
 }
@@ -156,3 +151,4 @@ export function HeroCarousel() {
 function cn(...inputs: (string | boolean | undefined | null)[]) {
     return inputs.filter(Boolean).join(" ");
 }
+

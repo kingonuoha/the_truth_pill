@@ -25,7 +25,9 @@ export const metadata: Metadata = {
 
 import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { AuthRedirect } from "@/components/auth-redirect";
+import { Footer } from "@/components/footer";
 import { Suspense } from "react";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -35,14 +37,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${lora.variable} ${outfit.variable} antialiased font-sans`}
+        className={`${geistSans.variable} ${lora.variable} ${outfit.variable} antialiased font-sans bg-background`}
       >
         <ConvexClientProvider>
           <Suspense fallback={null}>
             <AnalyticsTracker />
             <AuthRedirect />
+            <Toaster position="top-center" richColors />
           </Suspense>
           {children}
+          <Footer />
         </ConvexClientProvider>
       </body>
     </html>

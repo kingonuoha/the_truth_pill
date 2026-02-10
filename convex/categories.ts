@@ -12,9 +12,29 @@ export const getBySlug = query({
   },
 });
 
+export const getById = query({
+  args: { id: v.id("categories") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
+  },
+});
+
 export const listAll = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("categories").collect();
+    const categories = await ctx.db.query("categories").collect();
+    return await Promise.all(
+      categories.map(async (cat) => {
+        const articles = await ctx.db
+          .query("articles")
+          .withIndex("by_categoryId", (q) => q.eq("categoryId", cat._id))
+          .filter((q) => q.eq(q.field("status"), "published"))
+          .collect();
+        return {
+          ...cat,
+          articleCount: articles.length,
+        };
+      }),
+    );
   },
 });

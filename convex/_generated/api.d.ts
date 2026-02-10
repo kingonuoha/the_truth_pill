@@ -11,6 +11,8 @@
 import type * as analytics from "../analytics.js";
 import type * as articles from "../articles.js";
 import type * as categories from "../categories.js";
+import type * as engagement from "../engagement.js";
+import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 
 import type {
@@ -23,6 +25,8 @@ declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   articles: typeof articles;
   categories: typeof categories;
+  engagement: typeof engagement;
+  seed: typeof seed;
   users: typeof users;
 }>;
 

@@ -1,14 +1,23 @@
 "use client";
 
+import { use } from "react";
 import Image from "next/image";
 import { Navbar } from "@/components/navbar";
-import { Calendar, User, Share2, Bookmark, Heart, Send } from "lucide-react";
+import { Calendar, User, Clock, ChevronRight } from "lucide-react";
 import { motion, useScroll, useSpring } from "framer-motion";
-
-import { use } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import Link from "next/link";
+import { EngagementToolbar } from "@/components/engagement-toolbar";
+import { TableOfContents } from "@/components/table-of-contents";
+import { CommentsSection } from "@/components/comments-section";
+import { RelatedArticles } from "@/components/related-articles";
+import { Newsletter } from "@/components/newsletter";
 
 export default function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug: _slug } = use(params);
+    const { slug } = use(params);
+    const article = useQuery(api.articles.getBySlug, { slug });
+
     const { scrollYProgress } = useScroll();
     const scaleX = useSpring(scrollYProgress, {
         stiffness: 100,
@@ -16,33 +25,27 @@ export default function ArticlePage({ params }: { params: Promise<{ slug: string
         restDelta: 0.001
     });
 
-    // Mock data for initial UI build
-    const article = {
-        title: "The Unseen Power: How Observation Can Save and Guide You",
-        excerpt: "Discover the psychological weight of truly seeing the world around you and how it shapes your intuition.",
-        content: `
-      <p>Have you ever walked down a familiar street and suddenly noticed a building you've never seen before? Not a new building, but one that has been there for decades. This is the difference between seeing and observing. Seeing is a passive act, a mere biological function. Observation, however, is an active psychological engagement with reality.</p>
-      
-      <h3>The Psychology of the 'Thin Slice'</h3>
-      <p>In psychology, 'thin-slicing' is a term used to describe the ability of our unconscious to find patterns in situations and behavior based on very narrow windows of experience. When we sharpen our observation skills, we provide our brain with better data. This isn't about being paranoid; it's about being present.</p>
-      
-      <p>Imagine a street in Owerri where a retired nurse, Mrs. Ijeoma, noticed a subtle change in the gait of a local merchant. While others simply saw a man walking to work, her clinical observation identified a potential health risk before it became a crisis. This is the 'Truth Pill'—the realization that the world is constantly speaking to us if we only choose to listen.</p>
+    if (article === undefined) {
+        return (
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    className="w-8 h-8 border-4 border-sky-blue border-t-transparent rounded-full"
+                />
+            </div>
+        );
+    }
 
-      <blockquote>"The world is full of obvious things which nobody by any chance ever observes." — Sherlock Holmes</blockquote>
-
-      <h3>How to Practice Deep Observation</h3>
-      <p>To become a better observer, you must first quiet the internal noise. We often walk through life rehearsing future conversations or replaying past mistakes. To truly observe, you must be here, now. Try these three steps:</p>
-      <ul>
-        <li><strong>The 60-Second Scan:</strong> When you enter a room, spend one full minute just looking. Don't judge, just catalog.</li>
-        <li><strong>Vocalizing the Mundane:</strong> Mentally describe what you see in detail. "The wall is eggshell white with a slight crack near the ceiling."</li>
-        <li><strong>Pattern Recognition:</strong> Look for what is out of place. Why is that person smiling when the situation is somber?</li>
-      </ul>
-    `,
-        coverImage: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=1200",
-        category: "Life Skills",
-        author: "Sandra Opara",
-        date: "September 1, 2025",
-    };
+    if (article === null) {
+        return (
+            <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+                <h1 className="text-4xl font-serif font-bold mb-4">Article Not Found</h1>
+                <p className="text-zinc-500 mb-8">The truth you&apos;re looking for might have moved.</p>
+                <Link href="/" className="btn-gradient">Return Home</Link>
+            </div>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-white pb-20">
@@ -50,7 +53,7 @@ export default function ArticlePage({ params }: { params: Promise<{ slug: string
 
             {/* Reading Progress Bar */}
             <motion.div
-                className="fixed top-0 left-0 right-0 h-1.5 bg-primary z-[60] origin-left"
+                className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-blue to-school-purple z-[60] origin-left"
                 style={{ scaleX }}
             />
 
@@ -63,21 +66,29 @@ export default function ArticlePage({ params }: { params: Promise<{ slug: string
                     className="object-cover opacity-60"
                     priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent" />
 
-                <div className="relative z-10 max-w-4xl mx-auto px-6 pt-32 pb-12 w-full">
+                <div className="relative z-10 max-w-5xl mx-auto px-6 pt-32 pb-12 w-full">
+                    {/* Breadcrumbs */}
+                    <nav className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest mb-6">
+                        <Link href="/" className="hover:text-sky-blue transition-colors">Home</Link>
+                        <ChevronRight size={12} />
+                        <Link href={`/categories/${article.categorySlug}`} className="hover:text-sky-blue transition-colors">{article.categoryName}</Link>
+                    </nav>
+
                     <motion.div
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         className="mb-4"
                     >
-                        <span className="category-badge">{article.category}</span>
+                        <span className="category-badge">{article.categoryName}</span>
                     </motion.div>
+
                     <motion.h1
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.1 }}
-                        className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold text-zinc-900 leading-tight tracking-tight"
+                        className="text-3xl md:text-5xl lg:text-7xl font-serif font-bold text-zinc-900 leading-tight tracking-tight max-w-4xl"
                     >
                         {article.title}
                     </motion.h1>
@@ -86,74 +97,120 @@ export default function ArticlePage({ params }: { params: Promise<{ slug: string
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="flex flex-wrap items-center gap-6 mt-8"
+                        className="flex flex-wrap items-center gap-6 mt-10"
                     >
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                                <User size={20} className="text-primary" />
+                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-xl">
+                                {article.authorImage ? (
+                                    <Image src={article.authorImage} alt={article.authorName} width={48} height={48} className="object-cover" />
+                                ) : (
+                                    <div className="bg-primary/20 w-full h-full flex items-center justify-center">
+                                        <User size={20} className="text-primary" />
+                                    </div>
+                                )}
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-sm font-black uppercase tracking-tighter text-zinc-900">{article.author}</span>
-                                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest leading-none">Editorial Lead</span>
+                                <span className="text-sm font-black uppercase tracking-tighter text-zinc-900">{article.authorName}</span>
+                                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest leading-none">Verified Author</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 text-zinc-500 bg-zinc-100/50 px-3 py-1.5 rounded-full backdrop-blur-sm border border-zinc-200/50">
-                            <Calendar size={14} className="text-primary" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">{article.date}</span>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-zinc-500 bg-white/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-sm">
+                                <Calendar size={14} className="text-sky-blue" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">
+                                    {new Date(article.publishedAt || article.createdAt).toLocaleDateString()}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-zinc-500 bg-white/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-sm">
+                                <Clock size={14} className="text-school-purple" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">{article.readingTime} Min Read</span>
+                            </div>
                         </div>
                     </motion.div>
                 </div>
             </header>
 
-            {/* Article Content */}
-            <article className="max-w-3xl mx-auto px-6 pt-20">
-                <div
-                    className="prose prose-zinc prose-lg max-w-none font-sans leading-relaxed text-zinc-800
-          prose-headings:font-serif prose-headings:font-bold prose-headings:text-zinc-900
-          prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-zinc-50 prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:italic prose-blockquote:rounded-r-lg
-          prose-strong:text-zinc-900 prose-strong:font-black
-          prose-img:rounded-2xl prose-img:shadow-xl"
-                    dangerouslySetInnerHTML={{ __html: article.content }}
-                />
+            {/* Main Content Layout */}
+            <div className="relative max-w-7xl mx-auto px-6">
+                <div className="flex flex-col lg:flex-row gap-16 pt-20">
+                    {/* Left Sidebar - Engagement */}
+                    <aside className="hidden lg:block w-20 relative">
+                        <div className="sticky top-32">
+                            <EngagementToolbar articleId={article._id} />
+                        </div>
+                    </aside>
 
-                {/* Signature Footer */}
-                <footer className="mt-24 pt-12 border-t border-zinc-100">
-                    <div className="bg-zinc-50 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-10">
-                        <div className="flex flex-col gap-2 text-center md:text-left">
-                            <h3 className="text-2xl font-serif font-bold">Reflected on this truth?</h3>
-                            <p className="text-zinc-500 text-sm max-w-xs">If this article shifted your perspective, join our community of intentional readers.</p>
+                    {/* Content Column */}
+                    <div className="flex-1 max-w-3xl">
+                        <article
+                            className="prose prose-zinc prose-lg max-w-none font-serif leading-[1.8] text-zinc-800 text-[18px]
+                            prose-headings:font-serif prose-headings:font-bold prose-headings:text-zinc-900
+                            prose-blockquote:border-l-4 prose-blockquote:border-sky-blue prose-blockquote:bg-zinc-50 prose-blockquote:py-4 prose-blockquote:px-8 prose-blockquote:italic prose-blockquote:rounded-r-xl prose-blockquote:text-zinc-700
+                            prose-strong:text-zinc-900 prose-strong:font-black
+                            prose-img:rounded-3xl prose-img:shadow-2xl"
+                            dangerouslySetInnerHTML={{ __html: article.content }}
+                        />
+
+                        {/* Author Bio Card */}
+                        <div className="mt-24 bg-zinc-50 rounded-3xl p-10 flex flex-col md:flex-row items-center gap-8 border border-zinc-100">
+                            <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-xl flex-shrink-0">
+                                {article.authorImage ? (
+                                    <Image src={article.authorImage} alt={article.authorName} width={96} height={96} className="object-cover" />
+                                ) : (
+                                    <div className="bg-primary/20 w-full h-full flex items-center justify-center">
+                                        <User size={40} className="text-primary" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                <h3 className="text-2xl font-serif font-bold mb-2">{article.authorName}</h3>
+                                <p className="text-zinc-500 font-light text-sm leading-relaxed mb-4">
+                                    Deep diver into human behavior and mental models. Passionate about uncovering the hidden truths that shape our lives.
+                                </p>
+                                <Link
+                                    href={`/author/${article.authorId}`}
+                                    className="text-sky-blue font-bold text-xs uppercase tracking-widest hover:underline"
+                                >
+                                    View all articles by {article.authorName}
+                                </Link>
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                            <button className="flex items-center gap-2 px-6 py-3 bg-white border border-zinc-200 rounded-xl font-bold text-sm hover:bg-zinc-50 transition-all active:scale-95">
-                                <Heart size={18} className="text-red-500" />
-                                <span>1.2k</span>
-                            </button>
-                            <button className="p-3 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all active:scale-95">
-                                <Bookmark size={20} className="text-primary" />
-                            </button>
-                            <button className="p-3 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all active:scale-95">
-                                <Share2 size={20} className="text-zinc-600" />
-                            </button>
+                        {/* Newsletter Subscription */}
+                        <div className="mt-24">
+                            <Newsletter />
+                        </div>
+
+                        {/* Comments Section */}
+                        <div className="mt-24">
+                            <CommentsSection articleId={article._id} />
                         </div>
                     </div>
 
-                    <div className="mt-12 bg-primary p-12 rounded-2xl text-white text-center flex flex-col items-center gap-6 shadow-2xl shadow-primary/30">
-                        <h2 className="text-3xl md:text-4xl font-serif font-bold">Never Miss a Pill</h2>
-                        <p className="text-blue-100 max-w-sm font-light">Join 15,000+ others who receive weekly insights into human behavior and mental clarity.</p>
-                        <div className="w-full max-w-md flex flex-col sm:flex-row gap-3">
-                            <input
-                                type="email"
-                                placeholder="Enter your email"
-                                className="flex-1 px-6 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
-                            />
-                            <button className="bg-white text-primary px-8 py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2">
-                                Subscribe <Send size={16} />
-                            </button>
+                    {/* Right Sidebar - TOC & Recommended */}
+                    <aside className="hidden xl:block w-80 relative">
+                        <div className="sticky top-32 flex flex-col gap-12 max-h-[calc(100vh-160px)] overflow-y-auto pb-10 pr-4">
+                            <TableOfContents />
+
+                            <div className="pt-8 border-t border-zinc-100">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-6 flex items-center gap-3">
+                                    <span className="w-8 h-[1px] bg-zinc-100" />
+                                    Recommended Posts
+                                </h3>
+                                <RelatedArticles categoryId={article.categoryId} excludeId={article._id} lean />
+                            </div>
                         </div>
-                    </div>
-                </footer>
-            </article>
+                    </aside>
+                </div>
+            </div>
+
+            {/* Mobile Recommended Sections */}
+            <div className="xl:hidden bg-zinc-50 border-t border-zinc-100 mt-20 py-20 px-6">
+                <div className="max-w-3xl mx-auto">
+                    <h2 className="text-2xl font-serif font-bold mb-8">Related Insights</h2>
+                    <RelatedArticles categoryId={article.categoryId} excludeId={article._id} />
+                </div>
+            </div>
         </main>
     );
 }

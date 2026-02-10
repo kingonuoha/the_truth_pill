@@ -32,6 +32,7 @@ export function Navbar() {
 }
 
 function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
+    const { status } = useSession();
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState("");
 
@@ -66,14 +67,18 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                 >
                     <Search size={20} />
                 </button>
-                <Link href="/profile">
-                    <button className={cn(
-                        "p-2 rounded-full transition-colors",
-                        isScrolled ? "hover:bg-zinc-100 text-foreground" : "hover:bg-white/10 text-white"
-                    )}>
-                        <User size={20} />
-                    </button>
-                </Link>
+
+                {status === "authenticated" && (
+                    <Link href="/profile">
+                        <button className={cn(
+                            "p-2 rounded-full transition-colors",
+                            isScrolled ? "hover:bg-zinc-100 text-foreground" : "hover:bg-white/10 text-white"
+                        )}>
+                            <User size={20} />
+                        </button>
+                    </Link>
+                )}
+
                 <AuthButton isScrolled={isScrolled} />
             </div>
 

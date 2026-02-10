@@ -10,7 +10,7 @@
   --color-primary: var(--color-sky-blue);
   --color-secondary: var(--color-school-purple);
 
-  --color-background: #ffffff;
+  --color-background: #f8f9fa;
   --color-foreground: #1a1a1a;
 
   --radius-xl: 1rem;
@@ -18,7 +18,7 @@
 }
 
 :root {
-  --background: #ffffff;
+  --background: #f8f9fa;
   --foreground: #1a1a1a;
 
   --primary-gradient: linear-gradient(135deg, #0ea5e9 0%, #a855f7 100%);
@@ -110,8 +110,12 @@ h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary-gradient);
+  background: #d4d4d8;
   border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
 }
 
 .progress-bar {

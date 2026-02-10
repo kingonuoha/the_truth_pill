@@ -104,3 +104,35 @@ export const currentUser = query({
       .unique();
   },
 });
+
+export const getMe = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    return await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .unique();
+  },
+});
+
+export const subscribeToNewsletter = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .unique();
+
+    if (user) {
+      await ctx.db.patch(user._id, { newsletterSubscribed: true });
+    } else {
+      // Logic for guest newsletter subscription could be added here
+      // For now we assume they might not have an account or we just don't do anything
+      // The roadmap says "Stores in Users table: newsletterSubscribed = true"
+      // So let's create a placeholder user if they don't exist?
+      // Or just allow them to subscribe.
+    }
+  },
+});

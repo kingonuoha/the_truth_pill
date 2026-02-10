@@ -1,127 +1,114 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Calendar, User } from "lucide-react";
+import { Calendar, User, Loader2, ChevronDown, CheckCircle2 } from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { Id } from "../convex/_generated/dataModel";
 
-interface Article {
-    id: string;
-    title: string;
-    excerpt: string;
-    coverImage: string;
-    category: string;
-    author: string;
-    date: string;
-    slug: string;
+interface BlogGridProps {
+    categoryId?: Id<"categories">;
 }
 
-const MOCK_ARTICLES: Article[] = [
-    {
-        id: "1",
-        title: "The Unseen Power - How Observation Can Save and Guide You",
-        excerpt: "Mrs. Ijeoma, a retired nurse right here on a street in Owerri, noticed something strange about a new...",
-        coverImage: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600",
-        category: "Life Skills",
-        author: "Sandra Opara",
-        date: "September 1, 2025",
-        slug: "the-unseen-power",
-    },
-    {
-        id: "2",
-        title: "The Path of a Lifetime: Stop Rushing Your Journey",
-        excerpt: "Ever asked yourself, 'What exactly is this thing called life?' You're not alone. We've all been the...",
-        coverImage: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&q=80&w=600",
-        category: "Life Lessons",
-        author: "Sandra Opara",
-        date: "August 28, 2025",
-        slug: "stop-rushing",
-    },
-    {
-        id: "3",
-        title: "Don't Let the World Drown You: Guard Your Peace",
-        excerpt: "These days, bad news doesn't knock—it barges in, loud and unfiltered. From global conflicts to a str...",
-        coverImage: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=600",
-        category: "Stress Management",
-        author: "Sandra Opara",
-        date: "August 15, 2025",
-        slug: "guard-your-peace",
-    },
-    {
-        id: "4",
-        title: "LOVE THOSE WHO LOVE YOU!",
-        excerpt: "Why Do We Keep Loving People Who Don't Love Us Back? Hi friends, let's talk about that one perso...",
-        coverImage: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=600",
-        category: "Healthy Relationships",
-        author: "Sandra Opara",
-        date: "August 1, 2025",
-        slug: "love-those-who-love-you",
-    },
-    {
-        id: "5",
-        title: "THE POWER OF VULNERABILITY",
-        excerpt: "Hey friends, let's talk about the power of vulnerability. Some moments in life just hit differently ...",
-        coverImage: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600",
-        category: "Anxiety Therapy",
-        author: "Sandra Opara",
-        date: "June 2, 2025",
-        slug: "power-of-vulnerability",
-    },
-    {
-        id: "6",
-        title: "FINDING SERENITY AMIDST THE STORM",
-        excerpt: "In the intricate dance of love, relationships often encounter turbulent waters. Whether it's due to ...",
-        coverImage: "https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&q=80&w=600",
-        category: "Depression Therapy",
-        author: "Sandra Opara",
-        date: "February 26, 2025",
-        slug: "finding-serenity",
+export function BlogGrid({ categoryId }: BlogGridProps) {
+    const [limit, setLimit] = useState(6);
+    const articles = useQuery(api.articles.list, { limit, categoryId });
+
+    if (articles === undefined) {
+        return (
+            <div className="flex justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-sky-blue opacity-50" />
+            </div>
+        );
     }
-];
 
-export function BlogGrid() {
+    const hasMore = articles.length >= limit;
+
+    const handleLoadMore = () => {
+        setLimit(prev => prev + 6);
+    };
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 px-6 py-20 max-w-7xl mx-auto">
-            {MOCK_ARTICLES.map((article) => (
-                <article key={article.id} className="group flex flex-col items-start gap-4">
-                    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-sm">
-                        <Image
-                            src={article.coverImage}
-                            alt={article.title}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute top-4 right-4">
-                            <span className="category-badge">
-                                {article.category}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <Link href={`/articles/${article.slug}`}>
-                            <h2 className="text-xl font-serif font-bold leading-tight group-hover:text-primary transition-colors uppercase">
-                                {article.title}
-                            </h2>
-                        </Link>
-                        <p className="text-zinc-600 text-sm line-clamp-2 leading-relaxed">
-                            {article.excerpt}
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-6 mt-2 py-2 px-3 glass-card rounded-lg w-full">
-                        <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full overflow-hidden bg-zinc-200 border-2 border-sky-blue/20">
-                                <div className="bg-primary/20 w-full h-full flex items-center justify-center">
-                                    <User size={12} className="text-sky-blue" />
-                                </div>
+        <div className="max-w-7xl mx-auto px-6 py-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                {articles.map((article) => (
+                    <article key={article._id} className="group flex flex-col items-start gap-5">
+                        <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500">
+                            <Image
+                                src={article.coverImage}
+                                alt={article.title}
+                                fill
+                                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                            <div className="absolute top-4 right-4">
+                                <span className="category-badge bg-white/90 backdrop-blur-md text-zinc-900 border-none shadow-sm pb-1.5 px-3 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                    {article.categoryName}
+                                </span>
                             </div>
-                            <span className="text-[11px] font-bold text-foreground/80">{article.author}</span>
+                            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Calendar size={12} className="text-school-purple/60" />
-                            <span className="text-[11px] font-medium text-foreground/60">{article.date}</span>
+
+                        <div className="flex flex-col gap-3 px-1">
+                            <Link href={`/articles/${article.slug}`}>
+                                <h2 className="text-xl md:text-2xl font-serif font-bold leading-tight group-hover:text-primary transition-colors">
+                                    {article.title}
+                                </h2>
+                            </Link>
+                            <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed font-medium">
+                                {article.excerpt}
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-6 mt-2 py-3 px-4 bg-zinc-50 rounded-2xl w-full border border-zinc-100 group-hover:bg-white group-hover:border-primary/20 transition-all duration-500">
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full overflow-hidden border border-zinc-200">
+                                    {article.authorImage ? (
+                                        <Image src={article.authorImage} alt={article.authorName} width={28} height={28} className="object-cover" />
+                                    ) : (
+                                        <div className="bg-primary/10 w-full h-full flex items-center justify-center">
+                                            <User size={14} className="text-primary" />
+                                        </div>
+                                    )}
+                                </div>
+                                <span className="text-xs font-black uppercase tracking-tighter text-zinc-900">{article.authorName}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-zinc-400">
+                                <Calendar size={14} />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">
+                                    {new Date(article.publishedAt || article.createdAt).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric'
+                                    })}
+                                </span>
+                            </div>
+                        </div>
+                    </article>
+                ))}
+            </div>
+
+            <div className="mt-20 flex justify-center pb-20">
+                {hasMore ? (
+                    <button
+                        onClick={handleLoadMore}
+                        className="flex items-center gap-2 px-10 py-4 rounded-full bg-zinc-900 text-white font-black uppercase tracking-widest text-[10px] hover:bg-sky-blue transition-all duration-300 group shadow-xl hover:shadow-sky-blue/20"
+                    >
+                        Load More Articles
+                        <ChevronDown size={16} className="group-hover:translate-y-1 transition-transform" />
+                    </button>
+                ) : (
+                    <div className="flex flex-col items-center gap-4 py-10">
+                        <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400">
+                            <CheckCircle2 size={24} />
+                        </div>
+                        <div className="text-center">
+                            <p className="text-zinc-900 font-serif font-bold text-xl">You have reached the end</p>
+                            <p className="text-zinc-400 text-sm font-medium mt-1 uppercase tracking-widest text-[10px]">Much more to come soon</p>
                         </div>
                     </div>
-                </article>
-            ))}
+                )}
+            </div>
         </div>
     );
 }
