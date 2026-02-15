@@ -11,20 +11,33 @@ export default defineSchema({
     role: v.union(v.literal("admin"), v.literal("user")),
     emailVerified: v.optional(v.boolean()),
     newsletterSubscribed: v.boolean(),
+    emailConfirmed: v.optional(v.boolean()),
+    confirmationToken: v.optional(v.string()),
+    resetToken: v.optional(v.string()),
+    resetTokenExpires: v.optional(v.float64()),
     createdAt: v.float64(),
   })
     .index("by_email", ["email"])
-    .index("by_role", ["role"]),
+    .index("by_role", ["role"])
+    .index("by_confirmationToken", ["confirmationToken"])
+    .index("by_resetToken", ["resetToken"]),
+
+  quotes: defineTable({
+    text: v.string(),
+    author: v.string(),
+    category: v.optional(v.string()),
+    createdAt: v.float64(),
+  }).index("by_createdAt", ["createdAt"]),
 
   articles: defineTable({
     title: v.string(),
     slug: v.string(),
-    excerpt: v.string(),
-    content: v.string(), // rich text/markdown
-    coverImage: v.string(), // Cloudinary URL
+    excerpt: v.optional(v.string()),
+    content: v.optional(v.string()), // rich text/markdown
+    coverImage: v.optional(v.string()), // Cloudinary URL
     authorId: v.id("users"),
-    categoryId: v.id("categories"),
-    tags: v.array(v.string()),
+    categoryId: v.optional(v.id("categories")),
+    tags: v.optional(v.array(v.string())),
     status: v.union(
       v.literal("draft"),
       v.literal("scheduled"),
@@ -35,10 +48,12 @@ export default defineSchema({
     publishedAt: v.optional(v.float64()),
     viewCount: v.number(),
     uniqueViewCount: v.number(),
-    readingTime: v.number(), // in minutes
+    readingTime: v.number(), // estimated minutes
+    actualReadingTime: v.optional(v.number()), // total seconds spent by all users
     createdAt: v.float64(),
     updatedAt: v.float64(),
     isFeatured: v.optional(v.boolean()),
+    isArchived: v.optional(v.boolean()),
   })
     .index("by_slug", ["slug"])
     .index("by_status", ["status"])
@@ -64,6 +79,7 @@ export default defineSchema({
       v.literal("approved"),
       v.literal("pending"),
       v.literal("spam"),
+      v.literal("removed"),
     ),
     createdAt: v.float64(),
   })
@@ -80,7 +96,10 @@ export default defineSchema({
       v.literal("insightful"),
     ),
     createdAt: v.float64(),
-  }).index("by_article_user", ["articleId", "userId"]),
+  })
+    .index("by_articleId", ["articleId"])
+    .index("by_userId", ["userId"])
+    .index("by_article_user", ["articleId", "userId"]),
 
   bookmarks: defineTable({
     articleId: v.id("articles"),
@@ -121,20 +140,25 @@ export default defineSchema({
     .index("by_userId", ["userId"]),
 
   aiSchedule: defineTable({
-    dayOfWeek: v.number(), // 0-6
+    daysOfWeek: v.array(v.number()), // [0-6]
     time: v.string(), // HH:MM
+    timezone: v.string(), // e.g. "UTC", "Africa/Lagos"
     isActive: v.boolean(),
     lastRun: v.optional(v.float64()),
     topicsToResearch: v.array(v.string()),
+    nextRun: v.optional(v.float64()),
   }),
 
   aiSettings: defineTable({
-    provider: v.union(v.literal("chatgpt"), v.literal("gemini")),
+    provider: v.string(), // openai, anthropic, deepseek, etc.
     apiKey: v.string(), // encrypted
     model: v.string(),
+    promptTemplate: v.optional(v.string()),
     isActive: v.boolean(),
     lastTested: v.optional(v.float64()),
     testStatus: v.optional(v.union(v.literal("success"), v.literal("failed"))),
+    isWriting: v.optional(v.float64()),
+    createdAt: v.optional(v.float64()),
   }),
 
   articleViews: defineTable({
@@ -142,23 +166,29 @@ export default defineSchema({
     visitorId: v.string(),
     userId: v.optional(v.id("users")),
     viewedAt: v.float64(),
+    engagementTime: v.optional(v.number()), // total seconds for this session
   }).index("by_article_visitor", ["articleId", "visitorId"]),
 
   emailQueue: defineTable({
-    recipientEmail: v.string(),
-    type: v.union(
-      v.literal("welcome"),
-      v.literal("newsletter"),
-      v.literal("comment"),
-    ),
+    recipient: v.string(),
     subject: v.string(),
-    body: v.string(),
+    templateName: v.string(),
+    templateData: v.any(), // JSON template data
     status: v.union(
       v.literal("pending"),
+      v.literal("sending"),
       v.literal("sent"),
       v.literal("failed"),
     ),
     scheduledFor: v.float64(),
     sentAt: v.optional(v.float64()),
-  }),
+    error: v.optional(v.string()),
+    retries: v.number(),
+  }).index("by_status_scheduled", ["status", "scheduledFor"]),
+  researchTopics: defineTable({
+    topic: v.string(),
+    categoryId: v.optional(v.id("categories")),
+    status: v.union(v.literal("pending"), v.literal("processed")),
+    createdAt: v.float64(),
+  }).index("by_status", ["status"]),
 });

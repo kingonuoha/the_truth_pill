@@ -2,22 +2,27 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { Doc } from "../convex/_generated/dataModel";
 
 export function HeroCarousel() {
     const featuredArticles = useQuery(api.articles.getFeatured, { limit: 5 });
     const [current, setCurrent] = useState(0);
+    const [direction, setDirection] = useState(0);
 
     const next = useCallback(() => {
         if (!featuredArticles) return;
+        setDirection(1);
         setCurrent((prevIdx) => (prevIdx + 1) % featuredArticles.length);
     }, [featuredArticles]);
 
     const prev = useCallback(() => {
         if (!featuredArticles) return;
+        setDirection(-1);
         setCurrent((prevIdx) => (prevIdx - 1 + featuredArticles.length) % featuredArticles.length);
     }, [featuredArticles]);
 
@@ -41,20 +46,44 @@ export function HeroCarousel() {
 
     const currentItem = featuredArticles[current];
 
+    const variants = {
+        enter: (direction: number) => ({
+            x: direction > 0 ? "100%" : "-100%",
+            opacity: 0
+        }),
+        center: {
+            x: 0,
+            opacity: 1
+        },
+        exit: (direction: number) => ({
+            x: direction < 0 ? "100%" : "-100%",
+            opacity: 0
+        })
+    };
+
     return (
         <div className="relative h-[95vh] w-full overflow-hidden bg-zinc-900">
-            <AnimatePresence mode="wait">
+            <AnimatePresence initial={false} custom={direction}>
                 <motion.div
                     key={current}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 1 }}
+                    custom={direction}
+                    variants={variants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                        x: { type: "spring", stiffness: 300, damping: 30 },
+                        opacity: { duration: 0.5 }
+                    }}
                     className="absolute inset-0"
                 >
-                    <div
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] scale-105"
-                        style={{ backgroundImage: `url(${currentItem.coverImage})` }}
+                    <Image
+                        src={currentItem.coverImage || ""}
+                        alt={currentItem.title}
+                        fill
+                        priority={current === 0}
+                        className="object-cover transition-transform duration-[10000ms] scale-105 opacity-60"
+                        sizes="100vw"
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent" />
                 </motion.div>
@@ -113,7 +142,7 @@ export function HeroCarousel() {
             {/* Navigation Dots */}
             {featuredArticles.length > 1 && (
                 <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-3">
-                    {featuredArticles.map((_, idx) => (
+                    {(featuredArticles as Doc<"articles">[]).map((_: Doc<"articles">, idx: number) => (
                         <button
                             key={idx}
                             onClick={() => setCurrent(idx)}

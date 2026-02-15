@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { LogIn, Mail, Lock, Chrome, Loader2 } from "lucide-react";
-import { loginUser } from "@/app/actions/auth";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function SignInPage() {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -18,10 +20,51 @@ export default function SignInPage() {
         setError(null);
 
         const formData = new FormData(event.currentTarget);
-        const result = await loginUser(formData);
+        const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
 
-        if (result?.error) {
-            setError(result.error);
+        try {
+            const result = await signIn("credentials", {
+                email,
+                password,
+                redirect: false,
+            });
+
+            if (result?.error) {
+                const message = result.error === "CredentialsSignin" ? "Invalid email or password" : result.error;
+                setError(message);
+                toast.error("Sign in failed", {
+                    description: message,
+                });
+                setIsLoading(false);
+            } else {
+                toast.success("Welcome back!", {
+                    description: "You have successfully signed in.",
+                });
+
+                const session = await getSession();
+                const userRole = session?.user?.role;
+
+                // Fetch the redirect URL if it exists
+                const storageRedirect = localStorage.getItem("auth_redirect_url");
+                localStorage.removeItem("auth_redirect_url");
+
+                // Determine final redirect
+                let finalRedirect = storageRedirect || "/";
+
+                // If they were going to "/" but are logged in, send them to their dashboard
+                if (finalRedirect === "/") {
+                    finalRedirect = userRole === "admin" ? "/admin" : "/dashboard";
+                }
+
+                router.push(finalRedirect);
+                router.refresh();
+            }
+        } catch {
+            setError("An unexpected error occurred");
+            toast.error("Error", {
+                description: "Something went wrong. Please try again.",
+            });
             setIsLoading(false);
         }
     }
@@ -103,9 +146,14 @@ export default function SignInPage() {
                     </div>
 
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             setIsGoogleLoading(true);
-                            signIn("google", { callbackUrl: "/" });
+                            try {
+                                await signIn("google", { callbackUrl: "/" });
+                            } catch {
+                                setIsGoogleLoading(false);
+                                toast.error("Google sign in failed");
+                            }
                         }}
                         disabled={isGoogleLoading}
                         className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-zinc-200 rounded-xl text-zinc-700 font-bold hover:bg-zinc-50 transition-all disabled:opacity-70"

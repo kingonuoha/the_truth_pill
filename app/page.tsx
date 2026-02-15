@@ -1,14 +1,59 @@
-"use client";
-
 import { Navbar } from "@/components/navbar";
 import { HeroCarousel } from "@/components/hero-carousel";
 import { BlogGrid } from "@/components/blog-grid";
 import { CategoryShowcase } from "@/components/category-showcase";
 import { Newsletter } from "@/components/newsletter";
+import { Metadata } from "next";
+
+export const revalidate = 60; // ISR: Revalidate every 60 seconds
+
+export const metadata: Metadata = {
+  title: "The Truth Pill | Insight into Human Behavior",
+  description: "The Truth Pill is a psychology-focused content platform for understanding yourself, others, and human behavior in everyday life.",
+  openGraph: {
+    title: "The Truth Pill | Insight into Human Behavior",
+    description: "Deep psychological insights and human-reviewed articles on behavior, relationships, and self-awareness.",
+    url: "https://thetruthpill.com",
+    siteName: "The Truth Pill",
+    images: [
+      {
+        url: "https://thetruthpill.com/og-image.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+    type: "website",
+  },
+};
 
 export default function Home() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "The Truth Pill",
+    "url": "https://thetruthpill.com",
+    "description": "Insight into human behavior and psychology.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "The Truth Pill",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://thetruthpill.com/logo.png",
+      },
+    },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://thetruthpill.com/search?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <main className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Navbar />
 
       {/* Immersive Hero Section */}

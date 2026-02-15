@@ -48,7 +48,7 @@ export function RelatedArticles({ categoryId, excludeId, lean = false }: Related
                     >
                         <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
                             <Image
-                                src={article.coverImage}
+                                src={article.coverImage || ""}
                                 alt={article.title}
                                 fill
                                 className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -82,7 +82,7 @@ export function RelatedArticles({ categoryId, excludeId, lean = false }: Related
                 >
                     <div className="relative aspect-[16/10] rounded-2xl overflow-hidden mb-4 shadow-sm group-hover:shadow-xl transition-all">
                         <Image
-                            src={article.coverImage}
+                            src={article.coverImage || ""}
                             alt={article.title}
                             fill
                             className="object-cover transition-transform duration-700 group-hover:scale-110"

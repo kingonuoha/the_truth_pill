@@ -1,32 +1,51 @@
-"use client";
-
-import { use } from "react";
-import { useQuery } from "convex/react";
+import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Navbar } from "@/components/navbar";
 import { BlogGrid } from "@/components/blog-grid";
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getOgImageUrl } from "@/lib/utils";
 
-export default function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = use(params);
-    const category = useQuery(api.categories.getBySlug, { slug });
+export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
-    if (category === undefined) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-        );
+interface CategoryPageProps {
+    params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+    const { slug } = await params;
+    const category = await fetchQuery(api.categories.getBySlug, { slug });
+
+    if (!category) {
+        return {
+            title: "Category Not Found | The Truth Pill",
+        };
     }
 
-    if (category === null) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-                <h1 className="text-4xl font-serif font-bold mb-4">Reality Not Found</h1>
-                <p className="text-zinc-500 max-w-md">This dimension of truth does not exist or has been shifted elsewhere.</p>
-            </div>
-        );
+    return {
+        title: `${category.name} | The Truth Pill`,
+        description: category.description || `Exploring the depth of ${category.name.toLowerCase()} and the underlying patterns of existence.`,
+        openGraph: {
+            title: `${category.name} | The Truth Pill`,
+            description: category.description || `Deep dives into ${category.name}.`,
+            images: [
+                {
+                    url: getOgImageUrl(category.name),
+                    width: 1200,
+                    height: 630,
+                },
+            ],
+        },
+    };
+}
+
+export default async function CategoryPage({ params }: CategoryPageProps) {
+    const { slug } = await params;
+    const category = await fetchQuery(api.categories.getBySlug, { slug });
+
+    if (!category) {
+        notFound();
     }
 
     // Fallback images based on slug
@@ -39,8 +58,20 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
     const headerImage = category.coverImage || fallbackImageMap[category.slug] || fallbackImageMap.default;
 
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": category.name,
+        "description": category.description,
+        "url": `https://thetruthpill.com/categories/${category.slug}`,
+    };
+
     return (
         <main className="min-h-screen bg-background">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             <Navbar />
 
             {/* Category Header */}

@@ -5,13 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { useSession } from "next-auth/react";
 
 export function NewsletterBar() {
     const [isVisible, setIsVisible] = useState(false);
     const [email, setEmail] = useState("");
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-    const { data: session } = useSession();
 
     // Check if user is already subscribed
     const user = useQuery(api.users.getMe);
@@ -39,7 +37,7 @@ export function NewsletterBar() {
             await subscribe({ email });
             setStatus('success');
             setTimeout(() => setIsVisible(false), 3000);
-        } catch (error) {
+        } catch {
             setStatus('error');
         }
     };

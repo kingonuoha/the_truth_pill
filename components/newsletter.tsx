@@ -17,11 +17,23 @@ export function Newsletter() {
 
         setIsSubmitting(true);
         try {
-            await subscribe({ email });
+            const result = (await subscribe({ email })) as { status: string };
             setEmail("");
-            toast.success("Welcome to the circle of truth.");
+
+            if (result.status === "invited") {
+                toast.success("Invitation sent!", {
+                    description: "Check your email to confirm your subscription and create your account.",
+                });
+            } else {
+                toast.success("Welcome to the circle of truth.", {
+                    description: "You've been successfully subscribed to our newsletter.",
+                });
+            }
         } catch (error) {
-            toast.error("Failed to subscribe. Please try again.");
+            console.error(error);
+            toast.error("Subscription failed", {
+                description: "Failed to process your subscription. Please try again.",
+            });
         } finally {
             setIsSubmitting(false);
         }

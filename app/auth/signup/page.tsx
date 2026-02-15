@@ -5,9 +5,12 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { UserPlus, Mail, Lock, User, Chrome, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { registerUser } from "@/app/actions/auth";
 
 export default function SignUpPage() {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -23,18 +26,33 @@ export default function SignUpPage() {
 
         if (password !== confirmPassword) {
             setError("Passwords do not match");
+            toast.error("Passwords do not match");
             setIsLoading(false);
             return;
         }
 
-        const result = await registerUser(formData);
+        try {
+            const result = await registerUser(formData);
 
-        if (result?.error) {
-            setError(result.error);
+            if (result?.error) {
+                setError(result.error);
+                toast.error("Registration failed", {
+                    description: result.error,
+                });
+                setIsLoading(false);
+            } else {
+                toast.success("Account created!", {
+                    description: "Welcome to The Truth Pill circle.",
+                });
+                router.push("/");
+                router.refresh();
+            }
+        } catch {
+            setError("An unexpected error occurred");
+            toast.error("Error", {
+                description: "Something went wrong. Please try again.",
+            });
             setIsLoading(false);
-        } else {
-            // Success - Redirect is handled in the action or by auth state change
-            window.location.href = "/";
         }
     }
 
@@ -138,9 +156,14 @@ export default function SignUpPage() {
                     </div>
 
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             setIsGoogleLoading(true);
-                            signIn("google", { callbackUrl: "/" });
+                            try {
+                                await signIn("google", { callbackUrl: "/" });
+                            } catch {
+                                setIsGoogleLoading(false);
+                                toast.error("Google sign in failed");
+                            }
                         }}
                         disabled={isGoogleLoading}
                         className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-zinc-200 rounded-xl text-zinc-700 font-bold hover:bg-zinc-50 transition-all disabled:opacity-70"

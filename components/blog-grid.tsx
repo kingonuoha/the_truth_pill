@@ -3,13 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Calendar, User, Loader2, ChevronDown, CheckCircle2 } from "lucide-react";
+import { Calendar, User, ChevronDown, CheckCircle2 } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { Id } from "../convex/_generated/dataModel";
+import { Id, Doc } from "../convex/_generated/dataModel";
+import { BlogSkeleton } from "./skeletons";
 
 interface BlogGridProps {
     categoryId?: Id<"categories">;
+}
+
+interface JoinedArticle extends Doc<"articles"> {
+    categoryName: string;
+    authorName: string;
+    authorImage?: string;
 }
 
 export function BlogGrid({ categoryId }: BlogGridProps) {
@@ -17,11 +24,7 @@ export function BlogGrid({ categoryId }: BlogGridProps) {
     const articles = useQuery(api.articles.list, { limit, categoryId });
 
     if (articles === undefined) {
-        return (
-            <div className="flex justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-sky-blue opacity-50" />
-            </div>
-        );
+        return <BlogSkeleton />;
     }
 
     const hasMore = articles.length >= limit;
@@ -33,11 +36,11 @@ export function BlogGrid({ categoryId }: BlogGridProps) {
     return (
         <div className="max-w-7xl mx-auto px-6 py-10">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {articles.map((article) => (
+                {articles.map((article: JoinedArticle) => (
                     <article key={article._id} className="group flex flex-col items-start gap-5">
                         <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500">
                             <Image
-                                src={article.coverImage}
+                                src={article.coverImage || ""}
                                 alt={article.title}
                                 fill
                                 className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -62,7 +65,7 @@ export function BlogGrid({ categoryId }: BlogGridProps) {
                         </div>
 
                         <div className="flex items-center gap-6 mt-2 py-3 px-4 bg-zinc-50 rounded-2xl w-full border border-zinc-100 group-hover:bg-white group-hover:border-primary/20 transition-all duration-500">
-                            <div className="flex items-center gap-2">
+                            <Link href={`/author/${article.authorId}`} className="flex items-center gap-2 group/author">
                                 <div className="w-7 h-7 rounded-full overflow-hidden border border-zinc-200">
                                     {article.authorImage ? (
                                         <Image src={article.authorImage} alt={article.authorName} width={28} height={28} className="object-cover" />
@@ -72,8 +75,8 @@ export function BlogGrid({ categoryId }: BlogGridProps) {
                                         </div>
                                     )}
                                 </div>
-                                <span className="text-xs font-black uppercase tracking-tighter text-zinc-900">{article.authorName}</span>
-                            </div>
+                                <span className="text-xs font-black uppercase tracking-tighter text-zinc-900 group-hover/author:text-primary transition-colors">{article.authorName}</span>
+                            </Link>
                             <div className="flex items-center gap-2 text-zinc-400">
                                 <Calendar size={14} />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">

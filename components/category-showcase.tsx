@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { Loader2 } from "lucide-react";
+import { Doc } from "../convex/_generated/dataModel";
+import { CategorySkeleton } from "./skeletons";
+import { DynamicCategoryImage } from "./dynamic-category-image";
+
+interface CategoryWithCount extends Doc<"categories"> {
+    articleCount: number;
+}
 
 export function CategoryShowcase() {
-    const categories = useQuery(api.categories.listAll);
+    const categories = useQuery(api.categories.listAll) as CategoryWithCount[] | undefined;
 
     if (categories === undefined) {
-        return (
-            <div className="flex justify-center py-10">
-                <Loader2 className="w-6 h-6 animate-spin text-sky-blue opacity-50" />
-            </div>
-        );
+        return <CategorySkeleton />;
     }
 
     if (!categories || categories.length === 0) {
@@ -22,28 +24,31 @@ export function CategoryShowcase() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-6 py-10 max-w-7xl mx-auto">
-            {categories.map((cat) => (
+            {categories.map((cat: CategoryWithCount) => (
                 <Link
                     key={cat.slug}
                     href={`/categories/${cat.slug}`}
-                    className="group relative h-64 rounded-2xl overflow-hidden"
+                    className="group relative h-72 rounded-[32px] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500"
                 >
-                    <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-                        style={{ backgroundImage: cat.coverImage ? `url(${cat.coverImage})` : 'none' }}
+                    <DynamicCategoryImage
+                        categoryName={cat.name}
+                        alt={cat.name}
+                        className="transition-transform duration-700 group-hover:scale-110"
                     />
-                    {!cat.coverImage && <div className="absolute inset-0 bg-zinc-100" />}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                    <div className="absolute inset-0 bg-sky-blue/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                    <div className="absolute bottom-6 left-6 z-10">
-                        <div className="flex flex-col">
-                            <h3 className="text-white font-serif text-2xl font-bold group-hover:translate-x-2 transition-transform duration-300">
-                                {cat.name}
-                            </h3>
-                            <span className="text-white/60 text-xs mt-1 font-medium">{cat.articleCount} Articles</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
+
+                    <div className="absolute inset-0 p-8 flex flex-col justify-end">
+                        <div className="flex items-center gap-3 mb-3">
+                            <span className="w-6 h-[1px] bg-sky-blue group-hover:w-10 transition-all duration-500" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-sky-blue">
+                                Discover
+                            </span>
                         </div>
-                        <div className="w-0 group-hover:w-full h-0.5 bg-gradient-to-r from-sky-blue to-school-purple transition-all duration-500 mt-2" />
+                        <h3 className="text-white font-serif text-3xl font-bold group-hover:translate-x-2 transition-transform duration-500">
+                            {cat.name}
+                        </h3>
+                        <p className="text-white/60 text-[10px] mt-2 font-bold uppercase tracking-widest">{cat.articleCount} Articles</p>
                     </div>
                 </Link>
             ))}

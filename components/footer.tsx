@@ -1,9 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { Github, Twitter, Linkedin, Mail, Heart } from "lucide-react";
+import { Github, Twitter, Linkedin, Mail, Heart, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
 
 export function Footer() {
+    const [email, setEmail] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const subscribe = useMutation(api.users.subscribeToNewsletter);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email) return;
+
+        setIsSubmitting(true);
+        try {
+            const result = (await subscribe({ email })) as { status: string };
+            setEmail("");
+
+            if (result.status === "invited") {
+                toast.success("Check your email", {
+                    description: "We've sent you an invitation to create an account and join the circle.",
+                });
+            } else {
+                toast.success("Welcome to the circle", {
+                    description: "Your weekly dose of truth is on its way.",
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to subscribe");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <footer className="bg-zinc-900 text-white py-20 px-6 mt-32">
             <div className="max-w-7xl mx-auto">
@@ -52,14 +86,22 @@ export function Footer() {
                     <div className="lg:col-span-1">
                         <h4 className="font-bold text-xs uppercase tracking-[0.2em] text-white mb-8">The Weekly dose</h4>
                         <p className="text-zinc-400 text-sm mb-6">Join 50,000+ others seeking the truth in their inbox.</p>
-                        <form className="relative group">
+                        <form onSubmit={handleSubmit} className="relative group">
                             <input
                                 type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Email address"
-                                className="w-full bg-zinc-800 border-none rounded-2xl py-4 px-6 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                required
+                                disabled={isSubmitting}
+                                className="w-full bg-zinc-800 border-none rounded-2xl py-4 px-6 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50"
                             />
-                            <button className="absolute right-2 top-2 bottom-2 bg-primary text-white rounded-xl px-4 text-xs font-bold uppercase tracking-widest hover:bg-sky-400 transition-colors">
-                                Subscribe
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="absolute right-2 top-2 bottom-2 bg-primary text-white rounded-xl px-4 text-xs font-bold uppercase tracking-widest hover:bg-sky-400 transition-colors disabled:bg-zinc-700 flex items-center justify-center min-w-[100px]"
+                            >
+                                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : "Subscribe"}
                             </button>
                         </form>
                     </div>
@@ -77,3 +119,5 @@ export function Footer() {
         </footer>
     );
 }
+
+export default Footer;
