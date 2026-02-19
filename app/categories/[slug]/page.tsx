@@ -1,74 +1,113 @@
-"use client";
-
+import { fetchQuery } from "convex/nextjs";
+import { api } from "@/convex/_generated/api";
 import { Navbar } from "@/components/navbar";
 import { BlogGrid } from "@/components/blog-grid";
 import Image from "next/image";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getOgImageUrl } from "@/lib/utils";
 
-import { use } from "react";
+export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
-export default function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = use(params);
+interface CategoryPageProps {
+    params: Promise<{ slug: string }>;
+}
 
-    // Mapping slugs to display names for mock
-    const categoryName = slug
-        .split("-")
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+    const { slug } = await params;
+    const category = await fetchQuery(api.categories.getBySlug, { slug });
+
+    if (!category) {
+        return {
+            title: "Category Not Found | The Truth Pill",
+        };
+    }
+
+    return {
+        title: `${category.name} | The Truth Pill`,
+        description: category.description || `Exploring the depth of ${category.name.toLowerCase()} and the underlying patterns of existence.`,
+        openGraph: {
+            title: `${category.name} | The Truth Pill`,
+            description: category.description || `Deep dives into ${category.name}.`,
+            images: [
+                {
+                    url: getOgImageUrl(category.name),
+                    width: 1200,
+                    height: 630,
+                },
+            ],
+        },
+    };
+}
+
+export default async function CategoryPage({ params }: CategoryPageProps) {
+    const { slug } = await params;
+    const category = await fetchQuery(api.categories.getBySlug, { slug });
+
+    if (!category) {
+        notFound();
+    }
+
+    // Fallback images based on slug
+    const fallbackImageMap: Record<string, string> = {
+        "psychology": "https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=2070&auto=format&fit=crop",
+        "philosophy": "https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=2070&auto=format&fit=crop",
+        "society": "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?q=80&w=2070&auto=format&fit=crop",
+        "default": "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&q=80&w=1200"
+    };
+
+    const headerImage = category.coverImage || fallbackImageMap[category.slug] || fallbackImageMap.default;
+
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": category.name,
+        "description": category.description,
+        "url": `https://thetruthpill.com/categories/${category.slug}`,
+    };
 
     return (
-        <main className="min-h-screen bg-white">
+        <main className="min-h-screen bg-background">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             <Navbar />
 
             {/* Category Header */}
-            <header className="relative w-full h-[50vh] bg-zinc-900 flex items-center justify-center text-center px-6 overflow-hidden">
+            <header className="relative w-full h-[60vh] flex items-center justify-center text-center px-6 overflow-hidden">
                 <Image
-                    src="https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&q=80&w=1200"
-                    alt={categoryName}
+                    src={headerImage}
+                    alt={category.name}
                     fill
-                    className="object-cover opacity-40"
+                    className="object-cover"
+                    priority
                 />
+                <div className="absolute inset-0 bg-zinc-900/60 backdrop-blur-[2px]" />
+
                 <div className="relative z-10 max-w-4xl">
-                    <p className="text-primary font-black uppercase tracking-[0.3em] text-[10px] mb-4">Sentiment Collection</p>
-                    <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-6 uppercase tracking-tight">
-                        {categoryName}
+                    <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-sky-blue text-[10px] font-black uppercase tracking-[0.3em] mb-6">
+                        Reality Dimension
+                    </div>
+                    <h1 className="text-5xl md:text-8xl font-serif font-bold text-white mb-6 uppercase tracking-tight">
+                        {category.name}
                     </h1>
-                    <p className="text-white/70 text-lg md:text-xl font-light max-w-2xl mx-auto leading-relaxed">
-                        Exploring the depth of {categoryName.toLowerCase()} and how it shapes our daily existence and long-term peace.
+                    <p className="text-white/80 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
+                        {category.description || `Exploring the depth of ${category.name.toLowerCase()} and the underlying patterns of existence.`}
                     </p>
                 </div>
             </header>
 
             {/* Main Content Sections */}
             <section className="bg-white">
-                <div className="max-w-7xl mx-auto pt-20 px-6">
-                    <h2 className="text-2xl font-serif font-bold mb-2">Reflections on {categoryName}</h2>
-                    <div className="w-12 h-1 bg-primary mb-10" />
+                <div className="max-w-7xl mx-auto pt-24 px-6">
+                    <div className="flex items-center gap-4 mb-12">
+                        <div className="w-12 h-1 bg-sky-blue rounded-full" />
+                        <h2 className="text-2xl md:text-3xl font-serif font-bold">Insights into {category.name}</h2>
+                    </div>
                 </div>
-                <BlogGrid />
+                <BlogGrid categoryId={category._id} />
             </section>
-
-            {/* Footer */}
-            <footer className="bg-zinc-50 border-t py-20 px-6 mt-20">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
-                    <div className="flex flex-col gap-4 text-center md:text-left">
-                        <div className="flex items-center justify-center md:justify-start gap-2">
-                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold">T</div>
-                            <span className="font-serif text-2xl font-bold">The Truth Pill</span>
-                        </div>
-                        <p className="text-zinc-500 max-w-sm text-sm">
-                            Helping you live a full life and become a better human to yourself and everyone around you.
-                        </p>
-                    </div>
-
-                    <div className="flex gap-10 text-sm font-medium">
-                        <div className="flex flex-col gap-3">
-                            <h4 className="font-bold">Platform</h4>
-                            <a href="#" className="text-zinc-500 hover:text-primary transition-colors">Articles</a>
-                            <a href="#" className="text-zinc-500 hover:text-primary transition-colors">Categories</a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </main>
     );
 }

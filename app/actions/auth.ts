@@ -10,6 +10,7 @@ export async function registerUser(formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const subscribe = formData.get("subscribe") === "true";
 
   if (!name || !email || !password) {
     return { error: "Missing required fields" };
@@ -22,6 +23,7 @@ export async function registerUser(formData: FormData) {
       name,
       email,
       password: hashedPassword,
+      newsletterSubscribed: subscribe,
     });
 
     // Auto-login after registration
@@ -64,5 +66,36 @@ export async function loginUser(formData: FormData) {
       }
     }
     throw error;
+  }
+}
+export async function resetPasswordAction(token: string, formData: FormData) {
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (!password || !confirmPassword) {
+    return { error: "Missing required fields" };
+  }
+
+  if (password !== confirmPassword) {
+    return { error: "Passwords do not match" };
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await fetchMutation(api.users.resetPassword, {
+      token,
+      password: hashedPassword,
+    });
+
+    if (result.success) {
+      return { success: true };
+    } else {
+      return { error: result.message || "Failed to reset password" };
+    }
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Reset password error:", err);
+    return { error: err.message || "Failed to reset password" };
   }
 }
