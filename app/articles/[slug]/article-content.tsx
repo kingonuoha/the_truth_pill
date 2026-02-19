@@ -12,6 +12,7 @@ import { EngagementToolbar } from "@/components/engagement-toolbar";
 import { TableOfContents } from "@/components/table-of-contents";
 import { RelatedArticles } from "@/components/related-articles";
 import { Newsletter } from "@/components/newsletter";
+import { AdSlot } from "@/components/ad-slot";
 import { getAvatarUrl, getVisitorId } from "@/lib/utils";
 import { Doc } from "@/convex/_generated/dataModel";
 import dynamic from "next/dynamic";
@@ -81,6 +82,24 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
         damping: 30,
         restDelta: 0.001
     });
+
+    const renderContentWithAds = (content: string) => {
+        if (!content) return { top: "", bottom: "" };
+
+        const paragraphs = content.split('</p>');
+        if (paragraphs.length > 2) {
+            // Reconstruct with middle ad after 2nd paragraph
+            const top = paragraphs.slice(0, 2).join('</p>') + '</p>';
+            const bottom = paragraphs.slice(2).join('</p>');
+
+            // We can't easily return JSX here to be used in dangerouslySetInnerHTML
+            // So we'll render the article in two parts if needed, or just let AdSlot handle its own visibility
+            return { top, bottom };
+        }
+        return { top: content, bottom: "" };
+    };
+
+    const splittedContent = renderContentWithAds(article.content || "");
 
     if (!article) return null;
 
@@ -177,22 +196,33 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                         </div>
                     </aside>
 
-                    {/* Content Column */}
                     <div className="flex-1 max-w-3xl">
+                        <AdSlot position="showAdTopOfArticle" className="mb-12 flex justify-center" />
+
                         <article
                             className="prose prose-zinc prose-lg dark:prose-invert max-w-none font-serif leading-[1.8] text-zinc-800 dark:text-zinc-200 text-[18px]
                             prose-headings:font-serif prose-headings:font-bold prose-headings:text-zinc-900 dark:prose-headings:text-white
                             prose-blockquote:border-l-4 prose-blockquote:border-sky-blue prose-blockquote:bg-zinc-50 dark:prose-blockquote:bg-zinc-800/50 prose-blockquote:py-4 prose-blockquote:px-8 prose-blockquote:italic prose-blockquote:rounded-r-xl prose-blockquote:text-zinc-700 dark:prose-blockquote:text-zinc-300
                             prose-strong:text-zinc-900 dark:prose-strong:text-white prose-strong:font-black
                             prose-img:rounded-3xl prose-img:shadow-2xl prose-img:cursor-zoom-in"
-                            dangerouslySetInnerHTML={{ __html: article.content || "" }}
                             onClick={(e) => {
                                 const target = e.target as HTMLElement;
                                 if (target.tagName === 'IMG') {
                                     setSelectedImage((target as HTMLImageElement).src);
                                 }
                             }}
-                        />
+                        >
+                            <div dangerouslySetInnerHTML={{ __html: splittedContent.top }} />
+
+                            {splittedContent.bottom && (
+                                <>
+                                    <AdSlot position="showAdMiddleOfArticle" className="my-16 flex justify-center" />
+                                    <div dangerouslySetInnerHTML={{ __html: splittedContent.bottom }} />
+                                </>
+                            )}
+                        </article>
+
+                        <AdSlot position="showAdBottomOfArticle" className="mt-16 mb-8 flex justify-center" />
 
                         {/* Author Bio Card */}
                         <div className="mt-24 bg-zinc-50 rounded-3xl p-10 flex flex-col md:flex-row items-center gap-8 border border-zinc-100">
@@ -238,6 +268,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                     {/* Right Sidebar - TOC & Recommended */}
                     <aside className="hidden xl:block w-80 relative">
                         <div className="sticky top-32 flex flex-col gap-12 max-h-[calc(100vh-160px)] overflow-y-auto pb-10 pr-4">
+                            <AdSlot position="showAdSidebar" className="mb-8" />
                             <TableOfContents />
 
                             <div className="flex flex-col gap-6">

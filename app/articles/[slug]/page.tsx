@@ -3,6 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { ArticleContent } from "./article-content";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getOgImageUrl } from "@/lib/utils";
 
 export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
     const title = `${article.title} | The Truth Pill`;
     const description = article.excerpt || "A deep dive into psychology and human behavior.";
-    const image = article.coverImage || "https://thetruthpill.com/og-image.png";
+    const image = article.coverImage || getOgImageUrl(article.title);
 
     return {
         title,

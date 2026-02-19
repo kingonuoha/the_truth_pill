@@ -7,10 +7,10 @@ import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { Doc } from "../convex/_generated/dataModel";
+import { JoinedArticle } from "./blog-grid";
 
-export function HeroCarousel() {
-    const featuredArticles = useQuery(api.articles.getFeatured, { limit: 5 });
+export function HeroCarousel({ initialArticles }: { initialArticles?: JoinedArticle[] }) {
+    const featuredArticles = useQuery(api.articles.getFeatured, { limit: 5 }) as JoinedArticle[] | undefined || initialArticles;
     const [current, setCurrent] = useState(0);
     const [direction, setDirection] = useState(0);
 
@@ -28,14 +28,14 @@ export function HeroCarousel() {
 
     useEffect(() => {
         if (!featuredArticles || featuredArticles.length <= 1) return;
-        const timer = setInterval(next, 6000);
+        const timer = setInterval(next, 8000);
         return () => clearInterval(timer);
     }, [featuredArticles, next]);
 
     if (featuredArticles === undefined) {
         return (
-            <div className="h-[95vh] w-full flex items-center justify-center bg-zinc-900">
-                <Loader2 className="w-8 h-8 text-white animate-spin opacity-50" />
+            <div className="h-[90vh] w-full flex items-center justify-center bg-gray-950">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin opacity-50" />
             </div>
         );
     }
@@ -47,22 +47,22 @@ export function HeroCarousel() {
     const currentItem = featuredArticles[current];
 
     const variants = {
-        enter: (direction: number) => ({
-            x: direction > 0 ? "100%" : "-100%",
-            opacity: 0
+        enter: () => ({
+            opacity: 0,
+            scale: 1.1
         }),
         center: {
-            x: 0,
-            opacity: 1
+            opacity: 1,
+            scale: 1
         },
-        exit: (direction: number) => ({
-            x: direction < 0 ? "100%" : "-100%",
-            opacity: 0
+        exit: () => ({
+            opacity: 0,
+            scale: 0.95
         })
     };
 
     return (
-        <div className="relative h-[95vh] w-full overflow-hidden bg-zinc-900">
+        <div className="relative h-[85vh] md:h-[90vh] w-full overflow-hidden bg-gray-950">
             <AnimatePresence initial={false} custom={direction}>
                 <motion.div
                     key={current}
@@ -72,8 +72,8 @@ export function HeroCarousel() {
                     animate="center"
                     exit="exit"
                     transition={{
-                        x: { type: "spring", stiffness: 300, damping: 30 },
-                        opacity: { duration: 0.5 }
+                        opacity: { duration: 0.8, ease: "easeInOut" },
+                        scale: { duration: 8, ease: "linear" }
                     }}
                     className="absolute inset-0"
                 >
@@ -81,98 +81,102 @@ export function HeroCarousel() {
                         src={currentItem.coverImage || ""}
                         alt={currentItem.title}
                         fill
-                        priority={current === 0}
-                        className="object-cover transition-transform duration-[10000ms] scale-105 opacity-60"
+                        priority
+                        className="object-cover opacity-60"
                         sizes="100vw"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/70 to-transparent" />
                 </motion.div>
             </AnimatePresence>
 
-            <div className="relative h-full flex items-center px-10 md:px-20 lg:px-32">
-                <div className="max-w-3xl text-left">
+            <div className="relative h-full flex items-center max-w-7xl mx-auto px-6 md:px-10 lg:px-12">
+                <div className="max-w-2xl text-left">
                     <motion.div
-                        key={`meta-${current}`}
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
+                        key={`badge-${current}`}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="mb-6"
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest mb-6"
                     >
-                        <span className="category-badge">
-                            Featured Article
-                        </span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                        Featured Truth
                     </motion.div>
 
                     <motion.h1
                         key={`title-${current}`}
-                        initial={{ x: -30, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.4 }}
-                        className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white mb-6 leading-tight tracking-tight"
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="text-4xl md:text-5xl lg:text-7xl font-serif font-extrabold text-white mb-6 leading-[1.1] tracking-tight"
                     >
                         {currentItem.title}
                     </motion.h1>
 
                     <motion.p
                         key={`excerpt-${current}`}
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.6 }}
-                        className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl font-light leading-relaxed border-l-2 border-sky-blue pl-6"
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                        className="text-lg md:text-xl text-gray-300 mb-10 max-w-xl font-medium leading-relaxed"
                     >
                         {currentItem.excerpt}
                     </motion.p>
 
                     <motion.div
-                        key={`btn-${current}`}
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.8 }}
+                        key={`actions-${current}`}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="flex flex-wrap gap-4"
                     >
                         <Link
                             href={`/articles/${currentItem.slug}`}
-                            className="btn-gradient inline-block shadow-2xl"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-10 rounded-full transition-all shadow-xl shadow-blue-600/20 active:scale-95 text-xs uppercase tracking-widest"
                         >
-                            Discover the Truth
+                            Read Article
+                        </Link>
+                        <Link
+                            href="/articles"
+                            className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white font-bold py-4 px-10 rounded-full transition-all active:scale-95 text-xs uppercase tracking-widest"
+                        >
+                            Explore Feed
                         </Link>
                     </motion.div>
                 </div>
             </div>
 
-            {/* Navigation Dots */}
-            {featuredArticles.length > 1 && (
-                <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-3">
-                    {(featuredArticles as Doc<"articles">[]).map((_: Doc<"articles">, idx: number) => (
-                        <button
-                            key={idx}
-                            onClick={() => setCurrent(idx)}
-                            className={cn(
-                                "w-2 h-2 rounded-full transition-all duration-300",
-                                current === idx ? "bg-white w-8" : "bg-white/40"
-                            )}
-                            style={current === idx ? { background: 'var(--primary-gradient)' } : {}}
-                        />
-                    ))}
-                </div>
-            )}
+            {/* Progress Dots */}
+            <div className="absolute bottom-10 right-10 flex gap-2">
+                {featuredArticles.map((_, idx) => (
+                    <button
+                        key={idx}
+                        onClick={() => {
+                            setDirection(idx > current ? 1 : -1);
+                            setCurrent(idx);
+                        }}
+                        className={cn(
+                            "h-1 transition-all duration-300 rounded-full",
+                            current === idx ? "bg-blue-600 w-12" : "bg-white/20 w-4"
+                        )}
+                    />
+                ))}
+            </div>
 
-            {/* Side Arrows */}
-            {featuredArticles.length > 1 && (
-                <>
-                    <button
-                        onClick={prev}
-                        className="absolute left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all backdrop-blur-sm hidden md:block"
-                    >
-                        <ChevronLeft size={24} />
-                    </button>
-                    <button
-                        onClick={next}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all backdrop-blur-sm hidden md:block"
-                    >
-                        <ChevronRight size={24} />
-                    </button>
-                </>
-            )}
+            {/* Swipe Controls (Desktop) */}
+            <div className="absolute bottom-10 left-10 flex gap-4">
+                <button
+                    onClick={prev}
+                    className="p-3 rounded-full border border-white/10 text-white hover:bg-white/10 transition-all active:scale-90"
+                >
+                    <ChevronLeft size={20} />
+                </button>
+                <button
+                    onClick={next}
+                    className="p-3 rounded-full border border-white/10 text-white hover:bg-white/10 transition-all active:scale-90"
+                >
+                    <ChevronRight size={20} />
+                </button>
+            </div>
         </div>
     );
 }
@@ -180,4 +184,3 @@ export function HeroCarousel() {
 function cn(...inputs: (string | boolean | undefined | null)[]) {
     return inputs.filter(Boolean).join(" ");
 }
-

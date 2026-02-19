@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as ads from "../ads.js";
 import type * as ai from "../ai.js";
 import type * as ai_actions from "../ai_actions.js";
 import type * as ai_prompts from "../ai_prompts.js";
@@ -31,6 +32,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  ads: typeof ads;
   ai: typeof ai;
   ai_actions: typeof ai_actions;
   ai_prompts: typeof ai_prompts;

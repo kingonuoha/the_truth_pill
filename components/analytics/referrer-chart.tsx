@@ -15,6 +15,12 @@ export function ReferrerChart({ data }: ReferrerChartProps) {
     return (
         <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} layout="vertical" margin={{ left: 20 }}>
+                <defs>
+                    <linearGradient id="gradient-primary" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#2563eb" />
+                        <stop offset="100%" stopColor="#7c3aed" />
+                    </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f5f5f5" />
                 <XAxis type="number" hide />
                 <YAxis
@@ -30,7 +36,7 @@ export function ReferrerChart({ data }: ReferrerChartProps) {
                     content={({ active, payload }: { active?: boolean; payload?: readonly { value: number; name: string }[] }) => {
                         if (active && payload && payload.length) {
                             return (
-                                <div className="bg-zinc-900 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold">
+                                <div className="bg-gray-950 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-xl">
                                     {payload[0].value} Visits
                                 </div>
                             );

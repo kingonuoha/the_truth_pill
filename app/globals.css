@@ -6,17 +6,57 @@
   --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-lora), ui-serif, Georgia, serif;
 
-  --color-sky-blue: #0ea5e9;
-  --color-school-purple: #a855f7;
+  /* Primary Palette - Blue */
+  /* Primary Palette - Blue */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
 
-  --color-primary: var(--color-sky-blue);
-  --color-secondary: var(--color-school-purple);
+  /* AI Accent Palette - School Purple */
+  --color-purple-50: #f5f3ff;
+  --color-purple-100: #ede9fe;
+  --color-purple-200: #ddd6fe;
+  --color-purple-300: #c4b5fd;
+  --color-purple-400: #a78bfa;
+  --color-purple-500: #8b5cf6;
+  --color-purple-600: #7c3aed;
+  --color-purple-700: #6d28d9;
+  --color-purple-800: #5b21b6;
+  --color-purple-900: #4c1d95;
 
-  --color-background: #f8f9fa;
-  --color-foreground: #1a1a1a;
+  /* Secondary Palette - Cyan */
+  --color-cyan-50: #ecfeff;
+  --color-cyan-100: #cffafe;
+  --color-cyan-200: #a5f3fc;
+  --color-cyan-300: #67e8f9;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  --color-cyan-700: #0e7490;
+  --color-cyan-800: #155e75;
+  --color-cyan-900: #164e63;
 
-  --radius-xl: 1rem;
+  --color-primary: var(--color-blue-600);
+  --color-primary-hover: var(--color-blue-700);
+  --color-secondary: var(--color-cyan-600);
+
+  /* Shadows */
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 28px rgba(0, 0, 0, 0.12);
+  --shadow-card-dark: 0 6px 24px rgba(0, 0, 0, 0.4);
+  --shadow-cta-glow:
+    0 0 0 1px rgba(59, 130, 246, 0.4), 0 8px 24px rgba(37, 99, 235, 0.35);
+
+  --radius-xl: 0.75rem;
   --radius-2xl: 1.5rem;
+  --radius-pill: 9999px;
 }
 
 :root {

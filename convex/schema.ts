@@ -191,4 +191,15 @@ export default defineSchema({
     status: v.union(v.literal("pending"), v.literal("processed")),
     createdAt: v.float64(),
   }).index("by_status", ["status"]),
+
+  adsSettings: defineTable({
+    adsEnabled: v.boolean(),
+    adsenseScriptCode: v.string(),
+    adsenseAdUnitCode: v.string(),
+    showAdTopOfArticle: v.boolean(),
+    showAdMiddleOfArticle: v.boolean(),
+    showAdBottomOfArticle: v.boolean(),
+    showAdSidebar: v.boolean(),
+    updatedAt: v.float64(),
+  }),
 });

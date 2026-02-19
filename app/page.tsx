@@ -3,15 +3,22 @@ import { HeroCarousel } from "@/components/hero-carousel";
 import { BlogGrid } from "@/components/blog-grid";
 import { CategoryShowcase } from "@/components/category-showcase";
 import { Newsletter } from "@/components/newsletter";
+import { LogoStrip } from "@/components/logo-strip";
+import { SplitFeature } from "@/components/split-feature";
 import { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "@/convex/_generated/api";
+import { JoinedArticle } from "@/components/blog-grid";
 
 export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
 export const metadata: Metadata = {
-  title: "The Truth Pill | Insight into Human Behavior",
-  description: "The Truth Pill is a psychology-focused content platform for understanding yourself, others, and human behavior in everyday life.",
+  title: "The Truth Pill | Unfiltered Insights into Human Behavior",
+  description: "Join 50,000+ seekers getting weekly insights that challenge conventional perception.",
   openGraph: {
-    title: "The Truth Pill | Insight into Human Behavior",
+    title: "The Truth Pill | Unfiltered Insights into Human Behavior",
     description: "Deep psychological insights and human-reviewed articles on behavior, relationships, and self-awareness.",
     url: "https://thetruthpill.com",
     siteName: "The Truth Pill",
@@ -26,13 +33,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const [featuredArticles, latestArticles] = await Promise.all([
+    fetchQuery(api.articles.getFeatured, { limit: 5 }),
+    fetchQuery(api.articles.list, { limit: 6 }),
+  ]);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "The Truth Pill",
     "url": "https://thetruthpill.com",
-    "description": "Insight into human behavior and psychology.",
+    "description": "Unfiltered insight into human behavior and psychology.",
     "publisher": {
       "@type": "Organization",
       "name": "The Truth Pill",
@@ -49,50 +61,70 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-white dark:bg-gray-950">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Navbar />
 
-      {/* Immersive Hero Section */}
-      <section className="relative">
-        <HeroCarousel />
+      {/* Hero Section */}
+      <section id="hero">
+        <HeroCarousel initialArticles={featuredArticles} />
       </section>
 
-      {/* Categories Section */}
-      <section className="py-20 bg-zinc-50/50">
-        <div className="max-w-7xl mx-auto px-6 mb-10 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-6">
-            Explore Truths
-          </div>
-          <h2 className="text-4xl md:text-5xl font-serif font-bold mb-4">Navigate by Reality</h2>
-          <p className="text-zinc-500 font-medium max-w-xl mx-auto">
-            Dive deeper into the areas of psychology and philosophy that shape your existence.
-          </p>
-        </div>
-        <CategoryShowcase />
-      </section>
+      {/* Trust Section */}
+      <LogoStrip />
 
-      {/* Main Content Sections */}
-      <section className="bg-white">
-        <div className="max-w-7xl mx-auto pt-24 px-6">
-          <div className="flex items-end justify-between mb-12">
+      {/* Methodology Section */}
+      <SplitFeature />
+
+      {/* Content Showcase Section */}
+      <section className="py-24">
+        <div className="max-w-7xl mx-auto px-6 md:px-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Latest Insights</h2>
-              <div className="w-20 h-1 bg-sky-blue rounded-full" />
+              <h2 className="text-blue-600 dark:text-blue-400 text-xs font-black uppercase tracking-[0.3em] mb-4">
+                Latest Insights
+              </h2>
+              <h3 className="text-4xl font-serif font-black text-gray-900 dark:text-white">
+                Deep dives into the <span className="italic">extraordinary.</span>
+              </h3>
             </div>
+            <Link
+              href="/articles"
+              className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-blue-600 transition-colors group"
+            >
+              View all articles
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
+          <BlogGrid initialArticles={latestArticles as JoinedArticle[]} />
         </div>
-        <BlogGrid />
       </section>
 
-      {/* Newsletter Signup */}
-      <div className="max-w-7xl mx-auto px-6 mb-24">
+      {/* Category Grid Section */}
+      <section className="py-24 bg-gray-50 dark:bg-gray-900/30 border-y border-gray-100 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 md:px-10">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-blue-600 dark:text-blue-400 text-xs font-black uppercase tracking-[0.3em] mb-4">
+              Explore Topics
+            </h2>
+            <h3 className="text-4xl font-serif font-black text-gray-900 dark:text-white mb-4">
+              Categorized for <span className="italic">clarity.</span>
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              Browse our curated collections of wisdom, from psychology to societal transitions.
+            </p>
+          </div>
+          <CategoryShowcase />
+        </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <div className="max-w-7xl mx-auto px-6 py-24 mb-24">
         <Newsletter />
       </div>
-
     </main>
   );
 }

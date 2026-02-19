@@ -7,6 +7,7 @@ import { AuthRedirect } from "@/components/auth-redirect";
 import { FooterWrapper } from "@/components/footer-wrapper";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
+import { AdSenseScript } from "@/components/adsense-script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,6 +69,7 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <AnalyticsTracker />
             <AuthRedirect />
+            <AdSenseScript />
             <Toaster position="top-right" richColors />
           </Suspense>
           {children}

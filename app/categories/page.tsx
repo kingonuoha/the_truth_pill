@@ -1,12 +1,23 @@
-"use client";
-
-import { useQuery } from "convex/react";
+import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import Link from "next/link";
-import { Loader2, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Id } from "@/convex/_generated/dataModel";
 import { DynamicCategoryImage } from "@/components/dynamic-category-image";
+import { Metadata } from "next";
+
+export const revalidate = 60; // ISR: Revalidate every 60 seconds
+
+export const metadata: Metadata = {
+    title: "Reality Navigator | The Truth Pill",
+    description: "Every dimension of human consciousness explored through deep inquiry and unfiltered observation.",
+    openGraph: {
+        title: "Explore Reality Dimensions",
+        description: "Browse curated categories of psychological and behavioral insights.",
+        type: "website",
+    },
+};
 
 interface Category {
     _id: Id<"categories">;
@@ -17,22 +28,26 @@ interface Category {
     articleCount: number;
 }
 
-export default function CategoriesPage() {
-    const categories = useQuery(api.categories.listAll);
+export default async function CategoriesPage() {
+    const categories = await fetchQuery(api.categories.listAll);
 
-    if (categories === undefined) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-        );
-    }
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Reality Navigator",
+        "description": "Every dimension of human consciousness explored through deep inquiry and unfiltered observation.",
+        "url": "https://thetruthpill.com/categories",
+    };
 
     return (
         <div className="bg-[#f8f9fa] min-h-screen font-sans">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             <Navbar solid />
             <main className="pt-32 pb-20 px-6">
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-7xl auto">
                     <div className="mb-16">
                         <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4 block">Reality Navigator</span>
                         <h1 className="text-5xl md:text-7xl font-serif font-bold mb-8">Choose Your Path</h1>
@@ -42,7 +57,7 @@ export default function CategoriesPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                        {categories.map((category) => (
+                        {categories?.map((category) => (
                             <CategoryCard key={category._id} category={category} />
                         ))}
                     </div>

@@ -18,9 +18,13 @@ export function TrafficChart({ data, days, customTooltip }: TrafficChartProps) {
         <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
                 <defs>
+                    <linearGradient id="gradient-primary" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#2563eb" />
+                        <stop offset="100%" stopColor="#7c3aed" />
+                    </linearGradient>
                     <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
                     </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -52,7 +56,7 @@ export function TrafficChart({ data, days, customTooltip }: TrafficChartProps) {
                     fillOpacity={1}
                     fill="url(#colorVisits)"
                     animationDuration={2000}
-                    activeDot={{ r: 6, strokeWidth: 0, fill: "#0ea5e9" }}
+                    activeDot={{ r: 6, strokeWidth: 0, fill: "#2563eb" }}
                 />
             </AreaChart>
         </ResponsiveContainer>

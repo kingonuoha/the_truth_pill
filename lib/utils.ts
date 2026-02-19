@@ -41,10 +41,12 @@ export function getAvatarUrl(name?: string, image?: string) {
 
 export function getOgImageUrl(title: string) {
   const cloudName = "dsqs5h1r3";
+  // The Truth Pill gradient: Sky Blue (#0ea5e9) to purple (#a855f7)
   const encodedTitle = encodeURIComponent(
     title.replace(/,/g, "%2C").replace(/\//g, "%2F"),
   );
 
-  // Cloudinary dynamic OG image with text overlay
-  return `https://res.cloudinary.com/${cloudName}/image/upload/w_1200,h_630,c_fill,q_auto,f_auto/b_rgb:0ea5e9/l_text:futura_70_bold:${encodedTitle},co_white,w_1000,c_fit,y_-50/l_text:futura_30_bold:The%20Truth%20Pill,co_white,g_south,y_50/v1/one-pixel.png`;
+  // Cloudinary dynamic OG image with text overlay and "gradient" effect
+  // We use sky blue background (b_rgb:0ea5e9) and a purple gradient overlay (e_gradient_fade)
+  return `https://res.cloudinary.com/${cloudName}/image/upload/w_1200,h_630,c_fill,q_auto,f_auto/b_rgb:0ea5e9/e_gradient_fade,y_-0.8,co_rgb:a855f7/l_text:lora_70_bold:${encodedTitle},co_white,w_1000,c_fit,y_-50/l_text:outfit_30_bold:The%20Truth%20Pill,co_white,g_south,y_50/v1/one-pixel.png`;
 }

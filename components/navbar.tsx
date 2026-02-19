@@ -24,7 +24,7 @@ export function Navbar({ solid = false, theme }: NavbarProps) {
 
     useEffect(() => {
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 50);
+            setIsScrolled(window.scrollY > 20);
         };
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
@@ -33,11 +33,15 @@ export function Navbar({ solid = false, theme }: NavbarProps) {
     return (
         <nav
             className={cn(
-                "fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-6 py-4 flex items-center justify-between",
-                (isScrolled || solid || theme === "dark") ? "bg-white/90 backdrop-blur-xl shadow-lg shadow-zinc-200/20 py-3" : "bg-transparent"
+                "fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-16 flex items-center px-6 md:px-10 border-b",
+                isScrolled || solid || theme === "dark"
+                    ? "bg-white/95 dark:bg-gray-950/90 backdrop-blur-md border-gray-200 dark:border-gray-800 shadow-sm"
+                    : "bg-transparent border-transparent"
             )}
         >
-            <NavbarContent isScrolled={isScrolled || solid} />
+            <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
+                <NavbarContent isScrolled={isScrolled || solid} />
+            </div>
         </nav>
     );
 }
@@ -109,13 +113,13 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                     <Menu size={24} />
                 </button>
 
-                <Link href="/" className="flex items-center gap-3 group">
-                    <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-500">
+                <Link href="/" className="flex items-center gap-2.5 group">
+                    <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
                         T
                     </div>
                     <span className={cn(
-                        "font-serif text-2xl font-bold tracking-tight transition-colors duration-500",
-                        isScrolled ? "text-zinc-900" : "text-white text-shadow"
+                        "font-serif text-xl font-bold tracking-tight transition-colors duration-300",
+                        isScrolled ? "text-gray-900 dark:text-gray-100" : "text-white"
                     )}>
                         The Truth Pill
                     </span>
@@ -123,23 +127,23 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
             </div>
 
             <div className={cn(
-                "hidden md:flex items-center gap-10 font-bold uppercase text-[10px] tracking-[0.2em] transition-colors duration-500",
-                isScrolled ? "text-zinc-600" : "text-white/80"
+                "hidden md:flex items-center gap-8 text-sm font-medium transition-colors duration-300",
+                isScrolled ? "text-gray-600 dark:text-gray-400" : "text-white/90"
             )}>
-                <Link href="/articles" className="hover:text-primary transition-all hover:tracking-[0.3em]">Articles</Link>
-                <Link href="/categories" className="hover:text-primary transition-all hover:tracking-[0.3em]">Categories</Link>
-                <Link href="/about" className="hover:text-primary transition-all hover:tracking-[0.3em]">About</Link>
+                <Link href="/articles" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Articles</Link>
+                <Link href="/categories" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Categories</Link>
+                <Link href="/about" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About</Link>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                 <button
                     onClick={() => setIsSearchOpen(true)}
                     className={cn(
-                        "p-3 rounded-full transition-all active:scale-95",
-                        isScrolled ? "hover:bg-zinc-100 text-zinc-900" : "hover:bg-white/10 text-white"
+                        "p-2 rounded-full transition-all active:scale-95",
+                        isScrolled ? "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100" : "hover:bg-white/10 text-white"
                     )}
                 >
-                    <Search size={22} />
+                    <Search size={20} />
                 </button>
 
                 <div className="hidden md:block">
@@ -231,14 +235,13 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                 router.push("/auth/signin");
                             }}
                             className={cn(
-                                "flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-lg active:scale-95",
+                                "flex items-center gap-2 px-5 py-2 rounded-full font-semibold text-xs transition-all shadow-sm active:scale-95",
                                 isScrolled
-                                    ? "bg-zinc-900 text-white hover:bg-primary"
-                                    : "bg-white text-zinc-900 hover:bg-zinc-100"
+                                    ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20"
+                                    : "bg-white text-gray-900 hover:bg-gray-100"
                             )}
                         >
-                            <LogIn size={16} />
-                            Login
+                            Get Started
                         </button>
                     )}
                 </div>
