@@ -202,6 +202,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                         <article
                             className="prose prose-zinc prose-lg dark:prose-invert max-w-none font-serif leading-[1.8] text-zinc-800 dark:text-zinc-200 text-[18px]
                             prose-headings:font-serif prose-headings:font-bold prose-headings:text-zinc-900 dark:prose-headings:text-white
+                            [&_p]:!mt-12 [&_p]:!mb-12 [&_li_p]:!my-2
                             prose-blockquote:border-l-4 prose-blockquote:border-sky-blue prose-blockquote:bg-zinc-50 dark:prose-blockquote:bg-zinc-800/50 prose-blockquote:py-4 prose-blockquote:px-8 prose-blockquote:italic prose-blockquote:rounded-r-xl prose-blockquote:text-zinc-700 dark:prose-blockquote:text-zinc-300
                             prose-strong:text-zinc-900 dark:prose-strong:text-white prose-strong:font-black
                             prose-img:rounded-3xl prose-img:shadow-2xl prose-img:cursor-zoom-in"

@@ -42,12 +42,12 @@ export default function AdminDashboard() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm relative overflow-hidden">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 transition-colors duration-500">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-900/50 shadow-sm relative overflow-hidden">
                     <div className="absolute inset-0 bg-blue-600/10 animate-pulse" />
-                    <Activity className="text-blue-600 animate-pulse" size={24} />
+                    <Activity className="text-blue-600 dark:text-blue-400 animate-pulse" size={24} />
                 </div>
-                <p className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] animate-pulse">Synchronizing command center...</p>
+                <p className="text-gray-400 dark:text-gray-500 font-bold text-[10px] uppercase tracking-[0.2em] animate-pulse">Synchronizing command center...</p>
             </div>
         );
     }
@@ -63,23 +63,23 @@ export default function AdminDashboard() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-serif font-black text-gray-950 tracking-tight italic">Pulse</h1>
-                    <p className="text-gray-500 mt-1 font-medium font-sans">
-                        Control console for <span className="text-gray-950 font-bold">The Truth Pill</span>.
-                        Welcome back, <span className="text-blue-600 font-bold">{session?.user?.name || 'Administrator'}</span>.
+                    <h1 className="text-4xl font-serif font-black text-gray-950 dark:text-white tracking-tight italic transition-colors">Pulse</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium font-sans">
+                        Control console for <span className="text-gray-950 dark:text-blue-400 font-bold">The Truth Pill</span>.
+                        Welcome back, <span className="text-blue-600 dark:text-blue-500 font-bold">{session?.user?.name || 'Administrator'}</span>.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Link
                         href="/admin/ai-drafts"
-                        className="flex items-center gap-2.5 px-5 py-3 rounded-xl border border-gray-200 bg-white font-black text-[10px] uppercase tracking-widest text-gray-950 hover:bg-gray-50 hover:border-gray-300 transition-all active:scale-95 shadow-sm"
+                        className="flex items-center gap-2.5 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 font-black text-[10px] uppercase tracking-widest text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all active:scale-95 shadow-sm"
                     >
                         <Sparkles size={16} className="text-purple-500" />
                         AI Laboratory
                     </Link>
                     <Link
                         href="/admin/articles/new"
-                        className="bg-blue-600 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2.5 hover:bg-blue-700 shadow-xl shadow-blue-600/20 transition-all active:scale-95"
+                        className="bg-blue-600 dark:bg-blue-500 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2.5 hover:bg-blue-700 dark:hover:bg-blue-600 shadow-xl shadow-blue-600/20 transition-all active:scale-95"
                     >
                         <Plus size={16} />
                         New Transmission
@@ -128,18 +128,18 @@ export default function AdminDashboard() {
             <div className="grid lg:grid-cols-3 gap-8">
                 {/* Analytics Chart */}
                 <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white p-8 md:p-10 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden group">
+                    <div className="bg-white dark:bg-gray-900 p-8 md:p-10 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden group transition-all duration-500">
                         <div className="flex items-center justify-between mb-12">
                             <div>
-                                <h3 className="text-2xl font-serif font-black text-gray-950 flex items-center gap-3 italic">
-                                    <TrendingUp size={24} className="text-blue-600" />
+                                <h3 className="text-2xl font-serif font-black text-gray-950 dark:text-white flex items-center gap-3 italic transition-colors">
+                                    <TrendingUp size={24} className="text-blue-600 dark:text-blue-400" />
                                     Reach Dynamics
                                 </h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mt-1">7-Day signal volume analysis</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mt-1">7-Day signal volume analysis</p>
                             </div>
                             <Link
                                 href="/admin/analytics"
-                                className="bg-gray-50 hover:bg-white border border-gray-100 hover:border-gray-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-gray-950 transition-all active:scale-95"
+                                className="bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-700 border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white transition-all active:scale-95"
                             >
                                 Detailed Observatory
                             </Link>
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
                                             <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-gray-800 transition-colors" />
                                     <XAxis
                                         dataKey="name"
                                         axisLine={false}
@@ -201,11 +201,11 @@ export default function AdminDashboard() {
 
                     {/* Secondary Metrics */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-gray-950 text-white p-8 rounded-2xl group relative overflow-hidden shadow-2xl">
+                        <div className="bg-gray-950 dark:bg-black text-white p-8 rounded-2xl group relative overflow-hidden shadow-2xl border border-transparent dark:border-gray-900 transition-all duration-500">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl rounded-full -mr-16 -mt-16" />
                             <div className="relative z-10 flex items-center justify-between">
                                 <div>
-                                    <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Audience Base</p>
+                                    <p className="text-gray-500 dark:text-gray-600 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Audience Base</p>
                                     <h4 className="text-4xl font-serif font-black">{stats.usersCount}</h4>
                                     <div className="flex items-center gap-2 mt-4">
                                         <span className="bg-green-500/10 text-green-400 text-[10px] px-2.5 py-1 rounded-lg font-black flex items-center tracking-widest">
@@ -214,25 +214,25 @@ export default function AdminDashboard() {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-gray-400">
+                                <div className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 dark:text-gray-500 font-bold transition-all">
                                     <Users size={24} />
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm group relative overflow-hidden">
+                        <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm group relative overflow-hidden transition-all duration-500">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl rounded-full -mr-16 -mt-16" />
                             <div className="relative z-10 flex items-center justify-between">
                                 <div>
-                                    <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Conversion Core</p>
-                                    <h4 className="text-4xl font-serif font-black text-gray-950">2.4%</h4>
+                                    <p className="text-gray-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Conversion Core</p>
+                                    <h4 className="text-4xl font-serif font-black text-gray-950 dark:text-white">2.4%</h4>
                                     <div className="flex items-center gap-2 mt-4">
-                                        <span className="bg-blue-50 text-blue-600 text-[10px] px-2.5 py-1 rounded-lg font-black flex items-center tracking-widest border border-blue-100">
+                                        <span className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] px-2.5 py-1 rounded-lg font-black flex items-center tracking-widest border border-blue-100 dark:border-blue-900/50">
                                             <TrendingUp size={12} className="mr-1" />
                                             OPTIMIZED
                                         </span>
                                     </div>
                                 </div>
-                                <div className="w-12 h-12 bg-blue-50 rounded-xl border border-blue-100 flex items-center justify-center text-blue-600">
+                                <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                     <Sparkles size={24} />
                                 </div>
                             </div>
@@ -242,15 +242,15 @@ export default function AdminDashboard() {
 
                 {/* Recent Activity */}
                 <div className="space-y-4">
-                    <div className="bg-white p-8 md:p-10 rounded-2xl border border-gray-200 shadow-sm h-full flex flex-col">
-                        <div className="flex items-center justify-between mb-10 pb-6 border-b border-gray-50">
+                    <div className="bg-white dark:bg-gray-900 p-8 md:p-10 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm h-full flex flex-col transition-all duration-500">
+                        <div className="flex items-center justify-between mb-10 pb-6 border-b border-gray-50 dark:border-gray-800">
                             <div>
-                                <h3 className="text-2xl font-serif font-black text-gray-950 italic">Live Stream</h3>
-                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Real-time pulses</p>
+                                <h3 className="text-2xl font-serif font-black text-gray-950 dark:text-white italic">Live Stream</h3>
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest mt-1">Real-time pulses</p>
                             </div>
                             <Link
                                 href="/admin/activity"
-                                className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all active:scale-90"
+                                className="w-10 h-10 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all active:scale-90"
                             >
                                 <ChevronRight size={20} />
                             </Link>
@@ -286,13 +286,13 @@ function StatCard({
     color: 'blue' | 'purple' | 'cyan'
 }) {
     const variants = {
-        blue: "bg-blue-50 text-blue-600 border-blue-100",
-        purple: "bg-purple-50 text-purple-600 border-purple-100",
-        cyan: "bg-cyan-50 text-cyan-600 border-cyan-100"
+        blue: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/50",
+        purple: "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/50",
+        cyan: "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-100 dark:border-cyan-900/50"
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-200 transition-all duration-500 group relative overflow-hidden flex flex-col">
+        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-500 group relative overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-8">
                 <div className={cn("w-12 h-12 rounded-xl border flex items-center justify-center transition-all duration-500 group-hover:scale-110", variants[color])}>
                     <Icon size={20} />
@@ -309,11 +309,11 @@ function StatCard({
             </div>
 
             <div className="mt-auto">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 group-hover:text-gray-950 transition-colors">{label}</p>
-                <h3 className="text-4xl font-serif font-black text-gray-950 tracking-tight leading-none mb-4">{value}</h3>
-                <div className="flex items-center gap-2 pt-4 border-t border-gray-50">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-1 group-hover:text-gray-950 dark:group-hover:text-white transition-colors">{label}</p>
+                <h3 className="text-4xl font-serif font-black text-gray-950 dark:text-white tracking-tight leading-none mb-4 transition-colors">{value}</h3>
+                <div className="flex items-center gap-2 pt-4 border-t border-gray-50 dark:border-gray-800">
                     <div className={cn("w-1.5 h-1.5 rounded-full", variants[color].split(' ')[1])} />
-                    <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest">{subValue}</p>
+                    <p className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest">{subValue}</p>
                 </div>
             </div>
         </div>
@@ -328,23 +328,23 @@ function ActivityItem({ item }: { item: { type: string; content: string; timesta
     };
 
     const variants = {
-        comment: "bg-blue-50 text-blue-600 border-blue-100",
-        signup: "bg-green-50 text-green-600 border-green-100",
-        article: "bg-purple-50 text-purple-600 border-purple-100"
+        comment: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/50",
+        signup: "bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-900/50",
+        article: "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/50"
     };
 
     return (
-        <div className="flex gap-4 p-4 rounded-xl border border-transparent hover:border-gray-100 hover:bg-gray-50/50 transition-all group">
-            <div className={cn("w-10 h-10 border rounded-xl flex items-center justify-center flex-shrink-0 transition-all shadow-sm group-hover:scale-110 group-active:scale-95", variants[item.type as keyof typeof variants] || "bg-gray-50 text-gray-400 border-gray-100")}>
+        <div className="flex gap-4 p-4 rounded-xl border border-transparent hover:border-gray-100 dark:hover:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800 transition-all group">
+            <div className={cn("w-10 h-10 border rounded-xl flex items-center justify-center flex-shrink-0 transition-all shadow-sm group-hover:scale-110 group-active:scale-95", variants[item.type as keyof typeof variants] || "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-gray-700 font-bold")}>
                 {icons[item.type as keyof typeof icons] || <Activity size={14} />}
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold text-gray-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
+                <p className="text-[11px] font-bold text-gray-900 dark:text-gray-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                     {item.content}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                    <Clock size={10} className="text-gray-400" />
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                    <Clock size={10} className="text-gray-400 dark:text-gray-500" />
+                    <span className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                         {formatDistanceToNow(item.timestamp)} ago
                     </span>
                 </div>

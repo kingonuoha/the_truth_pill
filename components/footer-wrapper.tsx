@@ -5,9 +5,9 @@ import { Footer } from "./footer";
 
 export function FooterWrapper() {
     const pathname = usePathname();
-    const isAdminPage = pathname?.startsWith("/admin");
+    const isExcludedPage = pathname?.startsWith("/admin") || pathname?.startsWith("/dashboard") || pathname?.startsWith("/auth");
 
-    if (isAdminPage) return null;
+    if (isExcludedPage) return null;
 
     return <Footer />;
 }

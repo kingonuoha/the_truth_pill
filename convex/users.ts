@@ -251,14 +251,16 @@ export const updateProfile = mutation({
   },
 });
 
-export const getMeFull = query({
-  handler: async (ctx) => {
+export const getMeFullSecure = query({
+  args: { email: v.optional(v.string()) },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
+    const email = identity?.email || args.email;
+    if (!email) return null;
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
 
     if (!user) return null;
@@ -374,16 +376,14 @@ export const resetPassword = mutation({
   },
 });
 
-export const listAll = query({
-  args: {},
-  handler: async (ctx) => {
-    // Check admin
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+export const listAllUsers = query({
+  args: { adminEmail: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.adminEmail) return [];
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .withIndex("by_email", (q) => q.eq("email", args.adminEmail))
       .unique();
 
     if (user?.role !== "admin") return [];
@@ -392,19 +392,16 @@ export const listAll = query({
   },
 });
 
-export const updateRole = mutation({
+export const updateUserRole = mutation({
   args: {
+    adminEmail: v.string(),
     id: v.id("users"),
     role: v.union(v.literal("admin"), v.literal("user")),
   },
   handler: async (ctx, args) => {
-    // Check admin
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
-
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .withIndex("by_email", (q) => q.eq("email", args.adminEmail))
       .unique();
 
     if (user?.role !== "admin") throw new Error("Forbidden");

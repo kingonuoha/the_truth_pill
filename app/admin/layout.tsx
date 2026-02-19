@@ -15,24 +15,51 @@ import {
     ArrowLeft,
     BarChart3,
     Mail,
-    Megaphone
+    Megaphone,
+    Settings
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-const NAV_ITEMS = [
-    { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { name: "Articles", href: "/admin/articles", icon: FileText },
-    { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { name: "AI Drafts", href: "/admin/ai-drafts", icon: Sparkles },
-    { name: "Categories", href: "/admin/categories", icon: FolderTree },
-    { name: "Users", href: "/admin/users", icon: Users },
-    { name: "Moderation", href: "/admin/comments", icon: MessageSquare },
-    { name: "Emails", href: "/admin/emails", icon: Mail },
-    { name: "AI Settings", href: "/admin/settings/ai", icon: Bot },
-    { name: "Ads Management", href: "/admin/ads", icon: Megaphone },
+const NAV_GROUPS = [
+    {
+        label: "General",
+        items: [
+            { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+            { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+        ]
+    },
+    {
+        label: "Content",
+        items: [
+            { name: "Articles", href: "/admin/articles", icon: FileText },
+            { name: "AI Drafts", href: "/admin/ai-drafts", icon: Sparkles },
+            { name: "Categories", href: "/admin/categories", icon: FolderTree },
+        ]
+    },
+    {
+        label: "Community",
+        items: [
+            { name: "Users", href: "/admin/users", icon: Users },
+            { name: "Moderation", href: "/admin/comments", icon: MessageSquare },
+            { name: "Emails", href: "/admin/emails", icon: Mail },
+        ]
+    },
+    {
+        label: "Advertising",
+        items: [
+            { name: "Ads Management", href: "/admin/ads", icon: Megaphone },
+        ]
+    },
+    {
+        label: "Settings",
+        items: [
+            { name: "Site Settings", href: "/admin/settings", icon: Settings },
+            { name: "AI Settings", href: "/admin/settings/ai", icon: Bot },
+        ]
+    },
 ];
 
 const NavContent = ({
@@ -47,7 +74,7 @@ const NavContent = ({
     <>
         <div className={cn("p-6", isCollapsed && "px-4 overflow-hidden")}>
             <Link href="/" className="flex items-center gap-3 group">
-                <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-black text-lg shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                <div className="w-10 h-10 bg-blue-600 dark:bg-blue-500 text-white rounded-xl flex items-center justify-center font-black text-lg shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
                     TP
                 </div>
                 {!isCollapsed && (
@@ -55,65 +82,74 @@ const NavContent = ({
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                     >
-                        <span className="font-serif text-lg font-bold block leading-none">The Truth Pill</span>
-                        <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Admin Control</span>
+                        <span className="font-serif text-lg font-bold block leading-none text-gray-900 dark:text-white">The Truth Pill</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest">Admin Control</span>
                     </motion.div>
                 )}
             </Link>
         </div>
 
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto pt-4 font-sans uppercase tracking-wider text-xs font-bold">
-            {NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={onClose}
-                        className={cn(
-                            "group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
-                            isActive
-                                ? "bg-blue-50 text-blue-600"
-                                : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                        )}
-                    >
-                        {isActive && (
-                            <motion.div
-                                layoutId="active-pill"
-                                className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-r-full"
-                            />
-                        )}
-                        <item.icon
-                            size={20}
-                            className={cn(
-                                "flex-shrink-0 transition-colors",
-                                isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-900"
-                            )}
-                        />
-                        {!isCollapsed && (
-                            <motion.span
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
+        <nav className="flex-1 px-3 space-y-6 overflow-y-auto pt-4 font-sans uppercase tracking-wider text-xs font-bold">
+            {NAV_GROUPS.map((group) => (
+                <div key={group.label} className="space-y-1">
+                    {!isCollapsed && (
+                        <h3 className="px-4 text-[10px] text-gray-400 dark:text-gray-600 font-black uppercase tracking-[0.2em] mb-3">
+                            {group.label}
+                        </h3>
+                    )}
+                    {group.items.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={onClose}
+                                className={cn(
+                                    "group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
+                                    isActive
+                                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                        : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 hover:text-gray-900 dark:hover:text-white"
+                                )}
                             >
-                                {item.name}
-                            </motion.span>
-                        )}
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="active-pill"
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 dark:bg-blue-400 rounded-r-full"
+                                    />
+                                )}
+                                <item.icon
+                                    size={20}
+                                    className={cn(
+                                        "flex-shrink-0 transition-colors",
+                                        isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-400 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white"
+                                    )}
+                                />
+                                {!isCollapsed && (
+                                    <motion.span
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                    >
+                                        {item.name}
+                                    </motion.span>
+                                )}
 
-                        {isCollapsed && (
-                            <div className="absolute left-full ml-4 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                                {item.name}
-                            </div>
-                        )}
-                    </Link>
-                );
-            })}
+                                {isCollapsed && (
+                                    <div className="absolute left-full ml-4 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl">
+                                        {item.name}
+                                    </div>
+                                )}
+                            </Link>
+                        );
+                    })}
+                </div>
+            ))}
         </nav>
 
-        <div className="p-4 mt-auto space-y-2 border-t border-gray-100">
+        <div className="p-4 mt-auto space-y-2 border-t border-gray-100 dark:border-gray-900">
             <Link
                 href="/"
                 className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors",
+                    "flex items-center gap-3 px-4 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors",
                     isCollapsed && "justify-center px-0"
                 )}
             >
@@ -121,7 +157,7 @@ const NavContent = ({
                 {!isCollapsed && <span>Back to Website</span>}
             </Link>
             <button className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 w-full transition-colors",
+                "flex items-center gap-3 px-4 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 w-full transition-colors",
                 isCollapsed && "justify-center px-0"
             )}>
                 <LogOut size={16} />
@@ -139,11 +175,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const closeMenu = () => setIsMobileMenuOpen(false);
 
     return (
-        <div className="flex min-h-screen bg-gray-50 font-sans">
+        <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 font-sans transition-colors duration-400">
             {/* Desktop Sidebar */}
             <aside
                 className={cn(
-                    "hidden lg:flex bg-white border-r border-gray-200 flex-col fixed inset-y-0 z-40 transition-all duration-300",
+                    "hidden lg:flex bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-900 flex-col fixed inset-y-0 z-40 transition-all duration-300",
                     isCollapsed ? "w-20" : "w-[260px]"
                 )}
             >
@@ -152,21 +188,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-20 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all z-50"
+                    className="absolute -right-3 top-20 w-6 h-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900 shadow-sm transition-all z-50"
                 >
                     <Menu size={12} className={cn("transition-transform", isCollapsed ? "rotate-180" : "rotate-0")} />
                 </button>
             </aside>
 
             {/* Mobile Header */}
-            <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-gray-200 px-4 flex items-center justify-between z-30">
+            <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-900 px-4 flex items-center justify-between z-30">
                 <Link href="/" className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-black text-sm">TP</div>
-                    <span className="font-serif font-bold">Admin</span>
+                    <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 text-white rounded-lg flex items-center justify-center font-black text-sm">TP</div>
+                    <span className="font-serif font-bold text-gray-900 dark:text-white">Admin</span>
                 </Link>
                 <button
                     onClick={() => setIsMobileMenuOpen(true)}
-                    className="p-2 text-gray-500 hover:bg-gray-100 rounded-xl transition-colors"
+                    className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-xl transition-colors"
                 >
                     <Menu size={24} />
                 </button>
@@ -188,12 +224,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             animate={{ x: 0 }}
                             exit={{ x: "-100%" }}
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed inset-y-0 left-0 w-[280px] bg-white z-[60] lg:hidden flex flex-col shadow-2xl"
+                            className="fixed inset-y-0 left-0 w-[280px] bg-white dark:bg-gray-950 z-[60] lg:hidden flex flex-col shadow-2xl"
                         >
                             <div className="absolute top-4 right-4">
                                 <button
                                     onClick={closeMenu}
-                                    className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors"
+                                    className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors"
                                 >
                                     <X size={20} />
                                 </button>

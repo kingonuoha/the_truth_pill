@@ -202,4 +202,23 @@ export default defineSchema({
     showAdSidebar: v.boolean(),
     updatedAt: v.float64(),
   }),
+
+  siteSettings: defineTable({
+    siteName: v.string(),
+    siteDescription: v.string(),
+    email: v.string(),
+    phone: v.optional(v.string()),
+    address: v.optional(v.string()),
+    socials: v.object({
+      facebook: v.optional(v.string()),
+      twitter: v.optional(v.string()),
+      instagram: v.optional(v.string()),
+      youtube: v.optional(v.string()),
+      tiktok: v.optional(v.string()),
+      linkedin: v.optional(v.string()),
+      github: v.optional(v.string()),
+    }),
+    footerText: v.optional(v.string()),
+    updatedAt: v.float64(),
+  }),
 });

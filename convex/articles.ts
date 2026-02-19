@@ -553,13 +553,15 @@ export const getByAuthor = query({
 });
 
 export const getBookmarkedArticles = query({
-  handler: async (ctx) => {
+  args: { email: v.optional(v.string()) },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const email = identity?.email || args.email;
+    if (!email) return [];
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
 
     if (!user) return [];

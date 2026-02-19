@@ -12,7 +12,6 @@ import {
     Search,
     Loader2,
     AlertCircle,
-    Send,
     Zap
 } from "lucide-react";
 import { format } from "date-fns";

@@ -3,7 +3,6 @@ import { HeroCarousel } from "@/components/hero-carousel";
 import { BlogGrid } from "@/components/blog-grid";
 import { CategoryShowcase } from "@/components/category-showcase";
 import { Newsletter } from "@/components/newsletter";
-import { LogoStrip } from "@/components/logo-strip";
 import { SplitFeature } from "@/components/split-feature";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -15,11 +14,11 @@ import { JoinedArticle } from "@/components/blog-grid";
 export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
 export const metadata: Metadata = {
-  title: "The Truth Pill | Unfiltered Insights into Human Behavior",
-  description: "Join 50,000+ seekers getting weekly insights that challenge conventional perception.",
+  title: "The Truth Pill | Learning Why People Do What They Do",
+  description: "Join 50,000+ people who want to understand life and human behavior better.",
   openGraph: {
-    title: "The Truth Pill | Unfiltered Insights into Human Behavior",
-    description: "Deep psychological insights and human-reviewed articles on behavior, relationships, and self-awareness.",
+    title: "The Truth Pill | Simple Insights into Human Nature",
+    description: "Easy-to-read articles that help you understand yourself and others better.",
     url: "https://thetruthpill.com",
     siteName: "The Truth Pill",
     images: [
@@ -73,9 +72,6 @@ export default async function Home() {
         <HeroCarousel initialArticles={featuredArticles} />
       </section>
 
-      {/* Trust Section */}
-      <LogoStrip />
-
       {/* Methodology Section */}
       <SplitFeature />
 
@@ -85,10 +81,10 @@ export default async function Home() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
               <h2 className="text-blue-600 dark:text-blue-400 text-xs font-black uppercase tracking-[0.3em] mb-4">
-                Latest Insights
+                Latest Stories
               </h2>
               <h3 className="text-4xl font-serif font-black text-gray-900 dark:text-white">
-                Deep dives into the <span className="italic">extraordinary.</span>
+                Learn something <span className="italic">new today.</span>
               </h3>
             </div>
             <Link
@@ -111,10 +107,10 @@ export default async function Home() {
               Explore Topics
             </h2>
             <h3 className="text-4xl font-serif font-black text-gray-900 dark:text-white mb-4">
-              Categorized for <span className="italic">clarity.</span>
+              Choose what you want to <span className="italic">learn.</span>
             </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              Browse our curated collections of wisdom, from psychology to societal transitions.
+            <p className="text-gray-500 dark:text-gray-400 italic">
+              Find simple and helpful lessons about life and how we act.
             </p>
           </div>
           <CategoryShowcase />

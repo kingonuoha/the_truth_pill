@@ -22,6 +22,7 @@ import type * as emails from "../emails.js";
 import type * as engagement from "../engagement.js";
 import type * as quotes from "../quotes.js";
 import type * as seed from "../seed.js";
+import type * as site_settings from "../site_settings.js";
 import type * as users from "../users.js";
 
 import type {
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   engagement: typeof engagement;
   quotes: typeof quotes;
   seed: typeof seed;
+  site_settings: typeof site_settings;
   users: typeof users;
 }>;
 

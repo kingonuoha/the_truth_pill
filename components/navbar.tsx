@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Doc } from "@/convex/_generated/dataModel";
+import { useTheme } from "next-themes";
+import { Sun, Moon } from "lucide-react";
 
 interface NavbarProps {
     solid?: boolean;
@@ -40,7 +42,7 @@ export function Navbar({ solid = false, theme }: NavbarProps) {
             )}
         >
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-                <NavbarContent isScrolled={isScrolled || solid} />
+                <NavbarContent isScrolled={isScrolled || solid || theme === "dark"} />
             </div>
         </nav>
     );
@@ -145,6 +147,8 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                 >
                     <Search size={20} />
                 </button>
+
+                <ThemeToggle isScrolled={isScrolled} />
 
                 <div className="hidden md:block">
                     {status === "loading" ? (
@@ -441,6 +445,55 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                 )}
             </AnimatePresence>
         </>
+    );
+}
+
+function ThemeToggle({ isScrolled }: { isScrolled: boolean }) {
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        const frame = requestAnimationFrame(() => setMounted(true));
+        return () => cancelAnimationFrame(frame);
+    }, []);
+
+    if (!mounted) return null;
+
+    return (
+        <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className={cn(
+                "p-2 rounded-full transition-all active:scale-95 relative overflow-hidden group",
+                isScrolled
+                    ? "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    : "hover:bg-white/10 text-white"
+            )}
+            title={`Toggle ${theme === "dark" ? "Light" : "Dark"} Mode`}
+        >
+            <AnimatePresence mode="wait">
+                {theme === "dark" ? (
+                    <motion.div
+                        key="moon"
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <Moon size={20} className="text-blue-400" />
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="sun"
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <Sun size={20} className="text-amber-500" />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </button>
     );
 }
 
