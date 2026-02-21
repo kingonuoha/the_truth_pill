@@ -48,6 +48,9 @@
   --color-secondary: var(--color-cyan-600);
 
   /* Shadows */
+  --color-sky-blue: #0ea5e9;
+  --color-school-purple: #8b5cf6;
+
   --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
   --shadow-card-hover: 0 8px 28px rgba(0, 0, 0, 0.12);
   --shadow-card-dark: 0 6px 24px rgba(0, 0, 0, 0.4);
@@ -57,6 +60,34 @@
   --radius-xl: 0.75rem;
   --radius-2xl: 1.5rem;
   --radius-pill: 9999px;
+}
+
+html {
+  height: auto;
+}
+
+body {
+  min-height: 100vh;
+}
+
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }
 
 :root {
@@ -281,10 +312,188 @@ h6 {
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
-    @apply bg-background text-foreground;
   }
+}
+
+/* CKEditor Custom Styles */
+.prose-editor .ck-content {
+  min-height: 600px !important;
+  max-height: 800px !important;
+  overflow-y: auto !important;
+  border-bottom-left-radius: 1.5rem !important;
+  border-bottom-right-radius: 1.5rem !important;
+  font-family: ui-serif, Georgia, serif;
+  font-size: 1.125rem;
+  line-height: 1.8;
+  padding: 3rem !important;
+  border-color: #f4f4f5 !important;
+  background: white !important;
+  color: #27272a;
+}
+.prose-editor .ck-toolbar {
+  border-top-left-radius: 1.5rem !important;
+  border-top-right-radius: 1.5rem !important;
+  background: #fafafa !important;
+  padding: 0.5rem 1rem !important;
+  border-color: #f4f4f5 !important;
+  border-top: 1px solid #f4f4f5 !important;
+  border-left: 1px solid #f4f4f5 !important;
+  border-right: 1px solid #f4f4f5 !important;
+}
+.prose-editor .ck.ck-editor__main > .ck-editor__editable:not(.ck-focused) {
+  border-color: #f4f4f5 !important;
+}
+.prose-editor .ck-editor__main > .ck-editor__editable.ck-focused {
+  border-color: #0ea5e966 !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.05) !important;
+}
+.prose-editor .ck.ck-toolbar {
+  border-bottom: 1px solid #f4f4f5 !important;
+}
+.prose-editor .ck-content h1,
+.prose-editor .ck-content h2,
+.prose-editor .ck-content h3 {
+  font-family: ui-serif, Georgia, serif;
+  font-weight: 900;
+  color: #09090b !important;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+.prose-editor .ck-content blockquote {
+  border-left: 4px solid #a855f7 !important;
+  background: #faf5ff !important;
+  padding: 1.5rem !important;
+  border-radius: 0.5rem !important;
+  font-style: italic !important;
+  color: #6b21a8 !important;
+}
+.prose-editor .ck-content img {
+  border-radius: 1.5rem !important;
+  border: 1px solid #f4f4f5 !important;
+  margin: 2rem 0 !important;
+}
+
+/* Article Content Premium Typography */
+.article-premium {
+  @apply font-serif text-[1.125rem] leading-[1.8] text-gray-800 dark:text-gray-200;
+}
+
+.article-premium h1 {
+  @apply text-4xl md:text-6xl font-black text-gray-900 dark:text-white mt-12 mb-10 tracking-tight;
+  line-height: 1.1;
+}
+
+.article-premium h2 {
+  @apply text-3xl md:text-5xl font-black text-gray-900 dark:text-white mt-20 mb-10 tracking-tight;
+  line-height: 1.1;
+  position: relative;
+}
+
+.article-premium h2::before {
+  content: "";
+  @apply absolute -left-6 top-2 bottom-2 w-1.5 bg-blue-600 dark:bg-blue-400 rounded-full opacity-50 hidden md:block;
+}
+
+.article-premium h3 {
+  @apply text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mt-14 mb-6 tracking-tight;
+  line-height: 1.2;
+}
+
+.article-premium h4 {
+  @apply text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 mt-10 mb-4 tracking-tight;
+}
+
+.article-premium p {
+  @apply mb-8;
+}
+
+.article-premium > p:first-of-type {
+  @apply text-xl md:text-2xl font-medium text-gray-900 dark:text-white leading-relaxed mb-12;
+}
+
+.article-premium blockquote {
+  @apply my-16 pl-10 pr-6 py-10 bg-gray-50 dark:bg-gray-900/50 border-l-8 border-purple-600 dark:border-purple-500 rounded-r-3xl italic relative;
+}
+
+.article-premium blockquote::after {
+  content: '"';
+  @apply absolute top-4 left-4 text-6xl text-purple-600/10 dark:text-purple-400/10 font-serif leading-none pointer-events-none;
+}
+
+.article-premium ul {
+  @apply list-none mb-10 space-y-4;
+}
+
+.article-premium ul li {
+  @apply pl-8 relative;
+}
+
+.article-premium ul li::before {
+  content: "";
+  @apply absolute left-0 top-3 w-3 h-3 border-2 border-blue-600 dark:border-blue-400 rounded-full;
+}
+
+.article-premium ol {
+  @apply list-none mb-10 space-y-4 [counter-reset:article-counter];
+}
+
+.article-premium ol li {
+  @apply pl-10 relative [counter-increment:article-counter];
+}
+
+.article-premium ol li::before {
+  content: counter(article-counter);
+  @apply absolute left-0 top-1 w-7 h-7 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center text-[10px] font-black;
+}
+
+.article-premium strong {
+  @apply font-black text-gray-900 dark:text-white;
+}
+
+.article-premium a {
+  @apply text-blue-600 dark:text-blue-400 font-bold underline decoration-blue-200 dark:decoration-blue-800 underline-offset-4 hover:decoration-blue-600 dark:hover:decoration-blue-400 transition-all;
+}
+
+.article-premium img {
+  @apply rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-800 my-16;
+}
+
+.article-premium iframe {
+  @apply rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-800 my-16 bg-black;
+}
+
+.article-premium hr {
+  @apply my-16 border-t-2 border-gray-100 dark:border-gray-800 w-1/4 mx-auto;
+}
+
+/* Tables */
+.article-premium table {
+  @apply w-full mb-12 border-collapse overflow-hidden rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm;
+}
+
+.article-premium thead {
+  @apply bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm;
+}
+
+.article-premium th {
+  @apply px-6 py-4 text-left font-black uppercase tracking-widest text-[11px] text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800;
+}
+
+.article-premium td {
+  @apply px-6 py-5 text-[15px] border-b border-gray-50/50 dark:border-gray-900/30 text-gray-700 dark:text-gray-300 transition-colors;
+}
+
+.article-premium tr:nth-child(even) {
+  @apply bg-gray-50/30 dark:bg-gray-900/10;
+}
+
+.article-premium tr:hover td {
+  @apply bg-blue-50/30 dark:bg-blue-900/5 text-gray-900 dark:text-white;
+}
+
+.article-premium tr:last-child td {
+  @apply border-b-0;
 }

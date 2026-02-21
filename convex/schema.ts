@@ -50,6 +50,9 @@ export default defineSchema({
     uniqueViewCount: v.number(),
     readingTime: v.number(), // estimated minutes
     actualReadingTime: v.optional(v.number()), // total seconds spent by all users
+    metaTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    focusKeyword: v.optional(v.string()),
     createdAt: v.float64(),
     updatedAt: v.float64(),
     isFeatured: v.optional(v.boolean()),

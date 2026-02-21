@@ -8,6 +8,7 @@ import { FooterWrapper } from "@/components/footer-wrapper";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { AdSenseScript } from "@/components/adsense-script";
+import { SmoothScroll } from "@/components/smooth-scroll";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,10 +41,10 @@ export const metadata: Metadata = {
     description: "A psychology-focused content platform for living a full life and understanding human behavior.",
     images: [
       {
-        url: "/og-image.png", // Fallback static OG image
+        url: "/the-truth-pill-og.jpg",
         width: 1200,
         height: 630,
-        alt: "The Truth Pill",
+        alt: "The Truth Pill - Insight into Human Behavior",
       },
     ],
   },
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The Truth Pill | Insight into Human Behavior",
     description: "A psychology-focused content platform for living a full life and understanding human behavior.",
-    images: ["/og-image.png"],
+    images: ["/the-truth-pill-og.jpg"],
   },
 };
 
@@ -66,14 +67,16 @@ export default function RootLayout({
         className={`${geistSans.variable} ${lora.variable} ${outfit.variable} antialiased font-sans bg-background`}
       >
         <ConvexClientProvider>
-          <Suspense fallback={null}>
-            <AnalyticsTracker />
-            <AuthRedirect />
-            <AdSenseScript />
-            <Toaster position="top-right" richColors />
-          </Suspense>
-          {children}
-          <FooterWrapper />
+          <SmoothScroll>
+            <Suspense fallback={null}>
+              <AnalyticsTracker />
+              <AuthRedirect />
+              <AdSenseScript />
+              <Toaster position="top-right" richColors />
+            </Suspense>
+            {children}
+            <FooterWrapper />
+          </SmoothScroll>
         </ConvexClientProvider>
       </body>
     </html>

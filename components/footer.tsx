@@ -128,8 +128,8 @@ export function Footer() {
                         <ul className="space-y-4 text-sm text-gray-400 font-semibold">
                             <li><Link href="/articles" className="hover:text-white transition-colors flex items-center gap-2 group"><span className="w-1.5 h-1.5 bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" /> Latest Articles</Link></li>
                             <li><Link href="/categories" className="hover:text-white transition-colors flex items-center gap-2 group"><span className="w-1.5 h-1.5 bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" /> Navigation by Reality</Link></li>
-                            <li><Link href="/featured" className="hover:text-white transition-colors flex items-center gap-2 group"><span className="w-1.5 h-1.5 bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" /> Featured Discoveries</Link></li>
-                            <li><Link href="/authors" className="hover:text-white transition-colors flex items-center gap-2 group"><span className="w-1.5 h-1.5 bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" /> Our Ethos</Link></li>
+                            <li><Link href="/articles?featured=true" className="hover:text-white transition-colors flex items-center gap-2 group"><span className="w-1.5 h-1.5 bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" /> Featured Discoveries</Link></li>
+                            <li><Link href="/about" className="hover:text-white transition-colors flex items-center gap-2 group"><span className="w-1.5 h-1.5 bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" /> Our Ethos</Link></li>
                         </ul>
                     </div>
 

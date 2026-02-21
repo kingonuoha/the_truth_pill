@@ -8,11 +8,16 @@ import { toast } from "sonner";
 import {
     Calendar, Image as ImageIcon, Loader2, Plus, Save, X, Upload
 } from "lucide-react";
-import Editor from "./editor";
+import dynamic from "next/dynamic";
+const Editor = dynamic(() => import("./editor"), {
+    ssr: false,
+    loading: () => <div className="h-[600px] bg-zinc-50 animate-pulse rounded-2xl flex items-center justify-center text-zinc-400 font-black uppercase tracking-widest text-xs">Initializing Premium Editor...</div>
+});
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Id, Doc } from "@/convex/_generated/dataModel";
 import { uploadImage } from "@/app/actions/upload-image";
+import { useSession } from "next-auth/react";
 
 interface ArticleFormProps {
     isEditing?: boolean;
@@ -20,11 +25,11 @@ interface ArticleFormProps {
 }
 
 export default function ArticleForm({ isEditing = false, initialData }: ArticleFormProps) {
+    const { data: session } = useSession();
     const router = useRouter();
     const categories = useQuery(api.categories.listAll);
     const createArticle = useMutation(api.articles.create);
     const updateArticle = useMutation(api.articles.update);
-    const allTags = useQuery(api.articles.getAllTags); // Fetch available tags
 
     // For date picker
     const [scheduledDate, setScheduledDate] = useState("");
@@ -41,6 +46,9 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
         status: initialData?.status || "draft" as "draft" | "published" | "scheduled",
         source: initialData?.source || "human" as "human" | "ai",
         isFeatured: initialData?.isFeatured || false,
+        metaTitle: initialData?.metaTitle || "",
+        metaDescription: initialData?.metaDescription || "",
+        focusKeyword: initialData?.focusKeyword || "",
     });
 
     // Handle scheduledFor date formatting
@@ -54,9 +62,52 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
     }, [initialData]);
 
     const [tagInput, setTagInput] = useState("");
-    const [showTagSuggestions, setShowTagSuggestions] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [charCount, setCharCount] = useState(0);
+    const [readabilityScore, setReadabilityScore] = useState(0);
+    const [headingStructure, setHeadingStructure] = useState<{ hasH2: boolean; multipleH1: boolean }>({ hasH2: false, multipleH1: false });
+    const [missingAltCount, setMissingAltCount] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Readability and Heading Analysis
+    useEffect(() => {
+        if (!formData.content) {
+            setReadabilityScore(0);
+            setHeadingStructure({ hasH2: false, multipleH1: false });
+            setMissingAltCount(0);
+            return;
+        }
+
+        const text = formData.content.replace(/<[^>]*>/g, ' ');
+        const words = text.split(/\s+/).filter(Boolean).length;
+        const sentences = text.split(/[.!?]+/).filter(Boolean).length;
+
+        // Simple Flesch-Kincaid proxy (Standard readability score)
+        // We'll use word length as a proxy for syllables
+        const avgSentenceLength = words / (sentences || 1);
+        const avgWordLength = text.length / (words || 1);
+
+        // Mocked Flesch Score
+        const score = Math.max(0, Math.min(100, 100 - (avgSentenceLength * 0.5) - (avgWordLength * 5)));
+        setReadabilityScore(Math.round(score));
+
+        // Heading Analysis
+        const hasH2 = formData.content.includes('<h2');
+        const h1Count = (formData.content.match(/<h1/g) || []).length;
+        setHeadingStructure({ hasH2, multipleH1: h1Count > 1 });
+
+        // Alt Text Check
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(formData.content, 'text/html');
+        const images = doc.querySelectorAll('img');
+        let missingAlt = 0;
+        images.forEach(img => {
+            if (!img.getAttribute('alt') || img.getAttribute('alt')?.trim() === '') {
+                missingAlt++;
+            }
+        });
+        setMissingAltCount(missingAlt);
+    }, [formData.content]);
 
     // Auto-generate slug from title
     useEffect(() => {
@@ -71,6 +122,16 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
         }
     }, [formData.title, isEditing]);
 
+    // Auto-suggest meta title from title
+    useEffect(() => {
+        if (!formData.metaTitle && formData.title) {
+            setFormData(prev => ({
+                ...prev,
+                metaTitle: formData.title.length > 60 ? formData.title.substring(0, 57) + "..." : formData.title
+            }));
+        }
+    }, [formData.title, formData.metaTitle]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -82,6 +143,38 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
             }
             if (!formData.content) {
                 toast.error("Content is required for publishing");
+                return;
+            }
+
+            // Content Requirements
+            if (charCount < 800) {
+                toast.error(`Character count is too low (${charCount}/800). Minimum 800 characters required for publication.`);
+                return;
+            }
+            if (!headingStructure.hasH2) {
+                toast.error("At least one H2 subheading is required for SEO structure.");
+                return;
+            }
+            if (headingStructure.multipleH1) {
+                toast.error("Multiple H1 tags detected. Only one H1 is recommended for SEO.");
+                return;
+            }
+            if (missingAltCount > 0) {
+                toast.error(`${missingAltCount} images are missing ALT text. This is required for SEO.`);
+                return;
+            }
+
+            // SEO Metadata
+            if (!formData.metaTitle) {
+                toast.error("Meta Title is required for publishing");
+                return;
+            }
+            if (!formData.metaDescription) {
+                toast.error("Meta Description is required for publishing");
+                return;
+            }
+            if (formData.metaDescription.length > 255) {
+                toast.error("Meta Description must be 255 characters or less");
                 return;
             }
         }
@@ -101,30 +194,50 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
             if (isEditing) {
                 await updateArticle({
                     id: initialData!._id,
-                    ...formData,
-                    categoryId: formData.categoryId as Id<"categories">,
-                    scheduledFor: scheduledTimestamp,
-                    content: formData.content || "", // Allow empty string for drafts
-                    excerpt: formData.excerpt || "",
+                    title: formData.title,
+                    slug: formData.slug,
+                    excerpt: formData.excerpt,
+                    content: formData.content,
                     coverImage: formData.coverImage || "",
+                    categoryId: formData.categoryId as Id<"categories">,
+                    tags: formData.tags,
+                    status: formData.status,
+                    source: formData.source,
+                    isFeatured: formData.isFeatured,
+                    metaTitle: formData.metaTitle,
+                    metaDescription: formData.metaDescription,
+                    focusKeyword: formData.focusKeyword,
+                    adminEmail: session?.user?.email || undefined,
+                    scheduledFor: scheduledTimestamp,
                 });
                 toast.success("Article updated successfully");
             } else {
                 await createArticle({
-                    ...formData,
-                    categoryId: formData.categoryId,
-                    scheduledFor: scheduledTimestamp,
-                    content: formData.content || "",
-                    excerpt: formData.excerpt || "",
+                    title: formData.title,
+                    slug: formData.slug,
+                    excerpt: formData.excerpt,
+                    content: formData.content,
                     coverImage: formData.coverImage || "",
+                    categoryId: formData.categoryId,
+                    tags: formData.tags,
+                    status: formData.status,
+                    source: formData.source,
+                    isFeatured: formData.isFeatured,
+                    metaTitle: formData.metaTitle,
+                    metaDescription: formData.metaDescription,
+                    focusKeyword: formData.focusKeyword,
+                    adminEmail: session?.user?.email || undefined,
+                    scheduledFor: scheduledTimestamp,
                 });
                 toast.success("Article created successfully");
             }
             router.push("/admin/articles");
             router.refresh();
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
-            toast.error(isEditing ? "Failed to update article" : "Failed to create article");
+            // Handle Convex validation errors
+            const errorMessage = error instanceof Error ? error.message : (isEditing ? "Failed to update article" : "Failed to create article");
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -144,7 +257,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                 return { ...prev, tags: newTags };
             });
             setTagInput("");
-            setShowTagSuggestions(false);
+            // setShowTagSuggestions(false); // This state variable is not defined
         }
     };
 
@@ -185,8 +298,10 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
             setIsCategoryModalOpen(false);
             setNewCategory({ name: "", slug: "", description: "" });
             toast.success("Category created on-the-fly!");
-        } catch (_error) {
-            toast.error("Failed to create category");
+        } catch (error: unknown) {
+            console.error(error);
+            const errorMessage = error instanceof Error ? error.message : "Failed to create category";
+            toast.error(errorMessage);
         } finally {
             setIsCreatingCategory(false);
         }
@@ -196,18 +311,29 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // Cover image limit: 1.5MB (1.5 * 1024 * 1024 bytes)
+        const MAX_SIZE = 1.5 * 1024 * 1024;
+        if (file.size > MAX_SIZE) {
+            toast.error("Cover image must be less than 1.5MB. Use TinyPNG or similar to compress.");
+            // Reset input so user can try again
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return;
+        }
+
         setIsUploading(true);
         try {
-            const formData = new FormData();
-            formData.append("file", file);
-            const url = await uploadImage(formData);
+            const uploadData = new FormData();
+            uploadData.append("file", file);
+            const url = await uploadImage(uploadData);
             setFormData(prev => ({ ...prev, coverImage: url }));
             toast.success("Image uploaded!");
-        } catch (err) {
-            console.error(err);
-            toast.error("Upload failed. Ensure CLOUDINARY env vars are set.");
+        } catch (error: unknown) {
+            console.error(error);
+            const errorMessage = error instanceof Error ? error.message : "Something went wrong";
+            toast.error(errorMessage);
         } finally {
             setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
@@ -270,11 +396,51 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Rich Content</label>
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Rich Content</label>
+                            <div className="flex items-center gap-4">
+                                <div className={cn(
+                                    "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider",
+                                    charCount >= 800 ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-600"
+                                )}>
+                                    <span className="tabular-nums">{charCount}</span> / 800 Characters
+                                </div>
+                                <div className={cn(
+                                    "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider",
+                                    readabilityScore > 60 ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
+                                )}>
+                                    Score: {readabilityScore < 30 ? 'High Complexity' : readabilityScore < 60 ? 'Moderate' : 'Readable'} ({readabilityScore})
+                                </div>
+                            </div>
+                        </div>
                         <Editor
                             content={formData.content}
                             onChange={content => setFormData(prev => ({ ...prev, content }))}
+                            onLengthChange={setCharCount}
                         />
+                        <div className="mt-4 flex flex-wrap gap-4">
+                            <div className={cn(
+                                "flex items-center gap-2 text-[10px] font-bold uppercase",
+                                headingStructure.hasH2 ? "text-green-600" : "text-zinc-400"
+                            )}>
+                                <div className={cn("w-2 h-2 rounded-full", headingStructure.hasH2 ? "bg-green-500" : "bg-zinc-200")} />
+                                At least one H2
+                            </div>
+                            <div className={cn(
+                                "flex items-center gap-2 text-[10px] font-bold uppercase",
+                                headingStructure.multipleH1 ? "text-red-600" : "text-green-600"
+                            )}>
+                                <div className={cn("w-2 h-2 rounded-full", headingStructure.multipleH1 ? "bg-red-500" : "bg-green-500")} />
+                                {headingStructure.multipleH1 ? "Multiple H1s alert" : "Clean Heading Hierarchy"}
+                            </div>
+                            <div className={cn(
+                                "flex items-center gap-2 text-[10px] font-bold uppercase",
+                                missingAltCount === 0 ? "text-green-600" : "text-red-600"
+                            )}>
+                                <div className={cn("w-2 h-2 rounded-full", missingAltCount === 0 ? "bg-green-500" : "bg-red-500")} />
+                                {missingAltCount === 0 ? "All images have Alt Text" : `${missingAltCount} images missing Alt Text`}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -362,7 +528,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                             </div>
                             <select
                                 required
-                                value={formData.categoryId}
+                                value={formData.categoryId || ""} // Ensure value is string for select
                                 onChange={e => setFormData(prev => ({ ...prev, categoryId: (e.target.value || undefined) as Id<"categories"> | undefined }))}
                                 className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 font-bold text-sm outline-none appearance-none cursor-pointer"
                             >
@@ -378,6 +544,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                                 <div className="bg-white p-8 rounded-3xl shadow-2xl border border-zinc-100 max-w-md w-full relative">
                                     <button
+                                        type="button"
                                         onClick={() => setIsCategoryModalOpen(false)}
                                         className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-600"
                                     >
@@ -446,49 +613,92 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Metadata Tags</label>
-                            <div className="space-y-3">
-                                <input
-                                    type="text"
-                                    value={tagInput}
-                                    onChange={e => {
-                                        setTagInput(e.target.value);
-                                        setShowTagSuggestions(true);
-                                    }}
-                                    onKeyDown={addTag}
-                                    onPaste={handleTagPaste}
-                                    placeholder="Add tags (comma separated)..."
-                                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none"
-                                />
-                                {showTagSuggestions && tagInput && (
-                                    <div className="absolute z-10 bg-white border border-zinc-200 rounded-xl shadow-lg w-full mt-1 p-2 max-h-40 overflow-y-auto">
-                                        {allTags?.filter((t: string) => t.toLowerCase().includes(tagInput.toLowerCase()) && !formData.tags.includes(t)).map((t: string) => (
-                                            <button
-                                                key={t}
-                                                type="button"
-                                                onClick={() => {
-                                                    setFormData(prev => ({ ...prev, tags: [...prev.tags, t] }));
-                                                    setTagInput("");
-                                                    setShowTagSuggestions(false);
-                                                }}
-                                                className="block w-full text-left px-3 py-1.5 hover:bg-zinc-50 rounded-lg text-xs"
-                                            >
-                                                {t}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.tags.map((tag: string) => (
-                                        <span key={tag} className="inline-flex items-center gap-1 px-3 py-1 bg-zinc-100 text-zinc-600 rounded-full text-[10px] font-black uppercase tracking-tighter">
-                                            {tag}
-                                            <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
-                                                <X size={12} />
-                                            </button>
-                                        </span>
-                                    ))}
-                                </div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Discovery Tags {formData.status !== 'draft' && <span className="text-red-500">*</span>}</label>
+                                <span className="text-[10px] text-zinc-400 font-bold uppercase">{formData.tags.length} added</span>
                             </div>
+                            <input
+                                type="text"
+                                value={tagInput}
+                                onChange={e => setTagInput(e.target.value)}
+                                onKeyDown={addTag}
+                                onPaste={handleTagPaste}
+                                placeholder="Type & press Enter or Comma..."
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none"
+                            />
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                {formData.tags.map(tag => (
+                                    <span key={tag} className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 text-zinc-600 rounded-lg text-[10px] font-black uppercase tracking-wider group hover:bg-zinc-200 transition-colors">
+                                        {tag}
+                                        <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
+                                            <X size={10} strokeWidth={3} />
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                {/* SEO Optimization Card */}
+                <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 border-b border-zinc-50 pb-4">SEO Optimization</h3>
+
+                    <div className="space-y-4">
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Focus Keyword</label>
+                            </div>
+                            <input
+                                type="text"
+                                value={formData.focusKeyword}
+                                onChange={e => setFormData(prev => ({ ...prev, focusKeyword: e.target.value }))}
+                                placeholder="e.g. Psychology of Power"
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Meta Title {formData.status !== 'draft' && <span className="text-red-500">*</span>}</label>
+                                <span className={cn(
+                                    "text-[10px] font-black tabular-nums transition-colors",
+                                    formData.metaTitle.length > 60 ? "text-red-500" :
+                                        formData.metaTitle.length > 50 ? "text-orange-500" : "text-zinc-400"
+                                )}>
+                                    {formData.metaTitle.length} / 60
+                                </span>
+                            </div>
+                            <input
+                                type="text"
+                                required={formData.status !== 'draft'}
+                                value={formData.metaTitle}
+                                onChange={e => setFormData(prev => ({ ...prev, metaTitle: e.target.value }))}
+                                placeholder="Search engine title..."
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Meta Description {formData.status !== 'draft' && <span className="text-red-500">*</span>}</label>
+                                <span className={cn(
+                                    "text-[10px] font-black tabular-nums transition-colors",
+                                    formData.metaDescription.length > 255 ? "text-red-500" :
+                                        formData.metaDescription.length > 160 ? "text-orange-500" : "text-zinc-400"
+                                )}>
+                                    {formData.metaDescription.length} / 255
+                                </span>
+                            </div>
+                            <textarea
+                                required={formData.status !== 'draft'}
+                                value={formData.metaDescription}
+                                onChange={e => setFormData(prev => ({ ...prev, metaDescription: e.target.value }))}
+                                placeholder="Google search result snippet..."
+                                rows={4}
+                                className="w-full resize-none bg-zinc-50 border border-zinc-100 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all text-zinc-600 text-sm leading-relaxed"
+                            />
                         </div>
                     </div>
                 </div>
@@ -503,6 +713,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                 <>
                                     <Image src={formData.coverImage} alt="Cover" fill className="object-cover" />
                                     <button
+                                        type="button"
                                         onClick={() => setFormData(prev => ({ ...prev, coverImage: "" }))}
                                         className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
