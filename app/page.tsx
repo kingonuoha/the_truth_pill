@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     siteName: "The Truth Pill",
     images: [
       {
-        url: "https://thetruthpill.com/og-image.png",
+        url: "/the-truth-pill-og.jpg",
         width: 1200,
         height: 630,
       },
