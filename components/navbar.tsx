@@ -197,20 +197,20 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                         transition={{ duration: 0.2 }}
-                                        className="absolute right-0 mt-4 w-64 bg-white rounded-3xl shadow-2xl shadow-zinc-200/80 border border-zinc-100 overflow-hidden py-3 p-2 z-[60]"
+                                        className="absolute right-0 mt-4 w-64 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl shadow-zinc-200/80 dark:shadow-black/50 border border-zinc-100 dark:border-zinc-800 overflow-hidden py-3 p-2 z-[60]"
                                     >
-                                        <div className="px-4 py-3 border-b border-zinc-50 mb-2">
-                                            <p className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-1">Signed in as</p>
-                                            <p className="text-sm font-bold text-zinc-900 truncate">{session?.user?.email}</p>
+                                        <div className="px-4 py-3 border-b border-zinc-50 dark:border-zinc-800 mb-2">
+                                            <p className="text-xs font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">Signed in as</p>
+                                            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">{session?.user?.email}</p>
                                         </div>
 
                                         <div className="space-y-1">
                                             <Link
                                                 href={session?.user?.role === "admin" ? "/admin" : "/dashboard"}
                                                 onClick={() => setIsProfileOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-zinc-600 hover:text-primary hover:bg-zinc-50 transition-all group"
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-zinc-600 dark:text-zinc-400 hover:text-primary dark:hover:text-blue-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all group"
                                             >
-                                                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                                <div className="w-8 h-8 rounded-xl bg-primary/10 dark:bg-blue-500/10 flex items-center justify-center text-primary dark:text-blue-400 group-hover:scale-110 transition-transform">
                                                     <User size={16} />
                                                 </div>
                                                 <span className="text-xs font-bold uppercase tracking-widest">
@@ -220,9 +220,9 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
 
                                             <button
                                                 onClick={handleLogout}
-                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-zinc-600 hover:text-red-500 hover:bg-red-50 transition-all group"
+                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-zinc-600 dark:text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all group"
                                             >
-                                                <div className="w-8 h-8 rounded-xl bg-red-100/50 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                                                <div className="w-8 h-8 rounded-xl bg-red-100/50 dark:bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
                                                     <LogOut size={16} />
                                                 </div>
                                                 <span className="text-xs font-bold uppercase tracking-widest">Logout</span>
@@ -267,26 +267,26 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                             animate={{ x: 0 }}
                             exit={{ x: "-100%" }}
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed left-0 top-0 bottom-0 z-[120] w-[85%] max-w-sm bg-white shadow-2xl md:hidden overflow-y-auto"
+                            className="fixed left-0 top-0 bottom-0 z-[120] w-[85%] max-w-sm bg-white dark:bg-zinc-900 shadow-2xl md:hidden overflow-y-auto"
                         >
                             <div className="p-6 flex flex-col h-full">
                                 <div className="flex justify-between items-center mb-10">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                                        <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
                                             T
                                         </div>
-                                        <span className="font-serif text-xl font-bold">The Truth Pill</span>
+                                        <span className="font-serif text-xl font-bold dark:text-white">The Truth Pill</span>
                                     </div>
                                     <button
                                         onClick={() => setIsMenuOpen(false)}
-                                        className="p-2 hover:bg-zinc-100 rounded-full transition-all"
+                                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all dark:text-zinc-400"
                                     >
                                         <X size={24} />
                                     </button>
                                 </div>
 
                                 {isAuthenticated && (
-                                    <div className="mb-10 p-5 rounded-[32px] bg-zinc-50 border border-zinc-100">
+                                    <div className="mb-10 p-5 rounded-[32px] bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
                                         <div className="flex items-center gap-4 mb-6">
                                             <div className="w-14 h-14 rounded-2xl overflow-hidden relative border-2 border-white shadow-sm">
                                                 <Image
@@ -297,17 +297,17 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                                 />
                                             </div>
                                             <div>
-                                                <h3 className="font-serif text-lg font-bold text-zinc-900">{session?.user?.name}</h3>
-                                                <p className="text-primary text-[10px] font-black uppercase tracking-widest">Premium Member</p>
+                                                <h3 className="font-serif text-lg font-bold text-zinc-900 dark:text-white">{session?.user?.name}</h3>
+                                                <p className="text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">Premium Member</p>
                                             </div>
                                         </div>
                                         <Link
                                             href="/dashboard"
                                             onClick={() => setIsMenuOpen(false)}
-                                            className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-zinc-100 hover:border-primary transition-all group"
+                                            className="w-full flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-100 dark:border-zinc-700 hover:border-blue-600 transition-all group"
                                         >
-                                            <span className="text-xs font-bold uppercase tracking-widest text-zinc-600">Access Dashboard</span>
-                                            <ArrowRight size={16} className="text-primary group-hover:translate-x-1 transition-transform" />
+                                            <span className="text-xs font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400">Access Dashboard</span>
+                                            <ArrowRight size={16} className="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform" />
                                         </Link>
                                     </div>
                                 )}
@@ -324,7 +324,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                             key={item.label}
                                             href={item.href}
                                             onClick={() => setIsMenuOpen(false)}
-                                            className="flex items-center justify-between p-4 rounded-2xl text-zinc-900 hover:bg-primary hover:text-white transition-all group"
+                                            className="flex items-center justify-between p-4 rounded-2xl text-zinc-900 dark:text-white hover:bg-blue-600 hover:text-white transition-all group"
                                         >
                                             <span className="text-lg font-serif font-bold">{item.label}</span>
                                             <ArrowRight size={18} className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
@@ -370,18 +370,18 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-white flex flex-col p-6 md:p-20 overflow-y-auto"
+                        className="fixed inset-0 z-[100] bg-white dark:bg-zinc-950 flex flex-col p-6 md:p-20 overflow-y-auto transition-colors duration-500"
                         style={{ height: '100vh', top: 0 }}
                     >
                         <div className="flex justify-between items-center mb-16">
-                            <span className="font-serif text-3xl md:text-5xl font-bold text-zinc-900">Search Insights</span>
+                            <span className="font-serif text-3xl md:text-5xl font-bold text-zinc-900 dark:text-white">Search Insights</span>
                             <button
                                 onClick={() => setIsSearchOpen(false)}
-                                className="p-4 hover:bg-zinc-100 rounded-full transition-all group active:scale-90"
+                                className="p-4 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-full transition-all group active:scale-90"
                             >
                                 <div className="w-8 h-8 relative">
-                                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-black rotate-45 group-hover:bg-primary transition-colors" />
-                                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-black -rotate-45 group-hover:bg-primary transition-colors" />
+                                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-black dark:bg-white rotate-45 group-hover:bg-blue-600 transition-colors" />
+                                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-black dark:bg-white -rotate-45 group-hover:bg-blue-600 transition-colors" />
                                 </div>
                             </button>
                         </div>
@@ -390,7 +390,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                 autoFocus
                                 type="text"
                                 placeholder="Search keywords..."
-                                className="w-full text-4xl md:text-7xl font-serif font-bold border-b-2 border-zinc-100 focus:border-primary outline-none pb-8 transition-all duration-500 placeholder:text-zinc-200 text-zinc-900"
+                                className="w-full text-4xl md:text-7xl font-serif font-bold border-b-2 border-zinc-100 dark:border-zinc-800 bg-transparent focus:border-blue-600 outline-none pb-8 transition-all duration-500 placeholder:text-zinc-200 dark:placeholder:text-zinc-800 text-zinc-900 dark:text-white"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                             />
@@ -406,14 +406,14 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                             key={article._id}
                                             href={`/articles/${article.slug}`}
                                             onClick={() => setIsSearchOpen(false)}
-                                            className="group flex items-center gap-6 p-4 rounded-3xl hover:bg-zinc-50 transition-all border border-transparent hover:border-zinc-100"
+                                            className="group flex items-center gap-6 p-4 rounded-3xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all border border-transparent hover:border-zinc-100 dark:hover:border-zinc-800"
                                         >
                                             <div className="w-20 h-20 rounded-2xl overflow-hidden relative flex-shrink-0">
                                                 <Image src={article.coverImage || ""} alt={article.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
                                             </div>
                                             <div>
-                                                <h4 className="text-xl font-serif font-bold text-zinc-900 group-hover:text-primary transition-colors line-clamp-1">{article.title}</h4>
-                                                <p className="text-zinc-500 text-sm line-clamp-1 font-medium mt-1">{article.excerpt}</p>
+                                                <h4 className="text-xl font-serif font-bold text-zinc-900 dark:text-white group-hover:text-blue-600 transition-colors line-clamp-1">{article.title}</h4>
+                                                <p className="text-zinc-500 dark:text-zinc-400 text-sm line-clamp-1 font-medium mt-1">{article.excerpt}</p>
                                             </div>
                                         </Link>
                                     ))}
@@ -428,16 +428,16 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                             <button
                                                 key={term}
                                                 onClick={() => setQuery(term)}
-                                                className="px-6 py-3 rounded-2xl bg-zinc-50 hover:bg-primary hover:text-white text-zinc-600 font-bold text-sm transition-all"
+                                                className="px-6 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white text-zinc-600 dark:text-zinc-400 font-bold text-sm transition-all"
                                             >
                                                 {term}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="bg-zinc-50 rounded-[40px] p-10 flex flex-col justify-center">
-                                    <h3 className="text-2xl font-serif font-bold mb-4 italic">&quot;The truth will set you free, but first it will piss you off.&quot;</h3>
-                                    <p className="text-zinc-400 text-sm font-medium">— Gloria Steinem</p>
+                                <div className="bg-zinc-50 dark:bg-zinc-900 rounded-[40px] p-10 flex flex-col justify-center border border-transparent dark:border-zinc-800">
+                                    <h3 className="text-2xl font-serif font-bold mb-4 italic text-zinc-900 dark:text-zinc-100">&quot;The truth will set you free, but first it will piss you off.&quot;</h3>
+                                    <p className="text-zinc-400 dark:text-zinc-500 text-sm font-medium">— Gloria Steinem</p>
                                 </div>
                             </div>
                         </div>

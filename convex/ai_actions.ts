@@ -226,11 +226,11 @@ export const generateArticleFromTopic = action({
   },
   handler: async (ctx, args) => {
     const config = AI_CONFIG.articleGeneration;
-    const prompt = config.userPrompt(args.topic);
-    const systemPrompt = args.systemPrompt || config.systemPrompt;
+    const prompt = config.userPrompt(args.topic, args.systemPrompt);
+    const systemPrompt = config.systemPrompt;
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { topic: _, ...restArgs } = args;
+    const { topic: _, systemPrompt: __, ...restArgs } = args;
     const response = await ctx.runAction(api.ai_actions.generateContent, {
       ...restArgs,
       prompt,
@@ -262,6 +262,9 @@ export const generateArticleFromTopic = action({
         excerpt: data.excerpt,
         tags: data.tags || [],
         topic: args.topic,
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
+        focusKeyword: data.focusKeyword,
       });
 
       // Mark the research topic as processed if it exists

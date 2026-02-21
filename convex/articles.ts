@@ -199,8 +199,12 @@ export const create = mutation({
     source: v.union(v.literal("human"), v.literal("ai")),
     scheduledFor: v.optional(v.number()),
     isFeatured: v.optional(v.boolean()),
+    metaTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    focusKeyword: v.optional(v.string()),
+    adminEmail: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { adminEmail, ...args }) => {
     // Validation for non-drafts
     if (args.status !== "draft") {
       if (!args.excerpt) throw new Error("Excerpt is required for publishing");
@@ -211,17 +215,41 @@ export const create = mutation({
         throw new Error("Category is required for publishing");
       if (!args.tags || args.tags.length === 0)
         throw new Error("Tags are required for publishing");
+
+      // Enhanced SEO checks
+      if (!args.metaTitle)
+        throw new Error("Meta Title is required for publishing");
+      if (!args.metaDescription)
+        throw new Error("Meta Description is required for publishing");
+      if (args.metaDescription.length > 255)
+        throw new Error("Meta Description must be 255 characters or less");
+
+      // Character count check (800 characters minimum)
+      const charCount = (args.content || "").length;
+      if (charCount < 800) {
+        throw new Error(
+          `Article content is too short (${charCount} characters). Minimum 800 characters required for publication.`,
+        );
+      }
+
+      // H2 check
+      if (!args.content.includes("<h2")) {
+        throw new Error(
+          "At least one H2 subheading is required for SEO structure.",
+        );
+      }
     }
     // Get current user as author
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
+    const email = identity?.email || adminEmail;
+    if (!email) throw new Error("Not authenticated");
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
 
-    if (!user) throw new Error("User not found");
+    if (!user || user.role !== "admin") throw new Error("Unauthorized");
 
     const now = Date.now();
     const articleId = await ctx.db.insert("articles", {
@@ -229,7 +257,7 @@ export const create = mutation({
       authorId: user._id,
       viewCount: 0,
       uniqueViewCount: 0,
-      readingTime: Math.ceil((args.content || "").split(/\s+/).length / 200),
+      readingTime: Math.ceil((args.content || "").length / 1300),
       createdAt: now,
       updatedAt: now,
       publishedAt: args.status === "published" ? now : undefined,
@@ -265,8 +293,24 @@ export const update = mutation({
     source: v.optional(v.union(v.literal("human"), v.literal("ai"))),
     scheduledFor: v.optional(v.number()),
     isFeatured: v.optional(v.boolean()),
+    metaTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    focusKeyword: v.optional(v.string()),
+    adminEmail: v.optional(v.string()),
   },
-  handler: async (ctx, { id, ...args }) => {
+  handler: async (ctx, { id, adminEmail, ...args }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    const email = identity?.email || adminEmail;
+
+    const user = email
+      ? await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", email))
+          .unique()
+      : null;
+
+    if (!user || user.role !== "admin") throw new Error("Unauthorized");
+
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("Article not found");
 
@@ -284,6 +328,30 @@ export const update = mutation({
       if (!coverImage) throw new Error("Cover Image is required");
       if (!categoryId) throw new Error("Category is required");
       if (!tags || tags.length === 0) throw new Error("Tags are required");
+
+      // Enhanced SEO checks
+      const metaTitle = args.metaTitle || existing.metaTitle;
+      const metaDescription = args.metaDescription || existing.metaDescription;
+
+      if (!metaTitle) throw new Error("Meta Title is required");
+      if (!metaDescription) throw new Error("Meta Description is required");
+      if (metaDescription.length > 255)
+        throw new Error("Meta Description must be 255 characters or less");
+
+      // Character count check (800 characters minimum)
+      const charCount = (content || "").length;
+      if (charCount < 800) {
+        throw new Error(
+          `Article content is too short (${charCount} characters). Minimum 800 characters required for publication.`,
+        );
+      }
+
+      // H2 check
+      if (!content || !content.includes("<h2")) {
+        throw new Error(
+          "At least one H2 subheading is required for SEO structure.",
+        );
+      }
     }
 
     const patch: Partial<Doc<"articles">> & { updatedAt: number } = {
@@ -292,7 +360,7 @@ export const update = mutation({
     };
 
     if (args.content) {
-      patch.readingTime = Math.ceil(args.content.split(/\s+/).length / 200);
+      patch.readingTime = Math.ceil(args.content.length / 1300);
     }
 
     if (args.status === "published" && existing.status !== "published") {
@@ -480,23 +548,48 @@ export const saveAIDraft = internalMutation({
     excerpt: v.string(),
     tags: v.array(v.string()),
     topic: v.string(),
+    metaTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    focusKeyword: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    let aiAuthor = await ctx.db
+    const {
+      metaTitle,
+      metaDescription,
+      focusKeyword,
+      topic: _,
+      ...rest
+    } = args;
+    const admins = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "ai@thetruthpill.com"))
-      .unique();
+      .withIndex("by_role", (q) => q.eq("role", "admin"))
+      .collect();
 
-    if (!aiAuthor) {
-      const aiAuthorId = await ctx.db.insert("users", {
-        name: "TruthPill AI",
-        email: "ai@thetruthpill.com",
-        role: "admin",
-        provider: "system",
-        newsletterSubscribed: false,
-        createdAt: Date.now(),
-      });
-      aiAuthor = await ctx.db.get(aiAuthorId);
+    let authorId: Id<"users">;
+
+    if (admins.length > 0) {
+      // Pick a random admin
+      const randomAdmin = admins[Math.floor(Math.random() * admins.length)];
+      authorId = randomAdmin._id;
+    } else {
+      // Fallback: create/get system AI author
+      const aiAuthor = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", "ai@thetruthpill.com"))
+        .unique();
+
+      if (!aiAuthor) {
+        authorId = await ctx.db.insert("users", {
+          name: "TruthPill AI",
+          email: "ai@thetruthpill.com",
+          role: "admin",
+          provider: "system",
+          newsletterSubscribed: false,
+          createdAt: Date.now(),
+        });
+      } else {
+        authorId = aiAuthor._id;
+      }
     }
 
     const category = await ctx.db.query("categories").first();
@@ -509,20 +602,20 @@ export const saveAIDraft = internalMutation({
       .replace(/(^-|-$)+/g, "");
 
     return await ctx.db.insert("articles", {
-      title: args.title,
+      ...rest,
+      metaTitle,
+      metaDescription,
+      focusKeyword,
       slug: slug + "-" + Math.random().toString(36).substring(2, 7),
-      excerpt: args.excerpt,
-      content: args.content,
       coverImage:
         "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80",
-      authorId: aiAuthor!._id,
+      authorId,
       categoryId: category._id,
-      tags: args.tags,
       status: "draft",
       source: "ai",
       viewCount: 0,
       uniqueViewCount: 0,
-      readingTime: Math.ceil(args.content.split(/\s+/).length / 200),
+      readingTime: Math.ceil(rest.content.length / 1300),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });

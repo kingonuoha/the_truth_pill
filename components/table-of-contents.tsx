@@ -13,41 +13,85 @@ export function TableOfContents() {
     const [activeId, setActiveId] = useState<string>("");
 
     useEffect(() => {
-        const headings = Array.from(document.querySelectorAll("article h2, article h3"));
-        const tocItems = headings.map((heading, index) => {
-            const id = heading.id || `heading-${index}`;
-            heading.id = id;
-            return {
-                id,
-                text: heading.textContent || "",
-                level: heading.tagName === "H2" ? 2 : 3
-            };
-        });
+        // Function to find and setup headings
+        const setupHeadings = () => {
+            const article = document.querySelector("article");
+            if (!article) return;
 
-        const timer = setTimeout(() => {
+            const headings = Array.from(article.querySelectorAll("h2, h3"));
+            const tocItems = headings.map((heading, index) => {
+                const text = heading.textContent || "";
+                // Generate a consistent ID from text if not present, but avoid duplicates
+                const id = heading.id || text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') || `heading-${index}`;
+                heading.id = id;
+                return {
+                    id,
+                    text,
+                    level: heading.tagName === "H2" ? 2 : 3
+                };
+            });
+
             setItems(tocItems);
-        }, 100);
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        setActiveId(entry.target.id);
-                    }
-                });
-            },
-            { rootMargin: "-100px 0px -66%" }
-        );
+            // Setup Intersection Observer for active state
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            setActiveId(entry.target.id);
+                        }
+                    });
+                },
+                { rootMargin: "-100px 0px -66%" }
+            );
 
-        headings.forEach((heading) => observer.observe(heading));
-        return () => {
-            observer.disconnect();
-            clearTimeout(timer);
+            headings.forEach((heading) => observer.observe(heading));
+            return observer;
         };
+
+        // Run after a short delay to ensure content is rendered
+        const timer = setTimeout(() => {
+            const observer = setupHeadings();
+            return () => observer?.disconnect();
+        }, 500);
+
+        return () => clearTimeout(timer);
     }, []);
 
+    const scrollToHeading = (id: string) => (e: React.MouseEvent) => {
+        e.preventDefault();
+        const element = document.getElementById(id);
+        if (element) {
+            const offset = 120; // Navbar + extra breathing room
+            const bodyRect = document.body.getBoundingClientRect().top;
+            const elementRect = element.getBoundingClientRect().top;
+            const elementPosition = elementRect - bodyRect;
+            const offsetPosition = elementPosition - offset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
+
+            // Update URL hash without jumping
+            window.history.pushState(null, '', `#${id}`);
+        }
+    };
+
     const scrollToComments = () => {
-        document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' });
+        const element = document.getElementById('comments-section');
+        if (element) {
+            const offset = 100;
+            const bodyRect = document.body.getBoundingClientRect().top;
+            const elementRect = element.getBoundingClientRect().top;
+            const elementPosition = elementRect - bodyRect;
+            const offsetPosition = elementPosition - offset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
+        }
     };
 
     return (
@@ -55,7 +99,7 @@ export function TableOfContents() {
             <div className="flex flex-col gap-6">
                 <div className="flex items-center gap-3">
                     <div className="w-1 h-4 bg-primary rounded-full" />
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 dark:text-zinc-100">
                         On this page
                     </h4>
                 </div>
@@ -65,13 +109,14 @@ export function TableOfContents() {
                         <a
                             key={item.id}
                             href={`#${item.id}`}
+                            onClick={scrollToHeading(item.id)}
                             className={cn(
-                                "text-[13px] transition-all duration-300 relative pl-4 border-l border-zinc-100",
+                                "text-[13px] transition-all duration-300 relative pl-4 border-l border-zinc-100 dark:border-zinc-800",
                                 activeId === item.id
-                                    ? "text-primary font-bold border-primary"
-                                    : "text-zinc-500 font-medium hover:text-zinc-800 hover:border-zinc-300",
-                                item.level === 3 && "ml-4 text-[12px]"
+                                    ? "text-primary dark:text-blue-400 font-bold border-primary dark:border-blue-400 scale-105 origin-left"
+                                    : "text-zinc-500 font-medium hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300"
                             )}
+                            style={{ paddingLeft: item.level === 3 ? '1.5rem' : '1rem' }}
                         >
                             {item.text}
                         </a>

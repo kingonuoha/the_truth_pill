@@ -200,34 +200,34 @@ export default function AnalyticsPage() {
                 <div className="lg:col-span-2 space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Referrer Sources */}
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-sm transition-all duration-500">
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-sm transition-all duration-500">
                             <h3 className="text-lg font-serif font-black text-gray-950 dark:text-white mb-6 flex items-center gap-3">
                                 <MousePointer2 className="text-blue-600 dark:text-blue-500" size={20} />
                                 Origin points
                             </h3>
-                            <div className="h-[250px]">
+                            <div className="h-[220px]">
                                 <ReferrerChart data={referrerStats} />
                             </div>
                         </div>
 
                         {/* Device Breakdown */}
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-sm transition-all duration-500">
-                            <h3 className="text-lg font-serif font-black text-gray-950 dark:text-white mb-6 flex items-center gap-3">
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-sm transition-all duration-500">
+                            <h3 className="text-base font-serif font-black text-gray-950 dark:text-white mb-6 flex items-center gap-3">
                                 <Smartphone className="text-purple-600 dark:text-purple-500" size={20} />
                                 Access points
                             </h3>
-                            <div className="flex items-center gap-10">
-                                <div className="h-[200px] w-1/2">
+                            <div className="flex flex-col sm:flex-row items-center gap-4">
+                                <div className="h-[180px] w-full sm:w-1/2 flex justify-center">
                                     <DeviceChart data={deviceStats.devices} colors={COLORS} />
                                 </div>
-                                <div className="space-y-4 w-1/2">
+                                <div className="space-y-3 w-full sm:w-1/2">
                                     {deviceStats.devices.map((d: { name: string; value: number }, i: number) => (
                                         <div key={d.name} className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-600">{d.name}</span>
+                                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-600 truncate">{d.name}</span>
                                             </div>
-                                            <span className="text-sm font-black text-gray-950 dark:text-white transition-colors">{d.value}%</span>
+                                            <span className="text-xs font-black text-gray-950 dark:text-white transition-colors">{d.value}%</span>
                                         </div>
                                     ))}
                                 </div>
@@ -236,7 +236,7 @@ export default function AnalyticsPage() {
                     </div>
 
                     {/* Popular Content */}
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-sm transition-all duration-500">
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-sm transition-all duration-500">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-lg font-serif font-black text-gray-950 dark:text-white flex items-center gap-3">
                                 <Eye className="text-blue-600 dark:text-blue-500" size={20} />
@@ -272,7 +272,7 @@ export default function AnalyticsPage() {
                 {/* Right Column: Real-time Feed & Geo */}
                 <div className="space-y-8">
                     {/* Live Feed */}
-                    <div className="bg-gray-950 dark:bg-black border border-gray-800 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden transition-all duration-500">
+                    <div className="bg-gray-950 dark:bg-black border border-gray-800 rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden transition-all duration-500">
                         <div className="absolute top-0 right-0 p-8">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
@@ -283,22 +283,38 @@ export default function AnalyticsPage() {
                             <Activity size={20} className="text-blue-500" />
                             Pulse stream
                         </h3>
-                        <div className="space-y-6">
-                            {realTimeActivity.slice(0, 10).map((visit: RealTimeVisit) => (
-                                <div key={visit._id} className="flex gap-4 group">
-                                    <div className="flex flex-col items-center gap-1 mt-1">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] group-hover:scale-150 transition-transform" />
-                                        <div className="w-px h-full bg-gray-800" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors">
-                                            Visitor from <span className="text-blue-400">{visit.geoLocation?.country || 'Unknown Port'}</span>
-                                        </p>
-                                        <p className="text-[10px] text-gray-500 dark:text-gray-600 mt-1 flex items-center gap-2">
-                                            Accessed {getTimeAgo(visit._creationTime)}
-                                            <span className="w-1 h-1 rounded-full bg-gray-700" />
-                                            {visit.device}
-                                        </p>
+                        <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                            {realTimeActivity.slice(0, 20).map((visit: RealTimeVisit) => (
+                                <div key={visit._id} className="group relative">
+                                    <div className="flex gap-4">
+                                        <div className="flex flex-col items-center gap-1 mt-1">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)] group-hover:scale-125 transition-transform" />
+                                            <div className="w-px h-full bg-zinc-800" />
+                                        </div>
+                                        <div className="flex-1 pb-4 min-w-0">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="min-w-0">
+                                                    <p className="text-[10px] font-black tracking-tight text-zinc-100 group-hover:text-white transition-colors truncate">
+                                                        <span className="text-zinc-500">FR:</span> {visit.geoLocation?.country || (visit.ipAddress === "127.0.0.1" ? "Local Node" : "Unknown")}
+                                                    </p>
+                                                    {visit.ipAddress === "127.0.0.1" && (
+                                                        <span className="inline-block text-[7px] bg-blue-500/20 text-blue-400 px-1 py-0 rounded border border-blue-500/30 uppercase tracking-tighter mt-1">Live Port</span>
+                                                    )}
+                                                </div>
+                                                <span className="text-[8px] font-black text-zinc-600 uppercase tracking-tighter shrink-0 mt-0.5">{getTimeAgo(visit._creationTime)}</span>
+                                            </div>
+                                            <p className="text-[10px] text-zinc-400 mt-1 line-clamp-1 italic font-serif opacity-70 group-hover:opacity-100 transition-opacity">
+                                                Viewing {visit.url.replace(process.env.NEXT_PUBLIC_SITE_URL || '', '') || '/home'}
+                                            </p>
+                                            <div className="flex items-center gap-3 mt-2">
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 group-hover:border-zinc-700 transition-colors">
+                                                    {visit.device}
+                                                </span>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 group-hover:border-zinc-700 transition-colors">
+                                                    {visit.browser} / {visit.os}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -306,7 +322,7 @@ export default function AnalyticsPage() {
                     </div>
 
                     {/* Geographic Stats */}
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-sm transition-all duration-500">
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-sm transition-all duration-500">
                         <h3 className="text-lg font-serif font-black text-gray-950 dark:text-white mb-8 flex items-center gap-3">
                             <Shield className="text-blue-600 dark:text-blue-500" size={20} />
                             Global footprint
@@ -338,7 +354,7 @@ export default function AnalyticsPage() {
 
 function StatCard({ label, value, icon: Icon, trend, color }: { label: string, value: string, icon: React.ElementType, trend: string, color: 'blue' | 'purple' }) {
     return (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-sm group hover:-translate-y-1 transition-all duration-500">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-sm group hover:-translate-y-1 transition-all duration-500">
             <div className="flex items-center justify-between mb-6">
                 <div className={cn(
                     "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500",

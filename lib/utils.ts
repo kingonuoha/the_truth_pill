@@ -50,3 +50,7 @@ export function getOgImageUrl(title: string) {
   // We use sky blue background (b_rgb:0ea5e9) and a purple gradient overlay (e_gradient_fade)
   return `https://res.cloudinary.com/${cloudName}/image/upload/w_1200,h_630,c_fill,q_auto,f_auto/b_rgb:0ea5e9/e_gradient_fade,y_-0.8,co_rgb:a855f7/l_text:lora_70_bold:${encodedTitle},co_white,w_1000,c_fit,y_-50/l_text:outfit_30_bold:The%20Truth%20Pill,co_white,g_south,y_50/v1/one-pixel.png`;
 }
+export function truncate(str: string, length: number) {
+  if (!str) return "";
+  return str.length > length ? str.substring(0, length - 3) + "..." : str;
+}

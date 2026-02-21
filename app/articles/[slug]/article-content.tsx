@@ -83,20 +83,63 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
         restDelta: 0.001
     });
 
+    const [hasRead, setHasRead] = useState(false);
+
+    useEffect(() => {
+        return scrollYProgress.on("change", (latest) => {
+            if (latest > 0.9 && !hasRead) {
+                setHasRead(true);
+            }
+        });
+    }, [scrollYProgress, hasRead]);
+
+    const transformOembedToIframe = (content: string) => {
+        if (!content) return "";
+
+        // Regex to find <oembed url="..."></oembed>
+        const oembedRegex = /<oembed url="([^"]+)"><\/oembed>/g;
+
+        return content.replace(oembedRegex, (match, url) => {
+            // Check if it's a YouTube URL
+            const youtubeMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^?&\s]+)/);
+
+            if (youtubeMatch && youtubeMatch[1]) {
+                const videoId = youtubeMatch[1];
+                return `<div class="aspect-video w-full my-16 rounded-[2rem] overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-800 bg-black">
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src="https://www.youtube.com/embed/${videoId}" 
+                        title="YouTube video player" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen
+                        class="w-full h-full"
+                    ></iframe>
+                </div>`;
+            }
+
+            return `<div class="my-12 p-8 bg-zinc-50 dark:bg-zinc-900 rounded-[2rem] border border-dashed border-zinc-200 dark:border-zinc-800 text-center">
+                <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-sky-blue hover:underline transition-all uppercase tracking-widest">View External Content →</a>
+            </div>`;
+        });
+    };
+
     const renderContentWithAds = (content: string) => {
         if (!content) return { top: "", bottom: "" };
 
-        const paragraphs = content.split('</p>');
+        // Transform video embeds first
+        const transformedContent = transformOembedToIframe(content);
+
+        const paragraphs = transformedContent.split('</p>');
         if (paragraphs.length > 2) {
             // Reconstruct with middle ad after 2nd paragraph
             const top = paragraphs.slice(0, 2).join('</p>') + '</p>';
             const bottom = paragraphs.slice(2).join('</p>');
 
-            // We can't easily return JSX here to be used in dangerouslySetInnerHTML
-            // So we'll render the article in two parts if needed, or just let AdSlot handle its own visibility
             return { top, bottom };
         }
-        return { top: content, bottom: "" };
+        return { top: transformedContent, bottom: "" };
     };
 
     const splittedContent = renderContentWithAds(article.content || "");
@@ -104,7 +147,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
     if (!article) return null;
 
     return (
-        <main className="min-h-screen bg-white pb-20">
+        <main className="min-h-screen bg-white dark:bg-zinc-950 pb-20 transition-colors duration-500">
             <Navbar />
 
             {/* Reading Progress Bar */}
@@ -112,6 +155,30 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                 className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-blue to-school-purple z-[60] origin-left"
                 style={{ scaleX }}
             />
+
+            {/* Read Completion Badge */}
+            <AnimatePresence>
+                {hasRead && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[55]"
+                    >
+                        <div className="bg-white dark:bg-zinc-900 px-6 py-3 rounded-full border border-zinc-100 dark:border-zinc-800 shadow-2xl flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="text-white text-[10px] font-black"
+                                >
+                                    ✓
+                                </motion.div>
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-white">Truth Absorbed</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Article Header */}
             <header className="relative w-full min-h-[70vh] bg-zinc-900 overflow-hidden flex flex-col justify-end">
@@ -122,11 +189,11 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                     className="object-cover opacity-60"
                     priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-zinc-950 via-white/40 dark:via-zinc-950/40 to-transparent" />
 
                 <div className="relative z-10 max-w-5xl mx-auto px-6 pt-32 pb-12 w-full">
                     {/* Breadcrumbs */}
-                    <nav className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest mb-6">
+                    <nav className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 text-xs font-bold uppercase tracking-widest mb-6">
                         <Link href="/" className="hover:text-sky-blue transition-colors">Home</Link>
                         <ChevronRight size={12} />
                         <Link href={`/categories/${article.categorySlug}`} className="hover:text-sky-blue transition-colors">{article.categoryName}</Link>
@@ -144,7 +211,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.1 }}
-                        className="text-3xl md:text-5xl lg:text-7xl font-serif font-bold text-zinc-900 leading-tight tracking-tight max-w-4xl"
+                        className="text-3xl md:text-5xl lg:text-7xl font-serif font-bold text-zinc-900 dark:text-white leading-tight tracking-tight max-w-4xl"
                     >
                         {article.title}
                     </motion.h1>
@@ -166,18 +233,18 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                                 />
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-sm font-black uppercase tracking-tighter text-zinc-900">{article.authorName}</span>
-                                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest leading-none">Verified Author</span>
+                                <span className="text-sm font-black uppercase tracking-tighter text-zinc-900 dark:text-zinc-100">{article.authorName}</span>
+                                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest leading-none">Verified Author</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 text-zinc-500 bg-white/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-sm">
+                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 bg-white/50 dark:bg-zinc-900/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm">
                                 <Calendar size={14} className="text-sky-blue" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">
                                     {new Date(article.publishedAt || article.createdAt).toLocaleDateString()}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2 text-zinc-500 bg-white/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-sm">
+                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 bg-white/50 dark:bg-zinc-900/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm">
                                 <Clock size={14} className="text-school-purple" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">{article.readingTime} Min Read</span>
                             </div>
@@ -200,12 +267,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                         <AdSlot position="showAdTopOfArticle" className="mb-12 flex justify-center" />
 
                         <article
-                            className="prose prose-zinc prose-lg dark:prose-invert max-w-none font-serif leading-[1.8] text-zinc-800 dark:text-zinc-200 text-[18px]
-                            prose-headings:font-serif prose-headings:font-bold prose-headings:text-zinc-900 dark:prose-headings:text-white
-                            [&_p]:!mt-12 [&_p]:!mb-12 [&_li_p]:!my-2
-                            prose-blockquote:border-l-4 prose-blockquote:border-sky-blue prose-blockquote:bg-zinc-50 dark:prose-blockquote:bg-zinc-800/50 prose-blockquote:py-4 prose-blockquote:px-8 prose-blockquote:italic prose-blockquote:rounded-r-xl prose-blockquote:text-zinc-700 dark:prose-blockquote:text-zinc-300
-                            prose-strong:text-zinc-900 dark:prose-strong:text-white prose-strong:font-black
-                            prose-img:rounded-3xl prose-img:shadow-2xl prose-img:cursor-zoom-in"
+                            className="article-premium prose prose-zinc prose-lg dark:prose-invert max-w-none prose-headings:font-serif"
                             onClick={(e) => {
                                 const target = e.target as HTMLElement;
                                 if (target.tagName === 'IMG') {
@@ -226,7 +288,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                         <AdSlot position="showAdBottomOfArticle" className="mt-16 mb-8 flex justify-center" />
 
                         {/* Author Bio Card */}
-                        <div className="mt-24 bg-zinc-50 rounded-3xl p-10 flex flex-col md:flex-row items-center gap-8 border border-zinc-100">
+                        <div className="mt-24 bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl p-10 flex flex-col md:flex-row items-center gap-8 border border-zinc-100 dark:border-zinc-800 transition-colors">
                             <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-xl flex-shrink-0">
                                 {article.authorImage ? (
                                     <Image src={article.authorImage} alt={article.authorName} width={96} height={96} className="object-cover" />
@@ -237,8 +299,8 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                                 )}
                             </div>
                             <div className="flex-1 text-center md:text-left">
-                                <h3 className="text-2xl font-serif font-bold mb-2">{article.authorName}</h3>
-                                <p className="text-zinc-500 font-light text-sm leading-relaxed mb-4">
+                                <h3 className="text-2xl font-serif font-bold mb-2 text-zinc-900 dark:text-white">{article.authorName}</h3>
+                                <p className="text-zinc-500 dark:text-zinc-400 font-light text-sm leading-relaxed mb-4">
                                     Deep diver into human behavior and mental models. Passionate about uncovering the hidden truths that shape our lives.
                                 </p>
                                 <Link
@@ -283,9 +345,9 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
             </div>
 
             {/* Mobile Recommended Sections */}
-            <div className="xl:hidden bg-zinc-50 border-t border-zinc-100 mt-20 py-20 px-6">
+            <div className="xl:hidden bg-zinc-50 dark:bg-zinc-900/30 border-t border-zinc-100 dark:border-zinc-800 mt-20 py-20 px-6">
                 <div className="max-w-3xl mx-auto">
-                    <h2 className="text-2xl font-serif font-bold mb-8">Related Insights</h2>
+                    <h2 className="text-2xl font-serif font-bold mb-8 text-zinc-900 dark:text-white">Related Insights</h2>
                     {article.categoryId && (
                         <RelatedArticles categoryId={article.categoryId} excludeId={article._id} />
                     )}
@@ -330,10 +392,10 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.5, y: 20 }}
                         onClick={scrollToTop}
-                        className="fixed bottom-8 right-8 z-50 w-14 h-14 bg-zinc-900 text-white rounded-2xl shadow-2xl flex items-center justify-center hover:bg-sky-blue hover:-translate-y-2 transition-all duration-300 group"
+                        className="fixed bottom-8 right-8 z-50 w-14 h-14 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-2xl shadow-2xl flex items-center justify-center hover:bg-sky-blue dark:hover:bg-sky-blue hover:-translate-y-2 transition-all duration-300 group"
                     >
                         <ChevronUp size={24} className="group-hover:animate-bounce" />
-                        <div className="absolute -top-12 right-0 bg-zinc-900 text-[10px] font-black uppercase tracking-widest text-white px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                        <div className="absolute -top-12 right-0 bg-zinc-900 dark:bg-zinc-800 text-[10px] font-black uppercase tracking-widest text-white px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                             Scroll to Top
                         </div>
                     </motion.button>

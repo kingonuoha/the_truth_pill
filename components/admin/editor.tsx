@@ -1,17 +1,95 @@
+"use client";
+
+import React, { useEffect, useRef } from 'react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import {
+    ClassicEditor,
+    AccessibilityHelp,
+    Autoformat,
+    Autosave,
+    BlockQuote,
+    Bold,
+    Code,
+    CodeBlock,
+    Essentials,
+    FindAndReplace,
+    FontBackgroundColor,
+    FontColor,
+    FontFamily,
+    FontSize,
+    GeneralHtmlSupport,
+    Heading,
+    Highlight,
+    HorizontalLine,
+    ImageBlock,
+    ImageCaption,
+    ImageInline,
+    ImageInsert,
+    ImageInsertViaUrl,
+    ImageResize,
+    ImageStyle,
+    ImageTextAlternative,
+    ImageToolbar,
+    ImageUpload,
+    Indent,
+    IndentBlock,
+    Italic,
+    Link,
+    LinkImage,
+    List,
+    ListProperties,
+    MediaEmbed,
+    Mention,
+    PageBreak,
+    Paragraph,
+    PasteFromOffice,
+    RemoveFormat,
+    SelectAll,
+    SpecialCharacters,
+    SpecialCharactersEssentials,
+    Strikethrough,
+    Style,
+    Subscript,
+    Superscript,
+    Table,
+    TableCaption,
+    TableCellProperties,
+    TableColumnResize,
+    TableProperties,
+    TableToolbar,
+    TextTransformation,
+    Underline,
+    Undo,
+    WordCount,
+    Alignment,
+    TodoList
+} from 'ckeditor5';
+
+import 'ckeditor5/ckeditor5.css';
 import { marked } from 'marked';
-import dompurify from 'dompurify';
-import dynamic from 'next/dynamic';
+import DOMPurify from 'dompurify';
 import { uploadImage } from '@/app/actions/upload-image';
+import { toast } from 'sonner';
 
 // Custom Upload Adapter for CKEditor
 class CloudinaryUploadAdapter {
-    loader: { file: Promise<File> };
-    constructor(loader: { file: Promise<File> }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    loader: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(loader: any) {
         this.loader = loader;
     }
 
     upload(): Promise<{ default: string }> {
         return this.loader.file.then((file: File) => new Promise((resolve, reject) => {
+            // Article body image limit: 20MB
+            const MAX_SIZE = 20 * 1024 * 1024;
+            if (file.size > MAX_SIZE) {
+                const error = "Body image exceeds 20MB limit.";
+                toast.error(error);
+                return reject(error);
+            }
+
             const formData = new FormData();
             formData.append("file", file);
 
@@ -30,153 +108,124 @@ class CloudinaryUploadAdapter {
     abort() { }
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function MyCustomUploadAdapterPlugin(editor: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     editor.plugins.get('FileRepository').createUploadAdapter = (loader: any) => {
         return new CloudinaryUploadAdapter(loader);
     };
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
-// Dynamic import for CKEditor to avoid SSR issues
-const CKEditorWrapper = dynamic(
-    () => import('@ckeditor/ckeditor5-react').then(mod => mod.CKEditor),
-    { ssr: false }
-);
-
-// Use a safer way to import the classic build
-/* eslint-disable @typescript-eslint/no-require-imports */
-const ClassicEditor = typeof window !== 'undefined' ? require('@ckeditor/ckeditor5-build-classic') : null;
-/* eslint-enable @typescript-eslint/no-require-imports */
 
 interface EditorProps {
     content: string;
     onChange: (content: string) => void;
+    onLengthChange?: (count: number) => void;
 }
 
-export default function Editor({ content, onChange }: EditorProps) {
-    if (!ClassicEditor) return <div className="h-[400px] bg-zinc-50 animate-pulse rounded-2xl" />;
+export default function Editor({ content, onChange, onLengthChange }: EditorProps) {
+    const onLengthChangeRef = useRef(onLengthChange);
+
+    useEffect(() => {
+        onLengthChangeRef.current = onLengthChange;
+    }, [onLengthChange]);
+
+    const editorConfig = {
+        plugins: [
+            AccessibilityHelp, Autoformat, Autosave, BlockQuote, Bold, Code, CodeBlock, Essentials,
+            FindAndReplace, FontBackgroundColor, FontColor, FontFamily, FontSize, GeneralHtmlSupport,
+            Heading, Highlight, HorizontalLine, ImageBlock, ImageCaption, ImageInline, ImageInsert,
+            ImageInsertViaUrl, ImageResize, ImageStyle, ImageTextAlternative, ImageToolbar, ImageUpload,
+            Indent, IndentBlock, Italic, Link, LinkImage, List, ListProperties, MediaEmbed, Mention,
+            PageBreak, Paragraph, PasteFromOffice, RemoveFormat, SelectAll, SpecialCharacters,
+            SpecialCharactersEssentials, Strikethrough, Style, Subscript, Superscript, Table,
+            TableCaption, TableCellProperties, TableColumnResize, TableProperties, TableToolbar,
+            TextTransformation, Underline, Undo, WordCount,
+            Alignment, TodoList,
+            MyCustomUploadAdapterPlugin
+        ],
+        toolbar: {
+            items: [
+                'undo', 'redo',
+                '|', 'heading',
+                '|', 'style',
+                '|', 'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor',
+                '|', 'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript', 'code', 'removeFormat',
+                '|', 'specialCharacters', 'horizontalLine', 'pageBreak',
+                '|', 'link', 'insertImage', 'mediaEmbed', 'insertTable', 'blockQuote', 'codeBlock',
+                '|', 'alignment',
+                '|', 'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent'
+            ],
+            shouldNotGroupWhenFull: true
+        },
+        image: {
+            toolbar: [
+                'toggleImageCaption', 'imageTextAlternative', '|',
+                'imageStyle:inline', 'imageStyle:block', 'imageStyle:side', '|',
+                'resizeImage'
+            ]
+        },
+        table: {
+            contentToolbar: [
+                'tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties'
+            ]
+        },
+        heading: {
+            options: [
+                { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
+                { model: 'heading5', view: 'h5', title: 'Heading 5', class: 'ck-heading_heading5' },
+                { model: 'heading6', view: 'h6', title: 'Heading 6', class: 'ck-heading_heading6' }
+            ]
+        },
+        placeholder: 'Start writing your truth...',
+        licenseKey: 'GPL',
+        wordCount: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onUpdate: (stats: any) => {
+                if (onLengthChangeRef.current) onLengthChangeRef.current(stats.characters);
+            }
+        }
+    };
 
     return (
-        <div className="prose-editor">
-            <CKEditorWrapper
+        <div className="prose-editor space-y-2">
+            <CKEditor
                 editor={ClassicEditor}
                 data={content}
-                config={{
-                    extraPlugins: [MyCustomUploadAdapterPlugin],
-                    toolbar: [
-                        'heading',
-                        '|',
-                        'bold',
-                        'italic',
-                        'link',
-                        'bulletedList',
-                        'numberedList',
-                        '|',
-                        'outdent',
-                        'indent',
-                        '|',
-                        'imageUpload',
-                        'blockQuote',
-                        'insertTable',
-                        'mediaEmbed',
-                        'undo',
-                        'redo'
-                    ],
-                    // Removed extra plugins that aren't in classic build to avoid errors
-                    image: {
-                        toolbar: [
-                            'imageStyle:inline',
-                            'imageStyle:block',
-                            'imageStyle:side',
-                            '|',
-                            'toggleImageCaption',
-                            'imageTextAlternative'
-                        ]
-                    }
-                }}
-                /* eslint-disable @typescript-eslint/no-explicit-any */
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                config={editorConfig as any}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onReady={(editor: any) => {
                     // Handle markdown paste
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     editor.editing.view.document.on('clipboardInput', (evt: any, data: any) => {
                         const dataTransfer = data.dataTransfer;
                         const textData = dataTransfer.getData('text/plain');
 
-                        // Simple heuristic to detect markdown: presence of headers, bold, or lists
                         const isMarkdown = /^#\s|^\*|\*\*.+\*\*|^-\s|^>.+\n|^\[.+\]\(.+\)/m.test(textData);
                         const hasHtml = dataTransfer.getData('text/html');
 
                         if (isMarkdown && !hasHtml) {
-                            // Convert markdown to HTML
-                            const html = dompurify.sanitize(marked.parse(textData) as string);
-                            // Set the HTML to the clipboard data
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const html = DOMPurify.sanitize(marked.parse(textData) as any);
                             data.content = editor.data.processor.toView(html);
                         }
                     });
+
+                    // Update parent with length on load
+                    const wordCountPlugin = editor.plugins.get('WordCount');
+                    if (onLengthChangeRef.current) onLengthChangeRef.current(wordCountPlugin.characters);
                 }}
-                /* eslint-enable @typescript-eslint/no-explicit-any */
-                /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onChange={(_event: any, editor: any) => {
                     const data = editor.getData();
                     onChange(data);
                 }}
             />
-            <style jsx global>{`
-                .prose-editor .ck-content {
-                    min-height: 400px !important;
-                    border-bottom-left-radius: 1.5rem !important;
-                    border-bottom-right-radius: 1.5rem !important;
-                    font-family: ui-serif, Georgia, serif;
-                    font-size: 1.125rem;
-                    line-height: 1.8;
-                    padding: 3rem !important;
-                    border-color: #f4f4f5 !important;
-                    background: white !important;
-                    color: #27272a;
-                }
-                .prose-editor .ck-toolbar {
-                    border-top-left-radius: 1.5rem !important;
-                    border-top-right-radius: 1.5rem !important;
-                    background: #fafafa !important;
-                    padding: 0.5rem 1rem !important;
-                    border-color: #f4f4f5 !important;
-                    border-top: 1px solid #f4f4f5 !important;
-                    border-left: 1px solid #f4f4f5 !important;
-                    border-right: 1px solid #f4f4f5 !important;
-                }
-                .prose-editor .ck.ck-editor__main>.ck-editor__editable:not(.ck-focused) {
-                    border-color: #f4f4f5 !important;
-                }
-                .prose-editor .ck-editor__main > .ck-editor__editable.ck-focused {
-                    border-color: #0ea5e966 !important;
-                    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.05) !important;
-                }
-                .prose-editor .ck.ck-toolbar {
-                    border-bottom: 1px solid #f4f4f5 !important;
-                }
-                .prose-editor .ck-content h1, 
-                .prose-editor .ck-content h2, 
-                .prose-editor .ck-content h3 {
-                    font-family: ui-serif, Georgia, serif;
-                    font-weight: 900;
-                    color: #09090b;
-                    margin-top: 2rem;
-                    margin-bottom: 1rem;
-                }
-                .prose-editor .ck-content blockquote {
-                    border-left: 4px solid #a855f7;
-                    background: #faf5ff;
-                    padding: 1.5rem;
-                    border-radius: 0.5rem;
-                    font-style: italic;
-                    color: #6b21a8;
-                }
-                .prose-editor .ck-content img {
-                    border-radius: 1.5rem;
-                    border: 1px solid #f4f4f5;
-                    margin: 2rem 0;
-                }
-            `}</style>
+
         </div>
     );
 }

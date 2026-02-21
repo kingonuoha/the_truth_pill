@@ -3,7 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { ArticleContent } from "./article-content";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getOgImageUrl } from "@/lib/utils";
+import { getOgImageUrl, truncate } from "@/lib/utils";
 
 export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
@@ -21,8 +21,11 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
         };
     }
 
-    const title = `${article.title} | The Truth Pill`;
-    const description = article.excerpt || "A deep dive into psychology and human behavior.";
+    // SEO Standards: Title ~60 chars, Description ~155 chars
+    const rawTitle = `${article.title} | The Truth Pill`;
+    const title = truncate(rawTitle, 60);
+    const rawDescription = article.excerpt || "A deep dive into psychology and human behavior.";
+    const description = truncate(rawDescription, 155);
     const image = article.coverImage || getOgImageUrl(article.title);
 
     return {

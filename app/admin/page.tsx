@@ -128,7 +128,7 @@ export default function AdminDashboard() {
             <div className="grid lg:grid-cols-3 gap-8">
                 {/* Analytics Chart */}
                 <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white dark:bg-gray-900 p-8 md:p-10 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden group transition-all duration-500">
+                    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden group transition-all duration-500">
                         <div className="flex items-center justify-between mb-12">
                             <div>
                                 <h3 className="text-2xl font-serif font-black text-gray-950 dark:text-white flex items-center gap-3 italic transition-colors">
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
 
                     {/* Secondary Metrics */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-gray-950 dark:bg-black text-white p-8 rounded-2xl group relative overflow-hidden shadow-2xl border border-transparent dark:border-gray-900 transition-all duration-500">
+                        <div className="bg-gray-950 dark:bg-black text-white p-6 rounded-2xl group relative overflow-hidden shadow-2xl border border-transparent dark:border-gray-900 transition-all duration-500">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl rounded-full -mr-16 -mt-16" />
                             <div className="relative z-10 flex items-center justify-between">
                                 <div>
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm group relative overflow-hidden transition-all duration-500">
+                        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm group relative overflow-hidden transition-all duration-500">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl rounded-full -mr-16 -mt-16" />
                             <div className="relative z-10 flex items-center justify-between">
                                 <div>
@@ -242,8 +242,8 @@ export default function AdminDashboard() {
 
                 {/* Recent Activity */}
                 <div className="space-y-4">
-                    <div className="bg-white dark:bg-gray-900 p-8 md:p-10 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm h-full flex flex-col transition-all duration-500">
-                        <div className="flex items-center justify-between mb-10 pb-6 border-b border-gray-50 dark:border-gray-800">
+                    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm h-full flex flex-col transition-all duration-500">
+                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-50 dark:border-gray-800">
                             <div>
                                 <h3 className="text-2xl font-serif font-black text-gray-950 dark:text-white italic">Live Stream</h3>
                                 <p className="text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest mt-1">Real-time pulses</p>
