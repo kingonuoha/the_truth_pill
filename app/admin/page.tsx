@@ -128,7 +128,7 @@ export default function AdminDashboard() {
             <div className="grid lg:grid-cols-3 gap-8">
                 {/* Analytics Chart */}
                 <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden group transition-all duration-500">
+                    <div className="bg-white dark:bg-card p-8 rounded-[2rem] border-2 border-primary/10 shadow-xl overflow-hidden relative group">
                         <div className="flex items-center justify-between mb-12">
                             <div>
                                 <h3 className="text-2xl font-serif font-black text-gray-950 dark:text-white flex items-center gap-3 italic transition-colors">
@@ -292,7 +292,7 @@ function StatCard({
     };
 
     return (
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-500 group relative overflow-hidden flex flex-col">
+        <div className="p-6 rounded-3xl transition-all border border-zinc-100 dark:border-white/5 bg-white dark:bg-card shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-500 group relative overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-8">
                 <div className={cn("w-12 h-12 rounded-xl border flex items-center justify-center transition-all duration-500 group-hover:scale-110", variants[color])}>
                     <Icon size={20} />
@@ -300,7 +300,9 @@ function StatCard({
                 {trend && (
                     <span className={cn(
                         "text-[9px] font-black flex items-center px-2 py-1 rounded-lg transition-all tracking-widest uppercase",
-                        trendUp ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
+                        trendUp
+                            ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-100 dark:border-green-900/50'
+                            : 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50'
                     )}>
                         {trendUp ? <ArrowUpRight size={10} className="mr-1" /> : <ArrowDownRight size={10} className="mr-1" />}
                         {trend}

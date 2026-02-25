@@ -74,7 +74,6 @@ export default async function Home() {
 
       {/* Methodology Section */}
       <SplitFeature />
-
       {/* Content Showcase Section */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-6 md:px-10">

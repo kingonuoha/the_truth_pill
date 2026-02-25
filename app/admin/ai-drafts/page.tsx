@@ -26,19 +26,19 @@ export default function AIDraftsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-serif font-black text-gray-950 tracking-tight">Refiner</h1>
-                    <p className="text-gray-500 mt-1 font-medium font-sans">Review and polish autonomous content generations.</p>
+                    <h1 className="text-4xl font-serif font-black text-gray-950 dark:text-white tracking-tight">Refiner</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium font-sans">Review and polish autonomous content generations.</p>
                 </div>
-                <div className="px-5 py-2.5 bg-purple-50 rounded-xl border border-purple-100 flex items-center gap-3 shadow-sm shadow-purple-50">
-                    <Sparkles size={18} className="text-purple-600" />
-                    <span className="text-xs font-black uppercase tracking-[0.15em] text-purple-600">Active Pipeline: {drafts.length}</span>
+                <div className="px-5 py-2.5 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800 flex items-center gap-3 shadow-sm shadow-purple-50 dark:shadow-none">
+                    <Sparkles size={18} className="text-purple-600 dark:text-purple-400" />
+                    <span className="text-xs font-black uppercase tracking-[0.15em] text-purple-600 dark:text-purple-400">Active Pipeline: {drafts.length}</span>
                 </div>
             </div>
 
             {drafts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {drafts.map((draft) => (
-                        <div key={draft._id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden group hover:border-purple-300 hover:shadow-xl hover:shadow-purple-50 transition-all duration-500 flex flex-col">
+                        <div key={draft._id} className="bg-white dark:bg-cardrounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden group hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-xl hover:shadow-purple-50 dark:hover:shadow-purple-900/10 transition-all duration-500 flex flex-col">
                             <div className="aspect-[16/10] relative overflow-hidden">
                                 <Image
                                     src={draft.coverImage || "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80"}
@@ -54,24 +54,24 @@ export default function AIDraftsPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-6 space-y-4 flex-1 flex flex-col bg-white">
+                            <div className="p-6 space-y-4 flex-1 flex flex-col bg-white dark:bg-background-900">
                                 <div className="flex-1">
-                                    <h3 className="font-serif font-black text-xl text-gray-950 line-clamp-2 tracking-tight group-hover:text-purple-600 transition-colors duration-300 min-h-[56px]">
+                                    <h3 className="font-serif font-black text-xl text-gray-950 dark:text-white line-clamp-2 tracking-tight group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300 min-h-[56px]">
                                         {draft.title}
                                     </h3>
-                                    <p className="text-[13px] text-gray-500 line-clamp-2 mt-3 leading-relaxed font-medium">
+                                    <p className="text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-3 leading-relaxed font-medium">
                                         {draft.excerpt}
                                     </p>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-5 border-t border-gray-50 mt-2">
-                                    <div className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-[0.1em]">
-                                        <Calendar size={14} className="text-gray-300" />
+                                <div className="flex items-center justify-between pt-5 border-t border-gray-50 dark:border-zinc-800 mt-2">
+                                    <div className="flex items-center gap-2 text-gray-400 dark:text-zinc-500 text-[10px] font-black uppercase tracking-[0.1em]">
+                                        <Calendar size={14} className="text-gray-300 dark:text-zinc-600" />
                                         {format(draft.createdAt, "MMM d, yyyy")}
                                     </div>
                                     <Link
                                         href={`/admin/articles/${draft._id}/edit`}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 active:scale-90 shadow-sm shadow-purple-100"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 active:scale-90 shadow-sm shadow-purple-100 dark:shadow-none"
                                         title="Refine & Review"
                                     >
                                         <Edit2 size={14} />
@@ -83,7 +83,7 @@ export default function AIDraftsPage() {
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-40 bg-white rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden group">
+                <div className="text-center py-40 bg-white dark:bg-cardrounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm relative overflow-hidden group">
                     <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
                         <Image
                             src="/illustrations/Idea.svg"
@@ -93,14 +93,14 @@ export default function AIDraftsPage() {
                         />
                     </div>
                     <div className="relative z-10">
-                        <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-gray-100 group-hover:rotate-12 transition-transform duration-500">
-                            <Sparkles size={40} className="text-gray-200" />
+                        <div className="w-20 h-20 bg-gray-50 dark:bg-background-800 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-gray-100 dark:border-zinc-700 group-hover:rotate-12 transition-transform duration-500">
+                            <Sparkles size={40} className="text-gray-200 dark:text-zinc-700" />
                         </div>
-                        <p className="text-gray-500 font-black uppercase text-xs tracking-[0.2em]">Zero artifacts in pipeline</p>
-                        <p className="text-gray-400 text-[11px] mt-2 font-medium">Your digital scribe is currently dormant</p>
+                        <p className="text-gray-500 dark:text-gray-400 font-black uppercase text-xs tracking-[0.2em]">Zero artifacts in pipeline</p>
+                        <p className="text-gray-400 dark:text-zinc-500 text-[11px] mt-2 font-medium">Your digital scribe is currently dormant</p>
                         <Link
                             href="/admin/settings/ai"
-                            className="inline-flex items-center gap-2 mt-8 text-purple-600 font-black uppercase text-[10px] tracking-[0.15em] hover:bg-purple-50 px-6 py-3 rounded-xl border border-purple-100 transition-all shadow-sm"
+                            className="inline-flex items-center gap-2 mt-8 text-purple-600 dark:text-purple-400 font-black uppercase text-[10px] tracking-[0.15em] hover:bg-purple-50 dark:hover:bg-purple-900/20 px-6 py-3 rounded-xl border border-purple-100 dark:border-purple-800 transition-all shadow-sm"
                         >
                             <Edit2 size={12} />
                             Configure Scribe

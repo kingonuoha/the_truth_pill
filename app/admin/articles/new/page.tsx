@@ -17,7 +17,7 @@ export default function NewArticlePage() {
                     Back to Articles
                 </Link>
                 <div>
-                    <h1 className="text-3xl font-serif font-bold text-zinc-900">Create New Article</h1>
+                    <h1 className="text-3xl font-serif font-bold dark:text-zinc-900">Create New Article</h1>
                     <p className="text-zinc-500 mt-1 uppercase text-[10px] font-black tracking-widest">Craft your next viral piece of truth.</p>
                 </div>
             </div>

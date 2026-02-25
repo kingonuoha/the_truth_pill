@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { AdSenseScript } from "@/components/adsense-script";
 import { SmoothScroll } from "@/components/smooth-scroll";
+import { ThemeShortcut } from "@/components/theme-shortcut";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
     description: "A psychology-focused content platform for living a full life and understanding human behavior.",
     images: [
       {
-        url: "/the-truth-pill-og.jpg",
+        url: "/truthpill/logo-icon.png",
         width: 1200,
         height: 630,
         alt: "The Truth Pill - Insight into Human Behavior",
@@ -52,8 +53,13 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The Truth Pill | Insight into Human Behavior",
     description: "A psychology-focused content platform for living a full life and understanding human behavior.",
-    images: ["/the-truth-pill-og.jpg"],
+    images: ["/truthpill/logo-icon.png"],
   },
+  icons: {
+    icon: "/truthpill/logo-icon-svg.ico",
+    shortcut: "/truthpill/logo-icon-svg.svg",
+    apple: "/truthpill/logo-icon.png",
+  }
 };
 
 export default function RootLayout({
@@ -73,6 +79,7 @@ export default function RootLayout({
               <AuthRedirect />
               <AdSenseScript />
               <Toaster position="top-right" richColors />
+              <ThemeShortcut />
             </Suspense>
             {children}
             <FooterWrapper />

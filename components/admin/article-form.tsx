@@ -6,12 +6,12 @@ import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-    Calendar, Image as ImageIcon, Loader2, Plus, Save, X, Upload
+    Calendar, Image as ImageIcon, Loader2, Save, X, Upload
 } from "lucide-react";
 import dynamic from "next/dynamic";
 const Editor = dynamic(() => import("./editor"), {
     ssr: false,
-    loading: () => <div className="h-[600px] bg-zinc-50 animate-pulse rounded-2xl flex items-center justify-center text-zinc-400 font-black uppercase tracking-widest text-xs">Initializing Premium Editor...</div>
+    loading: () => <div className="h-[600px] bg-zinc-50 dark:bg-cardanimate-pulse rounded-2xl flex items-center justify-center text-zinc-400 dark:text-zinc-600 font-black uppercase tracking-widest text-xs border border-zinc-100 dark:border-zinc-800">Initializing Premium Editor...</div>
 });
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -109,7 +109,12 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
         setMissingAltCount(missingAlt);
     }, [formData.content]);
 
-    // Auto-generate slug from title
+    const [isMetaTitleTouched, setIsMetaTitleTouched] = useState(false);
+    const [isMetaDescriptionTouched, setIsMetaDescriptionTouched] = useState(false);
+    const [isFocusKeywordTouched, setIsFocusKeywordTouched] = useState(false);
+    const [isExcerptTouched, setIsExcerptTouched] = useState(false);
+
+    // Auto-generate slug and sync fields
     useEffect(() => {
         if (!isEditing && formData.title) {
             setFormData(prev => ({
@@ -122,15 +127,35 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
         }
     }, [formData.title, isEditing]);
 
-    // Auto-suggest meta title from title
+    // Sync Title -> Meta Title
     useEffect(() => {
-        if (!formData.metaTitle && formData.title) {
+        if (!isMetaTitleTouched && formData.title) {
             setFormData(prev => ({
                 ...prev,
                 metaTitle: formData.title.length > 60 ? formData.title.substring(0, 57) + "..." : formData.title
             }));
         }
-    }, [formData.title, formData.metaTitle]);
+    }, [formData.title, isMetaTitleTouched]);
+
+    // Sync Excerpt <-> Meta Description
+    useEffect(() => {
+        if (!isMetaDescriptionTouched && formData.excerpt) {
+            setFormData(prev => ({ ...prev, metaDescription: formData.excerpt }));
+        }
+    }, [formData.excerpt, isMetaDescriptionTouched]);
+
+    useEffect(() => {
+        if (!isExcerptTouched && formData.metaDescription) {
+            setFormData(prev => ({ ...prev, excerpt: formData.metaDescription.substring(0, 225) }));
+        }
+    }, [formData.metaDescription, isExcerptTouched]);
+
+    // Sync Tags -> Focus Keyword
+    useEffect(() => {
+        if (!isFocusKeywordTouched && formData.tags.length > 0) {
+            setFormData(prev => ({ ...prev, focusKeyword: formData.tags[0] }));
+        }
+    }, [formData.tags, isFocusKeywordTouched]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -311,15 +336,6 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Cover image limit: 1.5MB (1.5 * 1024 * 1024 bytes)
-        const MAX_SIZE = 1.5 * 1024 * 1024;
-        if (file.size > MAX_SIZE) {
-            toast.error("Cover image must be less than 1.5MB. Use TinyPNG or similar to compress.");
-            // Reset input so user can try again
-            if (fileInputRef.current) fileInputRef.current.value = "";
-            return;
-        }
-
         setIsUploading(true);
         try {
             const uploadData = new FormData();
@@ -341,425 +357,412 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
         setFormData(prev => ({ ...prev, tags: prev.tags.filter((t: string) => t !== tagToRemove) }));
     };
 
-    return (
-        <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-                {/* Main Content Card */}
-                <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
+    const [activeTab, setActiveTab] = useState<"general" | "advanced">("general");
+
+    const categoryModal = isCategoryModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm" onClick={() => !isCreatingCategory && setIsCategoryModalOpen(false)} />
+            <div className="relative bg-white dark:bg-card w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 dark:border-white/5 p-8">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-serif font-bold text-zinc-900 dark:text-zinc-100">New Category</h3>
+                    {!isCreatingCategory && (
+                        <button onClick={() => setIsCategoryModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                            <X size={20} />
+                        </button>
+                    )}
+                </div>
+
+                <form onSubmit={handleCreateCategory} className="space-y-6">
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Article Title</label>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Category Name</label>
                         <input
                             type="text"
-                            required
-                            value={formData.title}
-                            onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                            placeholder="Enter a compelling title..."
-                            className="w-full text-2xl font-serif font-bold bg-transparent border-b border-zinc-100 py-2 focus:outline-none focus:border-primary transition-colors placeholder:text-zinc-300"
-                        />
-                        {isEditing && initialData?.updatedAt && (
-                            <div className="text-[10px] text-zinc-400 mt-2 font-mono">
-                                Last edited: {new Date(initialData.updatedAt).toLocaleString()}
-                                {/* Show engagement stats ONLY if editing and published */}
-                                {initialData.status === 'published' && (
-                                    <span className="ml-4 text-purple-600">
-                                        Views: {initialData.viewCount} • Unique: {initialData.uniqueViewCount}
-                                    </span>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Short Excerpt {formData.status !== 'draft' && <span className="text-red-500">*</span>}</label>
-                            <span className={cn(
-                                "text-[10px] font-black tabular-nums transition-colors",
-                                formData.excerpt.length > 225 ? "text-red-500" :
-                                    formData.excerpt.length > 200 ? "text-orange-500" : "text-zinc-400"
-                            )}>
-                                {formData.excerpt.length} / 225
-                            </span>
-                        </div>
-                        <textarea
-                            required={formData.status !== 'draft'}
-                            value={formData.excerpt}
+                            value={newCategory.name}
                             onChange={e => {
-                                // Limit to 225 characters as requested in bug tracker 21
-                                if (e.target.value.length <= 225) {
-                                    setFormData(prev => ({ ...prev, excerpt: e.target.value }));
-                                }
+                                const name = e.target.value;
+                                const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                                setNewCategory(prev => ({ ...prev, name, slug }));
                             }}
-                            placeholder="Brief summary for indexing and cards..."
-                            rows={3}
-                            className="w-full resize-none bg-zinc-50 border border-zinc-100 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all text-zinc-600 font-medium leading-relaxed"
+                            className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-3 font-bold text-sm outline-none dark:text-zinc-100 dark:placeholder:text-zinc-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            placeholder="e.g., Psychology"
                         />
                     </div>
-
                     <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Rich Content</label>
-                            <div className="flex items-center gap-4">
-                                <div className={cn(
-                                    "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider",
-                                    charCount >= 800 ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-600"
-                                )}>
-                                    <span className="tabular-nums">{charCount}</span> / 800 Characters
-                                </div>
-                                <div className={cn(
-                                    "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider",
-                                    readabilityScore > 60 ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
-                                )}>
-                                    Score: {readabilityScore < 30 ? 'High Complexity' : readabilityScore < 60 ? 'Moderate' : 'Readable'} ({readabilityScore})
-                                </div>
-                            </div>
-                        </div>
-                        <Editor
-                            content={formData.content}
-                            onChange={content => setFormData(prev => ({ ...prev, content }))}
-                            onLengthChange={setCharCount}
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Category Slug</label>
+                        <input
+                            type="text"
+                            value={newCategory.slug}
+                            onChange={e => setNewCategory(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') }))}
+                            className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-3 font-bold text-sm outline-none dark:text-zinc-100 dark:placeholder:text-zinc-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            placeholder="psychology"
                         />
-                        <div className="mt-4 flex flex-wrap gap-4">
-                            <div className={cn(
-                                "flex items-center gap-2 text-[10px] font-bold uppercase",
-                                headingStructure.hasH2 ? "text-green-600" : "text-zinc-400"
-                            )}>
-                                <div className={cn("w-2 h-2 rounded-full", headingStructure.hasH2 ? "bg-green-500" : "bg-zinc-200")} />
-                                At least one H2
-                            </div>
-                            <div className={cn(
-                                "flex items-center gap-2 text-[10px] font-bold uppercase",
-                                headingStructure.multipleH1 ? "text-red-600" : "text-green-600"
-                            )}>
-                                <div className={cn("w-2 h-2 rounded-full", headingStructure.multipleH1 ? "bg-red-500" : "bg-green-500")} />
-                                {headingStructure.multipleH1 ? "Multiple H1s alert" : "Clean Heading Hierarchy"}
-                            </div>
-                            <div className={cn(
-                                "flex items-center gap-2 text-[10px] font-bold uppercase",
-                                missingAltCount === 0 ? "text-green-600" : "text-red-600"
-                            )}>
-                                <div className={cn("w-2 h-2 rounded-full", missingAltCount === 0 ? "bg-green-500" : "bg-red-500")} />
-                                {missingAltCount === 0 ? "All images have Alt Text" : `${missingAltCount} images missing Alt Text`}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="space-y-6">
-                {/* Publishing Card */}
-                <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 border-b border-zinc-50 pb-4">Status & Visibility</h3>
-
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Publish Status</label>
-                            <select
-                                value={formData.status}
-                                onChange={e => setFormData(prev => ({ ...prev, status: e.target.value as "draft" | "published" | "scheduled" }))}
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 font-bold text-sm outline-none appearance-none cursor-pointer hover:bg-zinc-100 transition-colors"
-                            >
-                                <option value="draft">Draft (Stay Hidden)</option>
-                                <option value="published">Publish Now (Publicly Visible)</option>
-                                <option value="scheduled">Schedule (Future Release)</option>
-                            </select>
-                        </div>
-
-                        {formData.status === "scheduled" && (
-                            <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Schedule For</label>
-                                <div className="relative">
-                                    <input
-                                        type="datetime-local"
-                                        value={scheduledDate}
-                                        onChange={(e) => setScheduledDate(e.target.value)}
-                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 font-bold text-sm outline-none"
-                                    />
-                                    <Calendar className="absolute right-4 top-2.5 text-zinc-400 pointer-events-none" size={16} />
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                            <div className="flex flex-col">
-                                <span className="text-xs font-black text-zinc-900">Featured Article</span>
-                                <span className="text-[10px] text-zinc-400 font-medium">Show in hero section</span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setFormData(prev => ({ ...prev, isFeatured: !prev.isFeatured }))}
-                                className={cn(
-                                    "w-10 h-5 rounded-full transition-all relative",
-                                    formData.isFeatured ? "bg-primary" : "bg-zinc-300"
-                                )}
-                            >
-                                <div className={cn(
-                                    "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
-                                    formData.isFeatured ? "left-6" : "left-1"
-                                )} />
-                            </button>
-                        </div>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={isSubmitting}
-                        className="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+                        disabled={isCreatingCategory || !newCategory.name || !newCategory.slug}
+                        className="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-95 transition-all disabled:opacity-50"
                     >
-                        {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                        {isEditing ? "Update Article" : "Publish Article"}
+                        {isCreatingCategory ? <Loader2 className="animate-spin" size={18} /> : "Create Category"}
                     </button>
-                </div>
+                </form>
+            </div>
+        </div>
+    );
 
-                {/* Organization Card */}
-                <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 border-b border-zinc-50 pb-4">Categorization</h3>
+    return (
+        <>
+            {categoryModal}
+            <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Tabs Header */}
+                    <div className="flex items-center gap-2 p-1 bg-zinc-100 dark:bg-background-800/50 rounded-2xl w-fit">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("general")}
+                            className={cn(
+                                "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                                activeTab === "general" ? "bg-white dark:bg-background-800 text-primary shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                            )}
+                        >
+                            General
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("advanced")}
+                            className={cn(
+                                "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                                activeTab === "advanced" ? "bg-white dark:bg-background-800 text-primary shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                            )}
+                        >
+                            Advanced
+                        </button>
+                    </div>
 
-                    <div className="space-y-4">
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Primary Category</label>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCategoryModalOpen(true)}
-                                    className="text-[10px] font-black uppercase text-primary hover:underline"
-                                >
-                                    + Create New
-                                </button>
+                    {activeTab === "general" ? (
+                        <div className="bg-white dark:bg-card p-8 rounded-3xl border border-zinc-200 dark:border-white/5 shadow-sm space-y-6">
+                            {/* Article Title */}
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Article Title</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.title}
+                                    onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                                    placeholder="Enter a compelling title..."
+                                    className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-2xl px-6 py-4 text-xl font-serif font-black focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all dark:text-zinc-100 dark:placeholder:text-zinc-600"
+                                />
+                                {isEditing && initialData?.updatedAt && (
+                                    <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-2 font-mono">
+                                        Last edited: {new Date(initialData.updatedAt).toLocaleString()}
+                                        {initialData.status === 'published' && (
+                                            <span className="ml-4 text-purple-600">
+                                                Views: {initialData.viewCount} • Unique: {initialData.uniqueViewCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
-                            <select
-                                required
-                                value={formData.categoryId || ""} // Ensure value is string for select
-                                onChange={e => setFormData(prev => ({ ...prev, categoryId: (e.target.value || undefined) as Id<"categories"> | undefined }))}
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 font-bold text-sm outline-none appearance-none cursor-pointer"
-                            >
-                                <option value="">Select Category</option>
-                                {categories?.map(cat => (
-                                    <option key={cat._id} value={cat._id}>{cat.name}</option>
-                                ))}
-                            </select>
-                        </div>
 
-                        {/* Category Modal Overlay */}
-                        {isCategoryModalOpen && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                                <div className="bg-white p-8 rounded-3xl shadow-2xl border border-zinc-100 max-w-md w-full relative">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsCategoryModalOpen(false)}
-                                        className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-600"
-                                    >
-                                        <X size={20} />
-                                    </button>
-                                    <h2 className="text-xl font-serif font-black text-zinc-900 mb-6">New Category</h2>
-                                    <form onSubmit={handleCreateCategory} className="space-y-4">
-                                        <div>
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Category Name</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={newCategory.name}
-                                                onChange={e => {
-                                                    const name = e.target.value;
-                                                    setNewCategory(prev => ({
-                                                        ...prev,
-                                                        name,
-                                                        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-                                                    }));
-                                                }}
-                                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
-                                                placeholder="e.g. Science & Tech"
-                                            />
+                            {/* Excerpt */}
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Short Excerpt {formData.status !== 'draft' && <span className="text-red-500">*</span>}</label>
+                                    <span className={cn(
+                                        "text-[10px] font-black tabular-nums transition-colors",
+                                        formData.excerpt.length > 225 ? "text-red-500" :
+                                            formData.excerpt.length > 200 ? "text-orange-500" : "text-zinc-400 dark:text-zinc-500"
+                                    )}>
+                                        {formData.excerpt.length} / 225
+                                    </span>
+                                </div>
+                                <textarea
+                                    required={formData.status !== 'draft'}
+                                    value={formData.excerpt}
+                                    onChange={e => {
+                                        if (e.target.value.length <= 225) {
+                                            setFormData(prev => ({ ...prev, excerpt: e.target.value }));
+                                            setIsExcerptTouched(true);
+                                        }
+                                    }}
+                                    placeholder="Brief summary for indexing and cards..."
+                                    rows={4}
+                                    maxLength={225}
+                                    className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-2xl px-6 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none dark:text-zinc-100 dark:placeholder:text-zinc-600"
+                                />
+                            </div>
+
+                            {/* Editor */}
+                            <div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Rich Content</label>
+                                    <div className="flex items-center gap-4">
+                                        <div className={cn(
+                                            "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider",
+                                            charCount >= 800 ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400" : "bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400"
+                                        )}>
+                                            <span className="tabular-nums">{charCount}</span> / 800 Characters
                                         </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Slug</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={newCategory.slug}
-                                                onChange={e => setNewCategory(prev => ({ ...prev, slug: e.target.value }))}
-                                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none"
-                                            />
+                                        <div className={cn(
+                                            "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider",
+                                            readabilityScore > 60 ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400" : "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                                        )}>
+                                            Score: {readabilityScore < 30 ? 'High Complexity' : readabilityScore < 60 ? 'Moderate' : 'Readable'} ({readabilityScore})
                                         </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Description (Optional)</label>
-                                            <textarea
-                                                value={newCategory.description}
-                                                onChange={e => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
-                                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:outline-none"
-                                                rows={2}
-                                            />
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={isCreatingCategory}
-                                            className="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-95 transition-all disabled:opacity-50"
-                                        >
-                                            {isCreatingCategory ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
-                                            Create Category
-                                        </button>
-                                    </form>
+                                    </div>
+                                </div>
+                                <Editor
+                                    content={formData.content}
+                                    onChange={content => setFormData(prev => ({ ...prev, content }))}
+                                    onLengthChange={setCharCount}
+                                />
+                                <div className="mt-4 flex flex-wrap gap-4">
+                                    <div className={cn("flex items-center gap-2 text-[10px] font-bold uppercase", headingStructure.hasH2 ? "text-green-600" : "text-zinc-400 dark:text-zinc-500")}>
+                                        <div className={cn("w-2 h-2 rounded-full", headingStructure.hasH2 ? "bg-green-500" : "bg-zinc-200 dark:bg-background-700")} />
+                                        At least one H2
+                                    </div>
+                                    <div className={cn("flex items-center gap-2 text-[10px] font-bold uppercase", headingStructure.multipleH1 ? "text-red-600" : "text-green-600")}>
+                                        <div className={cn("w-2 h-2 rounded-full", headingStructure.multipleH1 ? "bg-red-500" : "bg-green-500")} />
+                                        {headingStructure.multipleH1 ? "Multiple H1s alert" : "Clean Heading Hierarchy"}
+                                    </div>
+                                    <div className={cn("flex items-center gap-2 text-[10px] font-bold uppercase", missingAltCount === 0 ? "text-green-600" : "text-red-600")}>
+                                        <div className={cn("w-2 h-2 rounded-full", missingAltCount === 0 ? "bg-green-500" : "bg-red-500")} />
+                                        {missingAltCount === 0 ? "All images have Alt Text" : `${missingAltCount} images missing Alt Text`}
+                                    </div>
                                 </div>
                             </div>
-                        )}
 
-                        <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">SEO Slug</label>
-                            <input
-                                type="text"
-                                value={formData.slug}
-                                onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2 font-mono text-xs focus:outline-none"
-                            />
-                        </div>
-
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Discovery Tags {formData.status !== 'draft' && <span className="text-red-500">*</span>}</label>
-                                <span className="text-[10px] text-zinc-400 font-bold uppercase">{formData.tags.length} added</span>
+                            {/* Cover Media - Moved inside General Tab */}
+                            <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-4">Cover Media</h3>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="aspect-video bg-zinc-100 dark:bg-background-800/50 rounded-2xl overflow-hidden relative border border-zinc-200 dark:border-zinc-700 group">
+                                        {formData.coverImage ? (
+                                            <>
+                                                <Image src={formData.coverImage} alt="Cover" fill className="object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({ ...prev, coverImage: "" }))}
+                                                    className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500">
+                                                <ImageIcon size={32} strokeWidth={1.5} />
+                                                <span className="text-[10px] font-black uppercase mt-2">No Image Selected</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Image URL</label>
+                                            <input
+                                                type="text"
+                                                value={formData.coverImage}
+                                                onChange={e => setFormData(prev => ({ ...prev, coverImage: e.target.value }))}
+                                                placeholder="Paste URL..."
+                                                className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none dark:text-zinc-100 dark:placeholder:text-zinc-600"
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <input type="file" ref={fileInputRef} onChange={handleUpload} className="hidden" accept="image/*" />
+                                            <button
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                disabled={isUploading}
+                                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-zinc-100 dark:bg-background-800/50 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-100 transition-colors"
+                                            >
+                                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
+                                                Upload from PC
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <input
-                                type="text"
-                                value={tagInput}
-                                onChange={e => setTagInput(e.target.value)}
-                                onKeyDown={addTag}
-                                onPaste={handleTagPaste}
-                                placeholder="Type & press Enter or Comma..."
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none"
-                            />
-                            <div className="flex flex-wrap gap-2 mt-3">
-                                {formData.tags.map(tag => (
-                                    <span key={tag} className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 text-zinc-600 rounded-lg text-[10px] font-black uppercase tracking-wider group hover:bg-zinc-200 transition-colors">
-                                        {tag}
-                                        <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
-                                            <X size={10} strokeWidth={3} />
-                                        </button>
-                                    </span>
-                                ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {/* Categorization Card */}
+                            <div className="bg-white dark:bg-card p-8 rounded-3xl border border-zinc-200 dark:border-white/5 shadow-sm space-y-6">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 border-b border-zinc-50 dark:border-zinc-800 pb-4">Categorization</h3>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Primary Category</label>
+                                            <button type="button" onClick={() => setIsCategoryModalOpen(true)} className="text-[10px] font-black uppercase text-primary hover:underline">+ New</button>
+                                        </div>
+                                        <select
+                                            required
+                                            value={formData.categoryId || ""}
+                                            onChange={e => setFormData(prev => ({ ...prev, categoryId: (e.target.value || undefined) as Id<"categories"> | undefined }))}
+                                            className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-3 font-bold text-sm outline-none appearance-none cursor-pointer dark:text-zinc-100"
+                                        >
+                                            <option value="">Select Category</option>
+                                            {categories?.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">SEO Slug</label>
+                                        <input
+                                            type="text"
+                                            value={formData.slug}
+                                            onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                                            className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-3 font-mono text-xs focus:outline-none dark:text-zinc-100"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Discovery Tags</label>
+                                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase">{formData.tags.length} added</span>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={tagInput}
+                                        onChange={e => setTagInput(e.target.value)}
+                                        onKeyDown={addTag}
+                                        onPaste={handleTagPaste}
+                                        placeholder="Type & press Enter..."
+                                        className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none dark:text-zinc-100 dark:placeholder:text-zinc-600"
+                                    />
+                                    <div className="flex flex-wrap gap-2 mt-3">
+                                        {formData.tags.map(tag => (
+                                            <span key={tag} className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 dark:bg-background-800/50 text-zinc-600 dark:text-zinc-100 rounded-lg text-[10px] font-black uppercase group">
+                                                {tag}
+                                                <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500"><X size={10} strokeWidth={3} /></button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* SEO Optimization Card */}
+                            <div className="bg-white dark:bg-card p-8 rounded-3xl border border-zinc-200 dark:border-white/5 shadow-sm space-y-6">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 border-b border-zinc-50 dark:border-zinc-800 pb-4">SEO Optimization</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Focus Keyword</label>
+                                        <input
+                                            type="text"
+                                            value={formData.focusKeyword}
+                                            onChange={e => {
+                                                setFormData(prev => ({ ...prev, focusKeyword: e.target.value }));
+                                                setIsFocusKeywordTouched(true);
+                                            }}
+                                            placeholder="e.g. Psychology of Power"
+                                            className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none dark:text-zinc-100 dark:placeholder:text-zinc-600"
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Meta Title</label>
+                                            <span className={cn("text-[10px] font-black tabular-nums", formData.metaTitle.length > 60 ? "text-red-500" : "text-zinc-400 dark:text-zinc-500")}>{formData.metaTitle.length} / 60</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={formData.metaTitle}
+                                            onChange={e => {
+                                                setFormData(prev => ({ ...prev, metaTitle: e.target.value }));
+                                                setIsMetaTitleTouched(true);
+                                            }}
+                                            placeholder="SEO Specific Title..."
+                                            className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none dark:text-zinc-100 dark:placeholder:text-zinc-600"
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Meta Description</label>
+                                            <span className={cn("text-[10px] font-black tabular-nums", formData.metaDescription.length > 255 ? "text-red-500" : "text-zinc-400 dark:text-zinc-500")}>{formData.metaDescription.length} / 255</span>
+                                        </div>
+                                        <textarea
+                                            value={formData.metaDescription}
+                                            onChange={e => {
+                                                setFormData(prev => ({ ...prev, metaDescription: e.target.value }));
+                                                setIsMetaDescriptionTouched(true);
+                                            }}
+                                            rows={4}
+                                            className="w-full resize-none bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-100 dark:border-zinc-700 rounded-2xl p-4 focus:outline-none text-zinc-600 dark:text-zinc-200 text-sm leading-relaxed"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                    </div>
+                    )}
                 </div>
 
-                {/* SEO Optimization Card */}
-                <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 border-b border-zinc-50 pb-4">SEO Optimization</h3>
+                <div className="space-y-6">
+                    {/* Publishing Card */}
+                    <div className="bg-white dark:bg-card p-6 rounded-3xl border border-zinc-200 dark:border-white/5 shadow-sm space-y-6 sticky top-24">
+                        <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 border-b border-zinc-50 dark:border-zinc-800 pb-4">Status & Visibility</h3>
 
-                    <div className="space-y-4">
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Focus Keyword</label>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Publish Status</label>
+                                <select
+                                    value={formData.status}
+                                    onChange={e => setFormData(prev => ({ ...prev, status: e.target.value as "draft" | "published" | "scheduled" }))}
+                                    className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-3 font-bold text-sm outline-none appearance-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors dark:text-zinc-100"
+                                >
+                                    <option value="draft" className="bg-white dark:bg-card text-zinc-900 dark:text-white">Draft (Stay Hidden)</option>
+                                    <option value="published" className="bg-white dark:bg-card text-zinc-900 dark:text-white">Publish Now (Publicly Visible)</option>
+                                    <option value="scheduled" className="bg-white dark:bg-card text-zinc-900 dark:text-white">Schedule (Future Release)</option>
+                                </select>
                             </div>
-                            <input
-                                type="text"
-                                value={formData.focusKeyword}
-                                onChange={e => setFormData(prev => ({ ...prev, focusKeyword: e.target.value }))}
-                                placeholder="e.g. Psychology of Power"
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none"
-                            />
-                        </div>
 
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Meta Title {formData.status !== 'draft' && <span className="text-red-500">*</span>}</label>
-                                <span className={cn(
-                                    "text-[10px] font-black tabular-nums transition-colors",
-                                    formData.metaTitle.length > 60 ? "text-red-500" :
-                                        formData.metaTitle.length > 50 ? "text-orange-500" : "text-zinc-400"
-                                )}>
-                                    {formData.metaTitle.length} / 60
-                                </span>
-                            </div>
-                            <input
-                                type="text"
-                                required={formData.status !== 'draft'}
-                                value={formData.metaTitle}
-                                onChange={e => setFormData(prev => ({ ...prev, metaTitle: e.target.value }))}
-                                placeholder="Search engine title..."
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none"
-                            />
-                        </div>
-
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Meta Description {formData.status !== 'draft' && <span className="text-red-500">*</span>}</label>
-                                <span className={cn(
-                                    "text-[10px] font-black tabular-nums transition-colors",
-                                    formData.metaDescription.length > 255 ? "text-red-500" :
-                                        formData.metaDescription.length > 160 ? "text-orange-500" : "text-zinc-400"
-                                )}>
-                                    {formData.metaDescription.length} / 255
-                                </span>
-                            </div>
-                            <textarea
-                                required={formData.status !== 'draft'}
-                                value={formData.metaDescription}
-                                onChange={e => setFormData(prev => ({ ...prev, metaDescription: e.target.value }))}
-                                placeholder="Google search result snippet..."
-                                rows={4}
-                                className="w-full resize-none bg-zinc-50 border border-zinc-100 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all text-zinc-600 text-sm leading-relaxed"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Media Card */}
-                <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 border-b border-zinc-50 pb-4">Cover Media</h3>
-
-                    <div className="space-y-4">
-                        <div className="aspect-video bg-zinc-100 rounded-2xl overflow-hidden relative border border-zinc-200 group">
-                            {formData.coverImage ? (
-                                <>
-                                    <Image src={formData.coverImage} alt="Cover" fill className="object-cover" />
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, coverImage: "" }))}
-                                        className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </>
-                            ) : (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-400">
-                                    <ImageIcon size={32} strokeWidth={1.5} />
-                                    <span className="text-[10px] font-black uppercase mt-2">No Image Selected</span>
+                            {formData.status === "scheduled" && (
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Schedule For</label>
+                                    <div className="relative">
+                                        <input
+                                            type="datetime-local"
+                                            value={scheduledDate}
+                                            onChange={(e) => setScheduledDate(e.target.value)}
+                                            className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-2.5 font-bold text-sm outline-none dark:text-zinc-100"
+                                        />
+                                        <Calendar className="absolute right-4 top-2.5 text-zinc-400 dark:text-zinc-500 pointer-events-none" size={16} />
+                                    </div>
                                 </div>
                             )}
-                        </div>
 
-                        <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Image URL</label>
-                            <input
-                                type="text"
-                                value={formData.coverImage}
-                                onChange={e => setFormData(prev => ({ ...prev, coverImage: e.target.value }))}
-                                placeholder="Paste Cloudinary or Unsplash URL..."
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none"
-                            />
-                            <div className="mt-2 flex items-center gap-2">
-                                <span className="text-[10px] text-zinc-400 font-bold uppercase">OR</span>
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleUpload}
-                                    className="hidden"
-                                    accept="image/*"
-                                />
+                            <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-2xl">
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">Featured Article</span>
+                                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Show in hero section</span>
+                                </div>
                                 <button
                                     type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={isUploading}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-xs font-bold text-zinc-600 transition-colors"
+                                    onClick={() => setFormData(prev => ({ ...prev, isFeatured: !prev.isFeatured }))}
+                                    className={cn(
+                                        "w-10 h-5 rounded-full transition-all relative",
+                                        formData.isFeatured ? "bg-primary" : "bg-zinc-300 dark:bg-background-700"
+                                    )}
                                 >
-                                    {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
-                                    Upload from PC
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                                        formData.isFeatured ? "left-6" : "left-1"
+                                    )} />
                                 </button>
                             </div>
                         </div>
+
+                        <div className="space-y-3">
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+                            >
+                                {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                                {isEditing ? "Update Article" : "Publish Article"}
+                            </button>
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center italic leading-relaxed px-4">
+                                Once you publish, an automated email notification will be sent to all your active subscribers.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </>
     );
 }

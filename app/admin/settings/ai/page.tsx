@@ -198,17 +198,17 @@ export default function AISettingsPage() {
     const timezones = ["UTC", "GMT+1", "EST", "PST", "CET", "IST"];
 
     return (
-        <div className="max-w-4xl space-y-12 pb-20 px-4 md:px-0">
+        <div className="max-w-4xl space-y-12 pb-20 px-4 md:px-0 dark:text-gray-100">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-serif font-bold text-zinc-900">AI Operations</h1>
-                    <p className="text-zinc-500 mt-1 uppercase text-[10px] font-black tracking-widest hidden md:block">
+                    <h1 className="text-3xl font-serif font-bold text-zinc-900 dark:text-white">AI Operations</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-1 uppercase text-[10px] font-black tracking-widest hidden md:block">
                         Master your digital ghostwriters & autonomous rhythms.
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     {settings?.isWriting && (
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-sky-50 text-sky-600 rounded-lg border border-sky-100 shadow-sm overflow-hidden min-w-[140px]">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-sky-50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400 rounded-lg border border-sky-100 dark:border-sky-900 shadow-sm overflow-hidden min-w-[140px]">
                             <motion.div
                                 animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.2, 1] }}
                                 transition={{ repeat: Infinity, duration: 1.5 }}
@@ -232,7 +232,7 @@ export default function AISettingsPage() {
                             }
                         }}
                         disabled={isRunningJobs || !!settings?.isWriting}
-                        className="px-4 py-2 bg-zinc-100 text-zinc-600 rounded-xl border border-zinc-200 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all flex items-center gap-2 disabled:opacity-50"
+                        className="px-4 py-2 bg-zinc-100 dark:bg-background-800 text-zinc-600 dark:text-zinc-400 rounded-xl border border-zinc-200 dark:border-zinc-700 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all flex items-center gap-2 disabled:opacity-50"
                     >
                         {isRunningJobs ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                         Run Full Check
@@ -240,7 +240,7 @@ export default function AISettingsPage() {
                     <button
                         form="ai-config-form"
                         disabled={isSubmitting}
-                        className="px-6 py-2 bg-zinc-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-lg disabled:opacity-50 flex items-center gap-2"
+                        className="px-6 py-2 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all shadow-lg disabled:opacity-50 flex items-center gap-2"
                     >
                         {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
                         Save Config
@@ -250,21 +250,21 @@ export default function AISettingsPage() {
 
             <div className="grid gap-12">
                 <form id="ai-config-form" onSubmit={handleSubmit} className="space-y-6">
-                    <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-8">
-                        <div className="flex items-center gap-3 border-b border-zinc-50 pb-6">
-                            <div className="p-2.5 bg-zinc-900 text-white rounded-2xl">
+                    <div className="bg-white dark:bg-cardp-6 md:p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-8">
+                        <div className="flex items-center gap-3 border-b border-zinc-50 dark:border-zinc-800 pb-6">
+                            <div className="p-2.5 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white rounded-2xl">
                                 <Bot size={20} />
                             </div>
                             <div>
-                                <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900">Ghostwriter Engine</h3>
-                                <p className="text-[10px] text-zinc-400 font-bold uppercase">Configure LLM providers and credentials</p>
+                                <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-white">Ghostwriter Engine</h3>
+                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase">Configure LLM providers and credentials</p>
                             </div>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-8">
                             <div className="space-y-6">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">AI Provider</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">AI Provider</label>
                                     <select
                                         value={formData.provider}
                                         onChange={e => {
@@ -276,7 +276,7 @@ export default function AISettingsPage() {
                                             }));
                                             setAvailableModels([]);
                                         }}
-                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 font-bold text-sm outline-none appearance-none cursor-pointer hover:bg-zinc-100 transition-colors"
+                                        className="w-full bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 font-bold text-sm outline-none appearance-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
                                     >
                                         <option value="openai">OpenAI (ChatGPT)</option>
                                         <option value="gemini">Google (Gemini)</option>
@@ -284,7 +284,7 @@ export default function AISettingsPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">API Secret Key</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">API Secret Key</label>
                                     <div className="relative">
                                         <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300" size={16} />
                                         <input
@@ -292,7 +292,7 @@ export default function AISettingsPage() {
                                             value={formData.apiKey}
                                             onChange={e => setFormData(prev => ({ ...prev, apiKey: e.target.value }))}
                                             placeholder="sk-..."
-                                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-12 pr-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                            className="w-full bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-12 pr-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all dark:text-gray-100"
                                         />
                                     </div>
                                 </div>
@@ -301,7 +301,7 @@ export default function AISettingsPage() {
                             <div className="space-y-6">
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Preferred Model</label>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Preferred Model</label>
                                         <button
                                             type="button"
                                             onClick={async () => {
@@ -335,7 +335,7 @@ export default function AISettingsPage() {
                                         <select
                                             value={formData.model}
                                             onChange={e => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-12 pr-4 py-3 font-medium text-sm outline-none appearance-none cursor-pointer hover:bg-zinc-100 transition-colors"
+                                            className="w-full bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-12 pr-4 py-3 font-medium text-sm outline-none appearance-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
                                         >
                                             {availableModels.length > 0 ? (
                                                 availableModels.map(m => <option key={m} value={m}>{m}</option>)
@@ -378,26 +378,26 @@ export default function AISettingsPage() {
                                         }
                                     }}
                                     disabled={isTestingConnection || !formData.apiKey || !formData.model}
-                                    className="w-full py-3 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    className="w-full py-3 px-4 bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     {isTestingConnection ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                                     Test API Connection
                                 </button>
 
-                                <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+                                <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-background-800 rounded-2xl border border-zinc-100 dark:border-zinc-700">
                                     <div className="flex gap-3 items-center">
-                                        <div className={cn("p-2 rounded-xl transition-colors", formData.isActive ? 'bg-green-100 text-green-600' : 'bg-zinc-200 text-zinc-500')}>
+                                        <div className={cn("p-2 rounded-xl transition-colors", formData.isActive ? 'bg-green-100 dark:bg-green-950/30 text-green-600 dark:text-green-400' : 'bg-zinc-200 dark:bg-background-700 text-zinc-500 dark:text-zinc-400')}>
                                             <Sparkles size={20} />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-black text-zinc-900 leading-tight">Master Switch</span>
-                                            <span className="text-[10px] text-zinc-400 font-bold uppercase">System is {formData.isActive ? 'Live' : 'Paused'}</span>
+                                            <span className="text-sm font-black text-zinc-900 dark:text-white leading-tight">Master Switch</span>
+                                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase">System is {formData.isActive ? 'Live' : 'Paused'}</span>
                                         </div>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
-                                        className={cn("w-12 h-6 rounded-full transition-all relative", formData.isActive ? 'bg-primary' : 'bg-zinc-300')}
+                                        className={cn("w-12 h-6 rounded-full transition-all relative", formData.isActive ? 'bg-primary' : 'bg-zinc-300 dark:bg-background-700')}
                                     >
                                         <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm", formData.isActive ? 'left-7' : 'left-1')} />
                                     </button>
@@ -405,11 +405,11 @@ export default function AISettingsPage() {
                             </div>
                         </div>
 
-                        <div className="space-y-4 pt-4 border-t border-zinc-50">
+                        <div className="space-y-4 pt-4 border-t border-zinc-50 dark:border-zinc-800">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">Author&apos;s Digital Twin DNA</label>
-                                    <p className="text-[9px] text-zinc-400 font-bold uppercase italic">AI learns from your last 3 posts to stay in your voice.</p>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Author&apos;s Digital Twin DNA</label>
+                                    <p className="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase italic">AI learns from your last 3 posts to stay in your voice.</p>
                                 </div>
                                 <button
                                     type="button"
@@ -426,7 +426,7 @@ export default function AISettingsPage() {
                                 onChange={e => setFormData(prev => ({ ...prev, promptTemplate: e.target.value }))}
                                 rows={8}
                                 placeholder="The AI's persona is defined here. You can manually tweak it or use the 'Refresh' button above to automatically sync it with your recent writing style..."
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-6 font-serif text-zinc-600 leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all hover:bg-zinc-100/50"
+                                className="w-full bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-6 font-serif text-zinc-600 dark:text-gray-300 leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all hover:bg-zinc-100/50 dark:hover:bg-zinc-800/80"
                             />
                         </div>
                     </div>
@@ -449,15 +449,15 @@ export default function AISettingsPage() {
                             </button>
                         </div>
 
-                        <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-zinc-50 space-y-4">
+                        <div className="bg-white dark:bg-cardrounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                            <div className="p-6 border-b border-zinc-50 dark:border-zinc-800 space-y-4">
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
                                         value={newResearchTopic}
                                         onChange={e => setNewResearchTopic(e.target.value)}
                                         placeholder="Add custom research..."
-                                        className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/10"
+                                        className="flex-1 bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/10 dark:text-white"
                                     />
                                     <button
                                         onClick={() => {
@@ -469,7 +469,7 @@ export default function AISettingsPage() {
                                                 setNewResearchTopic("");
                                             }
                                         }}
-                                        className="p-2 bg-zinc-900 text-white rounded-xl hover:bg-zinc-800 transition-colors"
+                                        className="p-2 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
                                     >
                                         <Plus size={18} />
                                     </button>
@@ -479,7 +479,7 @@ export default function AISettingsPage() {
                                     <select
                                         value={selectedCategoryId}
                                         onChange={e => setSelectedCategoryId(e.target.value)}
-                                        className="flex-1 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase outline-none"
+                                        className="flex-1 bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase outline-none dark:text-white"
                                     >
                                         <option value="">No Category</option>
                                         {categories?.map((c: Doc<"categories">) => (
@@ -488,15 +488,15 @@ export default function AISettingsPage() {
                                     </select>
                                 </div>
                             </div>
-                            <div className="divide-y divide-zinc-50 max-h-[400px] overflow-y-auto">
+                            <div className="divide-y divide-zinc-50 dark:divide-zinc-800 max-h-[400px] overflow-y-auto">
                                 {researchTopics?.map((topic: Doc<"researchTopics">) => (
-                                    <div key={topic._id} className="p-4 flex items-center justify-between hover:bg-zinc-50 transition-colors group">
+                                    <div key={topic._id} className="p-4 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors group">
                                         <div className="flex-1 pr-4">
-                                            <p className="text-sm font-bold text-zinc-700 leading-tight">{topic.topic}</p>
+                                            <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 leading-tight">{topic.topic}</p>
                                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                                 <div className={cn(
                                                     "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter",
-                                                    topic.status === "processed" ? "bg-green-100 text-green-700" : "bg-zinc-100 text-zinc-400"
+                                                    topic.status === "processed" ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400" : "bg-zinc-100 dark:bg-background-800 text-zinc-400"
                                                 )}>
                                                     {topic.status === "processed" ? "Written" : "Strategic"}
                                                 </div>
@@ -550,9 +550,9 @@ export default function AISettingsPage() {
                                         exit={{ opacity: 0, height: 0 }}
                                         className="overflow-hidden"
                                     >
-                                        <div className="bg-white p-6 rounded-3xl border-2 border-primary/20 shadow-xl space-y-6 mb-4">
+                                        <div className="bg-white dark:bg-cardp-6 rounded-3xl border-2 border-primary/20 shadow-xl space-y-6 mb-4">
                                             <div className="space-y-4">
-                                                <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-400">Target Days</label>
+                                                <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Target Days</label>
                                                 <div className="flex flex-wrap gap-2">
                                                     {days.map((day, i) => (
                                                         <button
@@ -569,8 +569,8 @@ export default function AISettingsPage() {
                                                             className={cn(
                                                                 "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all border",
                                                                 scheduleFormData.daysOfWeek.includes(i)
-                                                                    ? 'bg-zinc-900 text-white border-zinc-900'
-                                                                    : 'bg-zinc-50 text-zinc-400 border-zinc-100 hover:bg-zinc-100'
+                                                                    ? 'bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white border-zinc-900'
+                                                                    : 'bg-zinc-50 dark:bg-background-800 text-zinc-400 dark:text-zinc-500 border-zinc-100 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                                                             )}
                                                         >
                                                             {day}
@@ -581,20 +581,20 @@ export default function AISettingsPage() {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Time</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Time</label>
                                                     <input
                                                         type="time"
                                                         value={scheduleFormData.time}
                                                         onChange={e => setScheduleFormData(prev => ({ ...prev, time: e.target.value }))}
-                                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2 text-xs font-bold outline-none"
+                                                        className="w-full bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2 text-xs font-bold outline-none dark:text-white"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Timezone</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Timezone</label>
                                                     <select
                                                         value={scheduleFormData.timezone}
                                                         onChange={e => setScheduleFormData(prev => ({ ...prev, timezone: e.target.value }))}
-                                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2 text-xs font-bold outline-none"
+                                                        className="w-full bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2 text-xs font-bold outline-none dark:text-white"
                                                     >
                                                         {timezones.map(tz => <option key={tz} value={tz}>{tz}</option>)}
                                                     </select>
@@ -607,7 +607,7 @@ export default function AISettingsPage() {
                                                         setEditingScheduleId(null);
                                                         setScheduleFormData({ daysOfWeek: [1], time: "09:00", timezone: "GMT+1", isActive: true, topicsToResearch: [] });
                                                     }}
-                                                    className="flex-1 py-2 text-[10px] font-black uppercase text-zinc-400 hover:bg-zinc-50 rounded-xl transition-colors"
+                                                    className="flex-1 py-2 text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl transition-colors"
                                                 >
                                                     Cancel
                                                 </button>
@@ -625,22 +625,22 @@ export default function AISettingsPage() {
 
                             <div className="space-y-3">
                                 {schedule?.map((item: Doc<"aiSchedule">) => (
-                                    <div key={item._id} className="bg-white p-5 rounded-3xl border border-zinc-200 shadow-sm flex items-center justify-between group hover:border-primary/20 transition-all">
+                                    <div key={item._id} className="bg-white dark:bg-cardp-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between group hover:border-primary/20 transition-all">
                                         <div className="flex items-center gap-4">
                                             <div className={cn(
                                                 "w-10 h-10 rounded-2xl flex items-center justify-center transition-colors",
-                                                item.isActive ? "bg-purple-50 text-purple-600" : "bg-zinc-50 text-zinc-400"
+                                                item.isActive ? "bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400" : "bg-zinc-50 dark:bg-background-800 text-zinc-400"
                                             )}>
                                                 <Calendar size={18} />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-zinc-900 text-sm">
+                                                <h4 className="font-bold text-zinc-900 dark:text-white text-sm">
                                                     {(item.daysOfWeek || []).map((d: number) => days[d]).join(", ")}
                                                 </h4>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{item.time}</span>
-                                                    <span className="w-1 h-1 bg-zinc-200 rounded-full" />
-                                                    <span className="text-[9px] font-bold text-zinc-300 uppercase">{item.timezone || 'GMT+1'}</span>
+                                                    <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">{item.time}</span>
+                                                    <span className="w-1 h-1 bg-zinc-200 dark:bg-background-800 rounded-full" />
+                                                    <span className="text-[9px] font-bold text-zinc-300 dark:text-zinc-600 uppercase">{item.timezone || 'GMT+1'}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -665,10 +665,10 @@ export default function AISettingsPage() {
                                                 }}
                                                 className={cn(
                                                     "w-10 h-10 rounded-2xl flex items-center justify-center transition-all",
-                                                    item.isActive ? "bg-zinc-900 text-white shadow-md" : "bg-zinc-100 text-zinc-400"
+                                                    item.isActive ? "bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white shadow-md" : "bg-zinc-100 dark:bg-background-800 text-zinc-400 dark:text-zinc-500"
                                                 )}
                                             >
-                                                {item.isActive ? <Clock size={16} /> : <div className="w-2 h-2 bg-zinc-300 rounded-full" />}
+                                                {item.isActive ? <Clock size={16} /> : <div className="w-2 h-2 bg-zinc-300 dark:bg-background-600 rounded-full" />}
                                             </button>
                                         </div>
                                     </div>

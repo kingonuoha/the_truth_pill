@@ -116,15 +116,14 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                 </button>
 
                 <Link href="/" className="flex items-center gap-2.5 group">
-                    <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
-                        T
-                    </div>
-                    <span className={cn(
-                        "font-serif text-xl font-bold tracking-tight transition-colors duration-300",
-                        isScrolled ? "text-gray-900 dark:text-gray-100" : "text-white"
-                    )}>
-                        The Truth Pill
-                    </span>
+                    <Image
+                        src={isScrolled ? "/truthpill/logo-text-hor-light.png" : "/truthpill/logo-text-hor-dark.png"}
+                        alt="The Truth Pill"
+                        width={180}
+                        height={45}
+                        className="h-9 w-auto object-contain transition-all group-hover:scale-105"
+                        priority
+                    />
                 </Link>
             </div>
 
@@ -197,7 +196,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                         transition={{ duration: 0.2 }}
-                                        className="absolute right-0 mt-4 w-64 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl shadow-zinc-200/80 dark:shadow-black/50 border border-zinc-100 dark:border-zinc-800 overflow-hidden py-3 p-2 z-[60]"
+                                        className="absolute right-0 mt-4 w-64 bg-white dark:bg-cardrounded-3xl shadow-2xl shadow-zinc-200/80 dark:shadow-black/50 border border-zinc-100 dark:border-zinc-800 overflow-hidden py-3 p-2 z-[60]"
                                     >
                                         <div className="px-4 py-3 border-b border-zinc-50 dark:border-zinc-800 mb-2">
                                             <p className="text-xs font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">Signed in as</p>
@@ -267,14 +266,18 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                             animate={{ x: 0 }}
                             exit={{ x: "-100%" }}
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed left-0 top-0 bottom-0 z-[120] w-[85%] max-w-sm bg-white dark:bg-zinc-900 shadow-2xl md:hidden overflow-y-auto"
+                            className="fixed left-0 top-0 bottom-0 z-[120] w-[85%] max-w-sm bg-white dark:bg-cardshadow-2xl md:hidden overflow-y-auto"
                         >
                             <div className="p-6 flex flex-col h-full">
                                 <div className="flex justify-between items-center mb-10">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-                                            T
-                                        </div>
+                                        <Image
+                                            src="/truthpill/logo-icon.png"
+                                            alt="The Truth Pill"
+                                            width={32}
+                                            height={32}
+                                            className="w-8 h-8 rounded-lg"
+                                        />
                                         <span className="font-serif text-xl font-bold dark:text-white">The Truth Pill</span>
                                     </div>
                                     <button
@@ -286,7 +289,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                 </div>
 
                                 {isAuthenticated && (
-                                    <div className="mb-10 p-5 rounded-[32px] bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                                    <div className="mb-10 p-5 rounded-[32px] bg-zinc-50 dark:bg-background-800/50 border border-zinc-100 dark:border-zinc-800">
                                         <div className="flex items-center gap-4 mb-6">
                                             <div className="w-14 h-14 rounded-2xl overflow-hidden relative border-2 border-white shadow-sm">
                                                 <Image
@@ -304,7 +307,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                         <Link
                                             href="/dashboard"
                                             onClick={() => setIsMenuOpen(false)}
-                                            className="w-full flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-100 dark:border-zinc-700 hover:border-blue-600 transition-all group"
+                                            className="w-full flex items-center justify-between p-4 bg-white dark:bg-background-800 rounded-2xl border border-zinc-100 dark:border-zinc-700 hover:border-blue-600 transition-all group"
                                         >
                                             <span className="text-xs font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400">Access Dashboard</span>
                                             <ArrowRight size={16} className="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform" />
@@ -370,7 +373,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-white dark:bg-zinc-950 flex flex-col p-6 md:p-20 overflow-y-auto transition-colors duration-500"
+                        className="fixed inset-0 z-[100] bg-white dark:bg-background-950 flex flex-col p-6 md:p-20 overflow-y-auto transition-colors duration-500"
                         style={{ height: '100vh', top: 0 }}
                     >
                         <div className="flex justify-between items-center mb-16">
@@ -428,14 +431,14 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                             <button
                                                 key={term}
                                                 onClick={() => setQuery(term)}
-                                                className="px-6 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 hover:bg-blue-600 hover:text-white text-zinc-600 dark:text-zinc-400 font-bold text-sm transition-all"
+                                                className="px-6 py-3 rounded-2xl bg-zinc-50 dark:bg-cardhover:bg-blue-600 hover:text-white text-zinc-600 dark:text-zinc-400 font-bold text-sm transition-all"
                                             >
                                                 {term}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="bg-zinc-50 dark:bg-zinc-900 rounded-[40px] p-10 flex flex-col justify-center border border-transparent dark:border-zinc-800">
+                                <div className="bg-zinc-50 dark:bg-cardrounded-[40px] p-10 flex flex-col justify-center border border-transparent dark:border-zinc-800">
                                     <h3 className="text-2xl font-serif font-bold mb-4 italic text-zinc-900 dark:text-zinc-100">&quot;The truth will set you free, but first it will piss you off.&quot;</h3>
                                     <p className="text-zinc-400 dark:text-zinc-500 text-sm font-medium">— Gloria Steinem</p>
                                 </div>
