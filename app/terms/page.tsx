@@ -28,7 +28,7 @@ export default function TermsPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-white dark:bg-zinc-950 pt-32 pb-20 px-6 transition-colors duration-500">
+        <div className="min-h-screen bg-white dark:bg-background-950 pt-32 pb-20 px-6 transition-colors duration-500">
             <div className="max-w-4xl mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -51,10 +51,10 @@ export default function TermsPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }}
-                            className="bg-zinc-50 dark:bg-zinc-900/50 p-8 rounded-[32px] border border-zinc-100 dark:border-zinc-800/50"
+                            className="bg-zinc-50 dark:bg-background-900/50 p-8 rounded-[32px] border border-zinc-100 dark:border-zinc-800/50"
                         >
                             <div className="flex items-start gap-6">
-                                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-900 shadow-sm border border-zinc-100 dark:border-zinc-800 flex items-center justify-center shrink-0 text-sky-blue">
+                                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-cardshadow-sm border border-zinc-100 dark:border-zinc-800 flex items-center justify-center shrink-0 text-sky-blue">
                                     <section.icon size={24} />
                                 </div>
                                 <div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Github, Twitter, Linkedin, Mail, Heart, Loader2, Facebook, Instagram, Youtube, Phone, Send } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
@@ -74,8 +75,13 @@ export function Footer() {
                     {/* Brand Section */}
                     <div className="lg:col-span-1">
                         <Link href="/" className="flex items-center gap-2.5 mb-8 group">
-                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl transition-all group-hover:scale-110 shadow-lg shadow-blue-600/20">T</div>
-                            <span className="font-serif text-2xl font-black tracking-tight text-white">{settings?.siteName || "The Truth Pill"}</span>
+                            <Image
+                                src="/truthpill/logo-text-hor-dark.png"
+                                alt={settings?.siteName || "The Truth Pill"}
+                                width={200}
+                                height={50}
+                                className="h-10 w-auto object-contain"
+                            />
                         </Link>
                         <p className="text-gray-400 text-sm leading-relaxed mb-10 max-w-xs font-medium">
                             {settings?.siteDescription || "Deciphering the human experience through deep psychological research and unfiltered insights."}

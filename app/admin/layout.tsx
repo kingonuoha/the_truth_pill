@@ -22,6 +22,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const NAV_GROUPS = [
     {
@@ -74,22 +75,39 @@ const NavContent = ({
     <>
         <div className={cn("p-6", isCollapsed && "px-4 overflow-hidden")}>
             <Link href="/" className="flex items-center gap-3 group">
-                <div className="w-10 h-10 bg-blue-600 dark:bg-blue-500 text-white rounded-xl flex items-center justify-center font-black text-lg shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                    TP
-                </div>
-                {!isCollapsed && (
-                    <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                    >
-                        <span className="font-serif text-lg font-bold block leading-none text-gray-900 dark:text-white">The Truth Pill</span>
-                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest">Admin Control</span>
-                    </motion.div>
+                {isCollapsed ? (
+                    <Image
+                        src="/truthpill/logo-icon.png"
+                        alt="Logo"
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0"
+                    />
+                ) : (
+                    <div className="relative h-10 w-full min-w-[160px]">
+                        <Image
+                            src="/truthpill/logo-text-hor-dark.png"
+                            alt="The Truth Pill"
+                            fill
+                            className="object-contain hidden dark:block"
+                            priority
+                        />
+                        <Image
+                            src="/truthpill/logo-text-hor-light.png"
+                            alt="The Truth Pill"
+                            fill
+                            className="object-contain dark:hidden "
+                            priority
+                        />
+                    </div>
                 )}
             </Link>
         </div>
 
-        <nav className="flex-1 px-3 space-y-6 overflow-y-auto pt-4 font-sans uppercase tracking-wider text-xs font-bold">
+        <nav
+            data-lenis-prevent
+            className="flex-1 px-3 space-y-6 overflow-y-auto pt-4 font-sans uppercase tracking-wider text-xs font-bold min-h-0"
+        >
             {NAV_GROUPS.map((group) => (
                 <div key={group.label} className="space-y-1">
                     {!isCollapsed && (
@@ -197,8 +215,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Mobile Header */}
             <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-900 px-4 flex items-center justify-between z-30">
                 <Link href="/" className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 text-white rounded-lg flex items-center justify-center font-black text-sm">TP</div>
-                    <span className="font-serif font-bold text-gray-900 dark:text-white">Admin</span>
+                    <div className="relative h-8 w-32">
+                        <Image
+                            src="/truthpill/logo-text-hor-dark.png"
+                            alt="The Truth Pill"
+                            fill
+                            className="object-contain dark:hidden"
+                        />
+                        <Image
+                            src="/truthpill/logo-text-hor-light.png"
+                            alt="The Truth Pill"
+                            fill
+                            className="object-contain hidden dark:block"
+                        />
+                    </div>
                 </Link>
                 <button
                     onClick={() => setIsMobileMenuOpen(true)}
