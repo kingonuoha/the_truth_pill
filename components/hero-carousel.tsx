@@ -34,7 +34,7 @@ export function HeroCarousel({ initialArticles }: { initialArticles?: JoinedArti
 
     if (featuredArticles === undefined) {
         return (
-            <div className="h-[90vh] w-full flex items-center justify-center bg-gray-950">
+            <div className="h-[98vh] w-full flex items-center justify-center bg-gray-950">
                 <Loader2 className="w-8 h-8 text-blue-500 animate-spin opacity-50" />
             </div>
         );
@@ -107,7 +107,7 @@ export function HeroCarousel({ initialArticles }: { initialArticles?: JoinedArti
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.3 }}
-                        className="text-4xl md:text-5xl lg:text-7xl font-serif font-extrabold text-white mb-6 leading-[1.1] tracking-tight"
+                        className="text-4xl md:text-5xl lg:text-7xl font-serif font-extrabold text-white mb-6 leading-[1.1] tracking-tight line-clamp-2 md:line-clamp-3"
                     >
                         {currentItem.title}
                     </motion.h1>
@@ -117,7 +117,7 @@ export function HeroCarousel({ initialArticles }: { initialArticles?: JoinedArti
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.4 }}
-                        className="text-lg md:text-xl text-gray-300 mb-10 max-w-xl font-medium leading-relaxed"
+                        className="text-lg md:text-xl text-gray-300 mb-10 max-w-xl font-medium leading-relaxed line-clamp-2 md:line-clamp-3"
                     >
                         {currentItem.excerpt}
                     </motion.p>

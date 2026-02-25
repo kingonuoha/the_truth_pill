@@ -69,7 +69,6 @@ import 'ckeditor5/ckeditor5.css';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { uploadImage } from '@/app/actions/upload-image';
-import { toast } from 'sonner';
 
 // Custom Upload Adapter for CKEditor
 class CloudinaryUploadAdapter {
@@ -82,14 +81,6 @@ class CloudinaryUploadAdapter {
 
     upload(): Promise<{ default: string }> {
         return this.loader.file.then((file: File) => new Promise((resolve, reject) => {
-            // Article body image limit: 20MB
-            const MAX_SIZE = 20 * 1024 * 1024;
-            if (file.size > MAX_SIZE) {
-                const error = "Body image exceeds 20MB limit.";
-                toast.error(error);
-                return reject(error);
-            }
-
             const formData = new FormData();
             formData.append("file", file);
 

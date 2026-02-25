@@ -112,7 +112,7 @@ export default function SettingsPage() {
     const labelClasses = "block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 dark:text-gray-400";
 
     return (
-        <div className="space-y-12 pb-20">
+        <div className="space-y-12 pb-20 dark:text-gray-100">
             {/* Header */}
             <div>
                 <h1 className="text-4xl font-serif font-black text-gray-950 dark:text-white mb-2 tracking-tight">System Configuration</h1>
@@ -163,9 +163,9 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Site Identity Card */}
-                    <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-900 rounded-2xl p-8 shadow-sm">
+                    <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-8 shadow-sm">
                         <h2 className="text-xl font-serif font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3">
-                            <Globe className="text-blue-600" size={24} />
+                            <Globe className="text-blue-600 dark:text-blue-400" size={24} />
                             Site Identity
                         </h2>
 
@@ -206,9 +206,9 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Contact Information */}
-                    <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-900 rounded-2xl p-8 shadow-sm">
+                    <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-8 shadow-sm">
                         <h2 className="text-xl font-serif font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3">
-                            <Mail className="text-blue-600" size={24} />
+                            <Mail className="text-blue-600 dark:text-blue-400" size={24} />
                             Contact Presence
                         </h2>
 
@@ -246,9 +246,9 @@ export default function SettingsPage() {
                 {/* Right Column: Social Links & Actions */}
                 <div className="space-y-8">
                     {/* Social Links Card */}
-                    <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-900 rounded-2xl p-8 shadow-sm h-fit">
+                    <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-8 shadow-sm h-fit">
                         <h2 className="text-xl font-serif font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3">
-                            <Shield className="text-blue-600" size={24} />
+                            <Shield className="text-blue-600 dark:text-blue-400" size={24} />
                             Social Signal
                         </h2>
 
@@ -286,7 +286,7 @@ export default function SettingsPage() {
 
                     {/* Action Card */}
                     <div className="sticky top-24">
-                        <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-900 rounded-2xl p-6 shadow-xl shadow-blue-900/5">
+                        <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-xl shadow-blue-900/5">
                             <button
                                 type="submit"
                                 disabled={isSaving}

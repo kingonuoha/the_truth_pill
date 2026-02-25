@@ -118,7 +118,7 @@ export function EngagementToolbar({ articleId, slug, vertical = false }: Engagem
 
     return (
         <div className={cn(
-            "flex items-center bg-white/80 dark:bg-zinc-900/80 border border-zinc-100 dark:border-zinc-800 shadow-xl backdrop-blur-xl transition-all duration-500",
+            "flex items-center bg-white/80 dark:bg-background-900/80 border border-zinc-100 dark:border-zinc-800 shadow-xl backdrop-blur-xl transition-all duration-500",
             vertical
                 ? "flex-col gap-8 p-4 rounded-full"
                 : "fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] md:w-auto md:static md:translate-x-0 md:justify-between px-8 py-4 rounded-3xl z-50 transform-gpu"

@@ -98,16 +98,16 @@ export default function CategoriesPage() {
     }
 
     return (
-        <div className="space-y-10 pb-12 font-sans text-gray-950">
+        <div className="space-y-10 pb-12 font-sans text-gray-950 dark:text-gray-100">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-serif font-black tracking-tight">Taxonomy</h1>
-                    <p className="text-gray-500 mt-1 font-medium font-sans">Organize your truth and define the knowledge structure.</p>
+                    <h1 className="text-4xl font-serif font-black tracking-tight dark:text-white">Taxonomy</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium font-sans">Organize your truth and define the knowledge structure.</p>
                 </div>
                 <button
                     onClick={() => { resetForm(); setIsModalOpen(true); }}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2.5 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-95 shadow-lg shadow-blue-100"
+                    className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2.5 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-95 shadow-lg shadow-blue-100 dark:shadow-blue-900/20"
                 >
                     <Plus size={20} />
                     New Taxonomy
@@ -116,24 +116,24 @@ export default function CategoriesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {categories.map((cat: CategoryWithCount) => (
-                    <div key={cat._id} className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm hover:shadow-xl hover:shadow-gray-200 transition-all duration-500 group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                    <div key={cat._id} className="bg-white dark:bg-cardp-8 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm hover:shadow-xl hover:shadow-gray-200 dark:hover:shadow-black/50 transition-all duration-500 group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/10 rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                         <div className="flex items-start justify-between mb-6 relative z-10">
-                            <div className="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 group-hover:bg-blue-600 group-hover:text-white group-hover:rotate-6 transition-all duration-500">
+                            <div className="w-14 h-14 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800 group-hover:bg-blue-600 group-hover:text-white group-hover:rotate-6 transition-all duration-500">
                                 <Folder size={24} />
                             </div>
                             <div className="flex items-center gap-1 mt-1">
                                 <button
                                     onClick={() => handleEdit(cat)}
-                                    className="p-2.5 bg-gray-50 text-gray-400 hover:bg-white hover:text-blue-600 hover:shadow-sm rounded-xl border border-transparent hover:border-gray-100 transition-all active:scale-90"
+                                    className="p-2.5 bg-gray-50 dark:bg-background-800 text-gray-400 dark:text-zinc-500 hover:bg-white dark:hover:bg-zinc-700 hover:text-blue-600 hover:shadow-sm rounded-xl border border-transparent hover:border-gray-100 dark:hover:border-zinc-700 transition-all active:scale-90"
                                     title="Edit Topic"
                                 >
                                     <Edit2 size={16} />
                                 </button>
                                 <button
                                     onClick={() => handleDelete(cat._id)}
-                                    className="p-2.5 bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-xl border border-transparent transition-all active:scale-90"
+                                    className="p-2.5 bg-gray-50 dark:bg-background-800 text-gray-400 dark:text-zinc-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded-xl border border-transparent transition-all active:scale-90"
                                     title="Delete Topic"
                                 >
                                     <Trash2 size={16} />
@@ -142,17 +142,17 @@ export default function CategoriesPage() {
                         </div>
 
                         <div className="relative z-10">
-                            <h3 className="font-serif font-black text-2xl tracking-tight mb-2 group-hover:text-blue-600 transition-colors">{cat.name}</h3>
-                            <p className="text-[13px] text-gray-500 leading-relaxed font-medium min-h-[40px] line-clamp-2">{cat.description || "No classification details provided for this taxonomy."}</p>
+                            <h3 className="font-serif font-black text-2xl tracking-tight mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors dark:text-white">{cat.name}</h3>
+                            <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium min-h-[40px] line-clamp-2">{cat.description || "No classification details provided for this taxonomy."}</p>
 
-                            <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
+                            <div className="mt-8 pt-6 border-t border-gray-50 dark:border-zinc-800 flex items-center justify-between">
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Structure</span>
-                                    <span className="text-xs font-bold text-gray-500 font-mono mt-0.5">/{cat.slug}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-zinc-500">Structure</span>
+                                    <span className="text-xs font-bold text-gray-500 dark:text-zinc-400 font-mono mt-0.5">/{cat.slug}</span>
                                 </div>
                                 <div className="flex flex-col items-end">
-                                    <span className="text-lg font-black text-blue-600 tabular-nums leading-none">{cat.articleCount || 0}</span>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Artifacts</span>
+                                    <span className="text-lg font-black text-blue-600 dark:text-blue-400 tabular-nums leading-none">{cat.articleCount || 0}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 dark:text-zinc-500 mt-1">Artifacts</span>
                                 </div>
                             </div>
                         </div>
@@ -175,43 +175,43 @@ export default function CategoriesPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white w-full max-w-lg rounded-2xl p-10 shadow-[0_30px_100px_rgba(0,0,0,0.25)] relative z-10 overflow-hidden"
+                            className="bg-white dark:bg-cardw-full max-w-lg rounded-2xl p-10 shadow-[0_30px_100px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_100px_rgba(0,0,0,0.5)] border border-transparent dark:border-zinc-800 relative z-10 overflow-hidden"
                         >
                             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-purple-600" />
 
-                            <h2 className="text-3xl font-serif font-black text-gray-950 mb-8 tracking-tight">
+                            <h2 className="text-3xl font-serif font-black text-gray-950 dark:text-white mb-8 tracking-tight">
                                 {editingCategory ? "Update Taxonomy" : "New Taxonomy"}
                             </h2>
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-gray-400">Identity</label>
+                                        <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 dark:text-zinc-500">Identity</label>
                                         <input
                                             required
                                             type="text"
                                             value={formData.name}
                                             onChange={e => setFormData(prev => ({ ...prev, name: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-') }))}
-                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3.5 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all placeholder:text-gray-300"
+                                            className="w-full bg-gray-50 dark:bg-background-800 border border-gray-100 dark:border-zinc-700 rounded-xl px-4 py-3.5 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all placeholder:text-gray-300 dark:placeholder:text-zinc-600 dark:text-white"
                                             placeholder="e.g., Hidden History"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-gray-400">Path Name</label>
+                                        <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 dark:text-zinc-500">Path Name</label>
                                         <input
                                             required
                                             type="text"
                                             value={formData.slug}
                                             onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3.5 font-mono text-xs text-blue-600 font-bold focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all"
+                                            className="w-full bg-gray-50 dark:bg-background-800 border border-gray-100 dark:border-zinc-700 rounded-xl px-4 py-3.5 font-mono text-xs text-blue-600 dark:text-blue-400 font-bold focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all placeholder:text-gray-300 dark:placeholder:text-zinc-600"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-gray-400">Definition</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 dark:text-zinc-500">Definition</label>
                                     <textarea
                                         value={formData.description}
                                         onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all resize-none min-h-[120px] placeholder:text-gray-300"
+                                        className="w-full bg-gray-50 dark:bg-background-800 border border-gray-100 dark:border-zinc-700 rounded-xl px-4 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all resize-none min-h-[120px] placeholder:text-gray-300 dark:placeholder:text-zinc-600 dark:text-white"
                                         placeholder="What is the essence of this knowledge branch?"
                                     />
                                 </div>
@@ -219,14 +219,14 @@ export default function CategoriesPage() {
                                     <button
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}
-                                        className="flex-1 px-6 py-4 rounded-xl border border-gray-200 text-[11px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50 transition-all active:scale-95"
+                                        className="flex-1 px-6 py-4 rounded-xl border border-gray-200 dark:border-zinc-700 text-[11px] font-black uppercase tracking-widest text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all active:scale-95"
                                     >
                                         Abort
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="flex-[2] px-6 py-4 rounded-xl bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-100 active:scale-95 flex items-center justify-center gap-2"
+                                        className="flex-[2] px-6 py-4 rounded-xl bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 active:scale-95 flex items-center justify-center gap-2"
                                     >
                                         {isSubmitting && <Loader2 size={14} className="animate-spin" />}
                                         {editingCategory ? "Synchronize" : "Establish Branch"}

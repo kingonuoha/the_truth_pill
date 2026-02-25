@@ -119,7 +119,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                 </div>`;
             }
 
-            return `<div class="my-12 p-8 bg-zinc-50 dark:bg-zinc-900 rounded-[2rem] border border-dashed border-zinc-200 dark:border-zinc-800 text-center">
+            return `<div class="my-12 p-8 bg-zinc-50 dark:bg-card rounded-[2rem] border border-dashed border-zinc-200 dark:border-white/5 text-center">
                 <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-sky-blue hover:underline transition-all uppercase tracking-widest">View External Content →</a>
             </div>`;
         });
@@ -147,7 +147,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
     if (!article) return null;
 
     return (
-        <main className="min-h-screen bg-white dark:bg-zinc-950 pb-20 transition-colors duration-500">
+        <main className="min-h-screen bg-white dark:bg-background pb-20 transition-colors duration-500">
             <Navbar />
 
             {/* Reading Progress Bar */}
@@ -164,7 +164,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                         animate={{ opacity: 1, y: 0 }}
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[55]"
                     >
-                        <div className="bg-white dark:bg-zinc-900 px-6 py-3 rounded-full border border-zinc-100 dark:border-zinc-800 shadow-2xl flex items-center gap-3">
+                        <div className="bg-white dark:bg-card px-6 py-3 rounded-full border border-zinc-100 dark:border-white/5 shadow-2xl flex items-center gap-3">
                             <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
                                 <motion.div
                                     initial={{ scale: 0 }}
@@ -238,13 +238,13 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 bg-white/50 dark:bg-zinc-900/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm">
+                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 bg-white/50 dark:bg-card/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm">
                                 <Calendar size={14} className="text-sky-blue" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">
                                     {new Date(article.publishedAt || article.createdAt).toLocaleDateString()}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 bg-white/50 dark:bg-zinc-900/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm">
+                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 bg-white/50 dark:bg-card/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm">
                                 <Clock size={14} className="text-school-purple" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">{article.readingTime} Min Read</span>
                             </div>
@@ -288,7 +288,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                         <AdSlot position="showAdBottomOfArticle" className="mt-16 mb-8 flex justify-center" />
 
                         {/* Author Bio Card */}
-                        <div className="mt-24 bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl p-10 flex flex-col md:flex-row items-center gap-8 border border-zinc-100 dark:border-zinc-800 transition-colors">
+                        <div className="mt-24 bg-zinc-50 dark:bg-card/50 rounded-3xl p-10 flex flex-col md:flex-row items-center gap-8 border border-zinc-100 dark:border-white/5 transition-colors">
                             <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-xl flex-shrink-0">
                                 {article.authorImage ? (
                                     <Image src={article.authorImage} alt={article.authorName} width={96} height={96} className="object-cover" />
@@ -345,7 +345,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
             </div>
 
             {/* Mobile Recommended Sections */}
-            <div className="xl:hidden bg-zinc-50 dark:bg-zinc-900/30 border-t border-zinc-100 dark:border-zinc-800 mt-20 py-20 px-6">
+            <div className="xl:hidden bg-zinc-50 dark:bg-card/30 border-t border-zinc-100 dark:border-white/5 mt-20 py-20 px-6">
                 <div className="max-w-3xl mx-auto">
                     <h2 className="text-2xl font-serif font-bold mb-8 text-zinc-900 dark:text-white">Related Insights</h2>
                     {article.categoryId && (
@@ -392,10 +392,10 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.5, y: 20 }}
                         onClick={scrollToTop}
-                        className="fixed bottom-8 right-8 z-50 w-14 h-14 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-2xl shadow-2xl flex items-center justify-center hover:bg-sky-blue dark:hover:bg-sky-blue hover:-translate-y-2 transition-all duration-300 group"
+                        className="fixed bottom-8 right-8 z-50 w-14 h-14 bg-zinc-900 dark:bg-background-100 text-white dark:text-zinc-900 rounded-2xl shadow-2xl flex items-center justify-center hover:bg-sky-blue dark:hover:bg-sky-blue hover:-translate-y-2 transition-all duration-300 group"
                     >
                         <ChevronUp size={24} className="group-hover:animate-bounce" />
-                        <div className="absolute -top-12 right-0 bg-zinc-900 dark:bg-zinc-800 text-[10px] font-black uppercase tracking-widest text-white px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                        <div className="absolute -top-12 right-0 bg-zinc-900 dark:bg-card text-[10px] font-black uppercase tracking-widest text-white px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                             Scroll to Top
                         </div>
                     </motion.button>

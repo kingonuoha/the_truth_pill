@@ -26,7 +26,7 @@ export default function ContactPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-zinc-950 pt-32 pb-20 px-6 transition-colors duration-500">
+        <div className="min-h-screen bg-white dark:bg-background-950 pt-32 pb-20 px-6 transition-colors duration-500">
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col lg:flex-row gap-20">
                     <div className="lg:w-1/2">
@@ -44,7 +44,7 @@ export default function ContactPage() {
 
                             <div className="space-y-8">
                                 <div className="flex items-center gap-6 group">
-                                    <div className="w-14 h-14 rounded-2xl bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center border border-zinc-100 dark:border-zinc-800 group-hover:bg-sky-blue group-hover:text-white transition-all duration-500">
+                                    <div className="w-14 h-14 rounded-2xl bg-zinc-50 dark:bg-cardflex items-center justify-center border border-zinc-100 dark:border-zinc-800 group-hover:bg-sky-blue group-hover:text-white transition-all duration-500">
                                         <Mail size={24} />
                                     </div>
                                     <div>
@@ -54,7 +54,7 @@ export default function ContactPage() {
                                 </div>
 
                                 <div className="flex items-center gap-6 group">
-                                    <div className="w-14 h-14 rounded-2xl bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center border border-zinc-100 dark:border-zinc-800 group-hover:bg-school-purple group-hover:text-white transition-all duration-500">
+                                    <div className="w-14 h-14 rounded-2xl bg-zinc-50 dark:bg-cardflex items-center justify-center border border-zinc-100 dark:border-zinc-800 group-hover:bg-school-purple group-hover:text-white transition-all duration-500">
                                         <MessageSquare size={24} />
                                     </div>
                                     <div>
@@ -70,7 +70,7 @@ export default function ContactPage() {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="bg-zinc-50 dark:bg-zinc-900/50 p-10 rounded-[40px] border border-zinc-100 dark:border-zinc-800/50 backdrop-blur-sm"
+                            className="bg-zinc-50 dark:bg-background-900/50 p-10 rounded-[40px] border border-zinc-100 dark:border-zinc-800/50 backdrop-blur-sm"
                         >
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -82,7 +82,7 @@ export default function ContactPage() {
                                             onChange={(e) => setName(e.target.value)}
                                             placeholder="Your name"
                                             required
-                                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-sky-blue/50 transition-all font-medium text-zinc-900 dark:text-white"
+                                            className="w-full bg-white dark:bg-background-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-sky-blue/50 transition-all font-medium text-zinc-900 dark:text-white"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -93,7 +93,7 @@ export default function ContactPage() {
                                             onChange={(e) => setEmail(e.target.value)}
                                             placeholder="Your email"
                                             required
-                                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-sky-blue/50 transition-all font-medium text-zinc-900 dark:text-white"
+                                            className="w-full bg-white dark:bg-background-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-sky-blue/50 transition-all font-medium text-zinc-900 dark:text-white"
                                         />
                                     </div>
                                 </div>
@@ -105,7 +105,7 @@ export default function ContactPage() {
                                         placeholder="What truths shall we explore?"
                                         required
                                         rows={6}
-                                        className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-sky-blue/50 transition-all font-medium text-zinc-900 dark:text-white resize-none"
+                                        className="w-full bg-white dark:bg-background-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-sky-blue/50 transition-all font-medium text-zinc-900 dark:text-white resize-none"
                                     />
                                 </div>
                                 <button
