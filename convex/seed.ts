@@ -6,13 +6,13 @@ export const seedData = mutation({
     // 1. Create a default author if not exists
     let author = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "admin@thetruthpill.com"))
+      .withIndex("by_email", (q) => q.eq("email", "admin@thetruthpill.org"))
       .unique();
 
     if (!author) {
       const authorId = await ctx.db.insert("users", {
         name: "Truth Seeker",
-        email: "admin@thetruthpill.com",
+        email: "admin@thetruthpill.org",
         role: "admin",
         provider: "email",
         newsletterSubscribed: true,

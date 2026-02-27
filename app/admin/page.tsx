@@ -107,8 +107,8 @@ export default function AdminDashboard() {
                 />
                 <StatCard
                     label="Reach Intensity"
-                    value={(stats.totalViews / 1000).toFixed(1) + "k"}
-                    subValue="Article Impressions"
+                    value={stats.totalReach.toLocaleString()}
+                    subValue="Unique Truth Seekers"
                     icon={Eye}
                     trend={`${trafficStats.isTrendUp ? '+' : ''}${trafficStats.trend}%`}
                     trendUp={trafficStats.isTrendUp}

@@ -27,7 +27,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://thetruthpill.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://thetruthpill.org'),
   title: {
     default: "The Truth Pill | Insight into Human Behavior",
     template: "%s | The Truth Pill"
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://thetruthpill.com",
+    url: "https://thetruthpill.org",
     siteName: "The Truth Pill",
     title: "The Truth Pill | Insight into Human Behavior",
     description: "A psychology-focused content platform for living a full life and understanding human behavior.",

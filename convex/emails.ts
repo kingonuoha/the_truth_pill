@@ -114,7 +114,7 @@ export const generateWeeklyNewsletter = internalMutation({
       <div style="margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px;">
         <h3 style="margin: 0 0 10px 0; color: #1e293b;">${art.title}</h3>
         <p style="margin: 0 0 15px 0; color: #64748b; font-size: 14px;">${art.excerpt || ""}</p>
-        <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com"}/articles/${art.slug}" style="color: #0ea5e9; text-decoration: none; font-weight: bold;">Read Article &rarr;</a>
+        <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org"}/articles/${art.slug}" style="color: #0ea5e9; text-decoration: none; font-weight: bold;">Read Article &rarr;</a>
       </div>
     `,
       )
@@ -134,8 +134,8 @@ export const generateWeeklyNewsletter = internalMutation({
             "The only way to do great work is to love what you do.",
           quoteAuthor: randomQuote?.author || "Steve Jobs",
           siteUrl:
-            process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com",
-          unsubscribeUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com"}/unsubscribe?email=${encodeURIComponent(user.email)}`,
+            process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org",
+          unsubscribeUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org"}/unsubscribe?email=${encodeURIComponent(user.email)}`,
         },
         status: "pending",
         scheduledFor: Date.now(),

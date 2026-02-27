@@ -83,10 +83,10 @@ export async function resetPasswordAction(token: string, formData: FormData) {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await fetchMutation(api.users.resetPassword, {
+    const result = (await fetchMutation(api.users.resetPassword, {
       token,
       password: hashedPassword,
-    });
+    })) as { success: boolean; message?: string };
 
     if (result.success) {
       return { success: true };
@@ -97,5 +97,76 @@ export async function resetPasswordAction(token: string, formData: FormData) {
     const err = error as Error;
     console.error("Reset password error:", err);
     return { error: err.message || "Failed to reset password" };
+  }
+}
+
+export async function sendOtpAction(
+  email: string,
+  type: "password_reset" | "password_change",
+) {
+  try {
+    const result = await fetchMutation(api.otp.generateOtp, { email, type });
+    return {
+      success: result.success,
+      message: result.message,
+    };
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("OTP send error:", err);
+    return {
+      success: false,
+      error: err.message || "Failed to send code",
+      message: err.message || "Failed to send code",
+    };
+  }
+}
+
+export async function verifyAndChangePasswordAction(
+  email: string,
+  code: string,
+  type: "password_reset" | "password_change",
+  formData: FormData,
+) {
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (!password || !confirmPassword) {
+    return {
+      success: false,
+      error: "Missing required fields",
+      message: "Missing required fields",
+    };
+  }
+
+  if (password !== confirmPassword) {
+    return {
+      success: false,
+      error: "Passwords do not match",
+      message: "Passwords do not match",
+    };
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const result = (await fetchMutation(api.otp.verifyOtpAndChangePassword, {
+      email,
+      code,
+      type,
+      newPassword: hashedPassword,
+    })) as { success: boolean; message?: string };
+
+    return {
+      success: result.success,
+      message: result.message || "",
+      error: result.success ? undefined : result.message || "Action failed",
+    };
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("OTP Verification/Password change error:", err);
+    return {
+      success: false,
+      error: err.message || "Failed to change password",
+      message: err.message || "Failed to change password",
+    };
   }
 }
