@@ -166,14 +166,14 @@ export const addComment = mutation({
     // Notify Admin
     const article = await ctx.db.get(args.articleId);
     await ctx.db.insert("emailQueue", {
-      recipient: process.env.ADMIN_EMAIL || "admin@thetruthpill.com",
+      recipient: process.env.ADMIN_EMAIL || "admin@thetruthpill.org",
       subject: `New comment on: ${article?.title || "Unknown Article"}`,
       templateName: "comment_alert",
       templateData: {
         commenterName: user.name,
         articleTitle: article?.title || "Unknown Article",
         commentContent: args.content,
-        adminUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com"}/admin/comments`,
+        adminUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org"}/admin/comments`,
       },
       status: "pending",
       scheduledFor: Date.now(),

@@ -63,7 +63,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         "@type": "CollectionPage",
         "name": category.name,
         "description": category.description,
-        "url": `https://thetruthpill.com/categories/${category.slug}`,
+        "url": `https://thetruthpill.org/categories/${category.slug}`,
     };
 
     return (

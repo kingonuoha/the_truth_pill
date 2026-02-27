@@ -36,7 +36,7 @@ export default async function CategoriesPage() {
         "@type": "CollectionPage",
         "name": "Reality Navigator",
         "description": "Every dimension of human consciousness explored through deep inquiry and unfiltered observation.",
-        "url": "https://thetruthpill.com/categories",
+        "url": "https://thetruthpill.org/categories",
     };
 
     return (

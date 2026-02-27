@@ -49,7 +49,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Electronic Mail</p>
-                                        <p className="text-lg font-bold text-zinc-900 dark:text-white">connect@thetruthpill.com</p>
+                                        <p className="text-lg font-bold text-zinc-900 dark:text-white">connect@thetruthpill.org</p>
                                     </div>
                                 </div>
 

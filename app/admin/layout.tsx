@@ -63,6 +63,8 @@ const NAV_GROUPS = [
     },
 ];
 
+import { signOut } from "next-auth/react";
+
 const NavContent = ({
     pathname,
     onClose,
@@ -71,119 +73,134 @@ const NavContent = ({
     pathname: string;
     onClose?: () => void;
     isCollapsed: boolean;
-}) => (
-    <>
-        <div className={cn("p-6", isCollapsed && "px-4 overflow-hidden")}>
-            <Link href="/" className="flex items-center gap-3 group">
-                {isCollapsed ? (
-                    <Image
-                        src="/truthpill/logo-icon.png"
-                        alt="Logo"
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0"
-                    />
-                ) : (
-                    <div className="relative h-10 w-full min-w-[160px]">
-                        <Image
-                            src="/truthpill/logo-text-hor-dark.png"
-                            alt="The Truth Pill"
-                            fill
-                            className="object-contain hidden dark:block"
-                            priority
-                        />
-                        <Image
-                            src="/truthpill/logo-text-hor-light.png"
-                            alt="The Truth Pill"
-                            fill
-                            className="object-contain dark:hidden "
-                            priority
-                        />
-                    </div>
-                )}
-            </Link>
-        </div>
+}) => {
+    const handleLogout = async () => {
+        try {
+            await signOut({ redirect: true, callbackUrl: "/" });
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
+    };
 
-        <nav
-            data-lenis-prevent
-            className="flex-1 px-3 space-y-6 overflow-y-auto pt-4 font-sans uppercase tracking-wider text-xs font-bold min-h-0"
-        >
-            {NAV_GROUPS.map((group) => (
-                <div key={group.label} className="space-y-1">
-                    {!isCollapsed && (
-                        <h3 className="px-4 text-[10px] text-gray-400 dark:text-gray-600 font-black uppercase tracking-[0.2em] mb-3">
-                            {group.label}
-                        </h3>
-                    )}
-                    {group.items.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={onClose}
-                                className={cn(
-                                    "group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
-                                    isActive
-                                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                        : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 hover:text-gray-900 dark:hover:text-white"
-                                )}
-                            >
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="active-pill"
-                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 dark:bg-blue-400 rounded-r-full"
-                                    />
-                                )}
-                                <item.icon
-                                    size={20}
-                                    className={cn(
-                                        "flex-shrink-0 transition-colors",
-                                        isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-400 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white"
-                                    )}
+    return (
+        <>
+            <div className={cn("p-6", isCollapsed && "px-4 overflow-hidden")}>
+                <Link href="/" className="flex items-center gap-3 group">
+                    {isCollapsed ? (
+                        <Image
+                            src="/truthpill/logo-icon.png"
+                            alt="Logo"
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0"
+                        />
+                    ) : (
+                        <div className="flex flex-col">
+                            <div className="relative h-10 w-full min-w-[160px]">
+                                <Image
+                                    src="/truthpill/logo-text-hor-dark.png"
+                                    alt="The Truth Pill"
+                                    fill
+                                    className="object-contain hidden dark:block"
+                                    priority
                                 />
-                                {!isCollapsed && (
-                                    <motion.span
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                    >
-                                        {item.name}
-                                    </motion.span>
-                                )}
+                                <Image
+                                    src="/truthpill/logo-text-hor-light.png"
+                                    alt="The Truth Pill"
+                                    fill
+                                    className="object-contain dark:hidden "
+                                    priority
+                                />
+                            </div>
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest mt-1 ml-1">Admin Control</span>
+                        </div>
+                    )}
+                </Link>
+            </div>
 
-                                {isCollapsed && (
-                                    <div className="absolute left-full ml-4 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl">
-                                        {item.name}
-                                    </div>
-                                )}
-                            </Link>
-                        );
-                    })}
-                </div>
-            ))}
-        </nav>
-
-        <div className="p-4 mt-auto space-y-2 border-t border-gray-100 dark:border-gray-900">
-            <Link
-                href="/"
-                className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors",
-                    isCollapsed && "justify-center px-0"
-                )}
+            <nav
+                data-lenis-prevent
+                className="flex-1 px-3 space-y-6 overflow-y-auto pt-4 font-sans uppercase tracking-wider text-xs font-bold min-h-0"
             >
-                <ArrowLeft size={16} />
-                {!isCollapsed && <span>Back to Website</span>}
-            </Link>
-            <button className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 w-full transition-colors",
-                isCollapsed && "justify-center px-0"
-            )}>
-                <LogOut size={16} />
-                {!isCollapsed && <span>Logout</span>}
-            </button>
-        </div>
-    </>
-);
+                {NAV_GROUPS.map((group) => (
+                    <div key={group.label} className="space-y-1">
+                        {!isCollapsed && (
+                            <h3 className="px-4 text-[10px] text-gray-400 dark:text-gray-600 font-black uppercase tracking-[0.2em] mb-3">
+                                {group.label}
+                            </h3>
+                        )}
+                        {group.items.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    onClick={onClose}
+                                    className={cn(
+                                        "group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
+                                        isActive
+                                            ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                            : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 hover:text-gray-900 dark:hover:text-white"
+                                    )}
+                                >
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="active-pill"
+                                            className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 dark:bg-blue-400 rounded-r-full"
+                                        />
+                                    )}
+                                    <item.icon
+                                        size={20}
+                                        className={cn(
+                                            "flex-shrink-0 transition-colors",
+                                            isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-400 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white"
+                                        )}
+                                    />
+                                    {!isCollapsed && (
+                                        <motion.span
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                        >
+                                            {item.name}
+                                        </motion.span>
+                                    )}
+
+                                    {isCollapsed && (
+                                        <div className="absolute left-full ml-4 px-2 py-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl">
+                                            {item.name}
+                                        </div>
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                ))}
+            </nav>
+
+            <div className="p-4 mt-auto space-y-2 border-t border-gray-100 dark:border-gray-900">
+                <Link
+                    href="/"
+                    className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors",
+                        isCollapsed && "justify-center px-0"
+                    )}
+                >
+                    <ArrowLeft size={16} />
+                    {!isCollapsed && <span>Back to Website</span>}
+                </Link>
+                <button
+                    onClick={handleLogout}
+                    className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 w-full transition-colors",
+                        isCollapsed && "justify-center px-0"
+                    )}>
+                    <LogOut size={16} />
+                    {!isCollapsed && <span>Logout</span>}
+                </button>
+            </div>
+        </>
+    );
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();

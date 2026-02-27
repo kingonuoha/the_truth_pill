@@ -58,7 +58,7 @@ export default async function AuthorProfilePage({ params }: AuthorPageProps) {
             "name": author.name,
             "description": `Verified Author at The Truth Pill`,
             "image": author.profileImage,
-            "url": `https://thetruthpill.com/author/${id}`,
+            "url": `https://thetruthpill.org/author/${id}`,
         }
     };
 

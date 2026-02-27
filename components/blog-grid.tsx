@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Calendar, ChevronDown } from "lucide-react";
+import { Calendar, ChevronDown, Eye } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id, Doc } from "../convex/_generated/dataModel";
 import { BlogSkeleton } from "./skeletons";
+import { getCloudinaryUrl } from "@/lib/utils";
 
 interface BlogGridProps {
     categoryId?: Id<"categories">;
@@ -40,10 +41,11 @@ export function BlogGrid({ categoryId, initialArticles }: BlogGridProps & { init
                     <article key={article._id} className="group flex flex-col items-start">
                         <div className="relative w-full aspect-[4/3] rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-700 mb-6 border border-gray-100 dark:border-gray-800">
                             <Image
-                                src={article.coverImage || ""}
+                                src={getCloudinaryUrl(article.coverImage || "", "w_800,c_fill,q_auto,f_auto")}
                                 alt={article.title}
                                 fill
                                 className="object-cover transition-transform duration-1000 group-hover:scale-105"
+                                unoptimized
                             />
                             <div className="absolute top-4 right-4">
                                 <span className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm text-gray-900 dark:text-gray-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm border border-gray-100 dark:border-gray-800">
@@ -75,14 +77,20 @@ export function BlogGrid({ categoryId, initialArticles }: BlogGridProps & { init
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-gray-100 group-hover/author:text-blue-600 transition-colors">{article.authorName}</span>
                             </Link>
-                            <div className="flex items-center gap-1.5 text-gray-400">
-                                <Calendar size={12} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">
-                                    {new Date(article.publishedAt || article.createdAt).toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric'
-                                    })}
-                                </span>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1.5 text-gray-400">
+                                    <Eye size={12} className="text-blue-500" />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">{article.viewCount || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-gray-400">
+                                    <Calendar size={12} />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                                        {new Date(article.publishedAt || article.createdAt).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </article>

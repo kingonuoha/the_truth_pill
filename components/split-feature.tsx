@@ -55,6 +55,7 @@ export function SplitFeature() {
                                 alt="Human Mind"
                                 fill
                                 className="object-cover"
+                                unoptimized
                             />
                             <div className="absolute inset-0 bg-blue-600/10 mix-blend-overlay" />
                         </div>

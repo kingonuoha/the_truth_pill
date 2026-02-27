@@ -10,10 +10,10 @@ import {
 import { ArticleStatusBadge, ArticleSourceBadge } from "@/components/admin/article-badges";
 import Link from "next/link";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
 import { AnimatePresence, motion } from "framer-motion";
+import { cn, getCloudinaryUrl } from "@/lib/utils";
 
 export default function AdminArticlesPage() {
     const stats = useQuery(api.admin.getDashboardStats, {});
@@ -219,7 +219,7 @@ export default function AdminArticlesPage() {
                 />
                 <MiniStatCard
                     label="Total Reads"
-                    value={(stats.totalViews / 1000).toFixed(1) + "k"}
+                    value={stats.totalViews.toLocaleString()}
                     icon={Eye}
                     color="blue"
                     illustration="/illustrations/Visual-data.svg"
@@ -325,10 +325,11 @@ export default function AdminArticlesPage() {
                                     <div className="flex items-center gap-5">
                                         <div className="w-14 h-14 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden relative flex-shrink-0 border border-gray-100 dark:border-gray-700 group-hover:scale-105 transition-transform duration-500">
                                             <Image
-                                                src={article.coverImage || `https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&h=100&fit=crop`}
+                                                src={getCloudinaryUrl(article.coverImage || "", "w_150,c_fill,q_auto,f_auto") || `https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&h=100&fit=crop`}
                                                 alt=""
                                                 fill
                                                 className="object-cover"
+                                                unoptimized
                                             />
                                         </div>
                                         <div>
@@ -364,8 +365,11 @@ export default function AdminArticlesPage() {
                                 </td>
                                 <td className="px-6 py-5 text-center">
                                     <div className="flex flex-col items-center">
-                                        <span className="text-lg font-black text-gray-950 dark:text-white tracking-tight transition-colors">{article.viewCount || 0}</span>
-                                        <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-black tracking-[0.1em]">Impact</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-lg font-black text-gray-950 dark:text-white tracking-tight">{article.viewCount || 0}</span>
+                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold">({article.uniqueViewCount || 0})</span>
+                                        </div>
+                                        <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-black tracking-[0.1em]">Spectral Reach</span>
                                     </div>
                                 </td>
                                 <td className="px-6 py-5 text-right">

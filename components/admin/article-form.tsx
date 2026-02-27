@@ -14,7 +14,7 @@ const Editor = dynamic(() => import("./editor"), {
     loading: () => <div className="h-[600px] bg-zinc-50 dark:bg-cardanimate-pulse rounded-2xl flex items-center justify-center text-zinc-400 dark:text-zinc-600 font-black uppercase tracking-widest text-xs border border-zinc-100 dark:border-zinc-800">Initializing Premium Editor...</div>
 });
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn, getCloudinaryUrl } from "@/lib/utils";
 import { Id, Doc } from "@/convex/_generated/dataModel";
 import { uploadImage } from "@/app/actions/upload-image";
 import { useSession } from "next-auth/react";
@@ -539,7 +539,13 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                     <div className="aspect-video bg-zinc-100 dark:bg-background-800/50 rounded-2xl overflow-hidden relative border border-zinc-200 dark:border-zinc-700 group">
                                         {formData.coverImage ? (
                                             <>
-                                                <Image src={formData.coverImage} alt="Cover" fill className="object-cover" />
+                                                <Image
+                                                    src={getCloudinaryUrl(formData.coverImage, "w_800,q_auto,f_auto")}
+                                                    alt="Cover"
+                                                    fill
+                                                    className="object-cover"
+                                                    unoptimized
+                                                />
                                                 <button
                                                     type="button"
                                                     onClick={() => setFormData(prev => ({ ...prev, coverImage: "" }))}

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { JoinedArticle } from "./blog-grid";
+import { getCloudinaryUrl } from "@/lib/utils";
 
 export function HeroCarousel({ initialArticles }: { initialArticles?: JoinedArticle[] }) {
     const featuredArticles = useQuery(api.articles.getFeatured, { limit: 5 }) as JoinedArticle[] | undefined || initialArticles;
@@ -78,12 +79,13 @@ export function HeroCarousel({ initialArticles }: { initialArticles?: JoinedArti
                     className="absolute inset-0"
                 >
                     <Image
-                        src={currentItem.coverImage || ""}
+                        src={getCloudinaryUrl(currentItem.coverImage || "", "q_auto,f_auto")}
                         alt={currentItem.title}
                         fill
                         priority
                         className="object-cover opacity-60"
                         sizes="100vw"
+                        unoptimized
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/70 to-transparent" />
                 </motion.div>

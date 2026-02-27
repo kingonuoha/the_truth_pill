@@ -116,14 +116,28 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                 </button>
 
                 <Link href="/" className="flex items-center gap-2.5 group">
-                    <Image
-                        src={isScrolled ? "/truthpill/logo-text-hor-light.png" : "/truthpill/logo-text-hor-dark.png"}
-                        alt="The Truth Pill"
-                        width={180}
-                        height={45}
-                        className="h-9 w-auto object-contain transition-all group-hover:scale-105"
-                        priority
-                    />
+                    <div className="relative h-9 w-40">
+                        <Image
+                            src="/truthpill/logo-text-hor-dark.png"
+                            alt="The Truth Pill"
+                            fill
+                            className={cn(
+                                "object-contain transition-all",
+                                isScrolled ? "block dark:hidden" : "hidden"
+                            )}
+                            priority
+                        />
+                        <Image
+                            src="/truthpill/logo-text-hor-light.png"
+                            alt="The Truth Pill"
+                            fill
+                            className={cn(
+                                "object-contain transition-all",
+                                isScrolled ? "hidden dark:block" : "block"
+                            )}
+                            priority
+                        />
+                    </div>
                 </Link>
             </div>
 
@@ -271,14 +285,20 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                             <div className="p-6 flex flex-col h-full">
                                 <div className="flex justify-between items-center mb-10">
                                     <div className="flex items-center gap-3">
-                                        <Image
-                                            src="/truthpill/logo-icon.png"
-                                            alt="The Truth Pill"
-                                            width={32}
-                                            height={32}
-                                            className="w-8 h-8 rounded-lg"
-                                        />
-                                        <span className="font-serif text-xl font-bold dark:text-white">The Truth Pill</span>
+                                        <div className="relative h-8 w-32">
+                                            <Image
+                                                src="/truthpill/logo-text-hor-dark.png"
+                                                alt="The Truth Pill"
+                                                fill
+                                                className="object-contain dark:hidden"
+                                            />
+                                            <Image
+                                                src="/truthpill/logo-text-hor-light.png"
+                                                alt="The Truth Pill"
+                                                fill
+                                                className="object-contain hidden dark:block"
+                                            />
+                                        </div>
                                     </div>
                                     <button
                                         onClick={() => setIsMenuOpen(false)}

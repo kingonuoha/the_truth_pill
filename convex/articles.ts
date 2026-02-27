@@ -398,10 +398,10 @@ export const queueNewArticleAlerts = internalMutation({
         templateData: {
           articleTitle: article.title,
           excerpt: article.excerpt || "",
-          articleUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com"}/articles/${article.slug}`,
+          articleUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org"}/articles/${article.slug}`,
           authorName: author?.name || "The Truth Pill",
           categoryName: category?.name || "Psychology",
-          unsubscribeUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com"}/unsubscribe?email=${encodeURIComponent(user.email)}`,
+          unsubscribeUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org"}/unsubscribe?email=${encodeURIComponent(user.email)}`,
         },
         status: "pending",
         scheduledFor: Date.now(),
@@ -575,13 +575,13 @@ export const saveAIDraft = internalMutation({
       // Fallback: create/get system AI author
       const aiAuthor = await ctx.db
         .query("users")
-        .withIndex("by_email", (q) => q.eq("email", "ai@thetruthpill.com"))
+        .withIndex("by_email", (q) => q.eq("email", "ai@thetruthpill.org"))
         .unique();
 
       if (!aiAuthor) {
         authorId = await ctx.db.insert("users", {
           name: "TruthPill AI",
-          email: "ai@thetruthpill.com",
+          email: "ai@thetruthpill.org",
           role: "admin",
           provider: "system",
           newsletterSubscribed: false,

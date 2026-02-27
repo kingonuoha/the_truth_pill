@@ -11,13 +11,15 @@ import {
     User, Settings, Bookmark, MessageSquare, Heart,
     LogOut, ChevronRight, Shield,
     Trash2, ExternalLink, Activity, Loader2, Sparkles,
-    ArrowRight, Clock, Sun, Moon
+    ArrowRight, Clock, Sun, Moon, Lock
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Navbar } from "@/components/navbar";
 import { toast } from "sonner";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { sendOtpAction, verifyAndChangePasswordAction } from "@/app/actions/auth";
+
 
 interface JoinedArticle extends Doc<"articles"> {
     categoryName: string;
@@ -404,6 +406,15 @@ export default function UserDashboard() {
 
                                             <div className="mt-16 pt-12 border-t border-gray-100 dark:border-gray-800">
                                                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-6 flex items-center gap-2">
+                                                    Security & Identity
+                                                    <span className="w-8 h-px bg-gray-100 dark:bg-gray-800" />
+                                                </h4>
+
+                                                <ChangePasswordSection email={user.email} />
+                                            </div>
+
+                                            <div className="mt-16 pt-12 border-t border-gray-100 dark:border-gray-800">
+                                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-6 flex items-center gap-2">
                                                     Appearance Controls
                                                     <span className="w-8 h-px bg-gray-100 dark:bg-gray-800" />
                                                 </h4>
@@ -433,6 +444,137 @@ export default function UserDashboard() {
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function ChangePasswordSection({ email }: { email: string }) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [step, setStep] = useState<"initial" | "otp">("initial");
+    const [otpCode, setOtpCode] = useState("");
+
+    const handleSendOtp = async () => {
+        setIsLoading(true);
+        try {
+            const result = await sendOtpAction(email, "password_change");
+            if (result.success) {
+                setStep("otp");
+                toast.success("Verification code sent to your email!");
+            } else {
+                toast.error(result.message || "Failed to send code");
+            }
+        } catch {
+            toast.error("An error occurred");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyAndChange = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsLoading(true);
+        const formData = new FormData(e.currentTarget);
+
+        try {
+            const result = await verifyAndChangePasswordAction(email, otpCode, "password_change", formData);
+            if (result.success) {
+                toast.success("Password changed successfully!");
+                setStep("initial");
+                setOtpCode("");
+            } else {
+                toast.error(result.message || result.error || "Failed to change password");
+            }
+        } catch {
+            toast.error("An error occurred");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-100 dark:border-gray-800">
+            <AnimatePresence mode="wait">
+                {step === "initial" ? (
+                    <motion.div
+                        key="initial"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex flex-col md:flex-row md:items-center justify-between gap-6"
+                    >
+                        <div className="space-y-1">
+                            <h5 className="text-sm font-black text-gray-950 dark:text-white uppercase tracking-wider">Change Password</h5>
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest leading-relaxed">Verification code will be sent to your email for security.</p>
+                        </div>
+                        <button
+                            onClick={handleSendOtp}
+                            disabled={isLoading}
+                            className="bg-gray-900 dark:bg-white text-white dark:text-gray-950 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 dark:hover:bg-blue-400 transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                        >
+                            {isLoading ? <Loader2 className="animate-spin" size={14} /> : <Lock size={14} />}
+                            Request Verification Code
+                        </button>
+                    </motion.div>
+                ) : (
+                    <motion.form
+                        key="otp"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        onSubmit={handleVerifyAndChange}
+                        className="space-y-6"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Verification Code</label>
+                                <input
+                                    value={otpCode}
+                                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                    placeholder="6-digit code"
+                                    required
+                                    className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-black tracking-[0.3em]"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">New Password</label>
+                                <input
+                                    name="password"
+                                    type="password"
+                                    placeholder="Enter new password"
+                                    required
+                                    className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Confirm New Password</label>
+                                <input
+                                    name="confirmPassword"
+                                    type="password"
+                                    placeholder="Confirm new password"
+                                    required
+                                    className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4 pt-2">
+                            <button
+                                type="submit"
+                                disabled={isLoading || otpCode.length !== 6}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                            >
+                                {isLoading ? "Updating..." : "Update Password"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setStep("initial")}
+                                className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </motion.form>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

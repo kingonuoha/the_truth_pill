@@ -20,6 +20,7 @@ import type * as crons from "../crons.js";
 import type * as email_actions from "../email_actions.js";
 import type * as emails from "../emails.js";
 import type * as engagement from "../engagement.js";
+import type * as otp from "../otp.js";
 import type * as quotes from "../quotes.js";
 import type * as seed from "../seed.js";
 import type * as site_settings from "../site_settings.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   email_actions: typeof email_actions;
   emails: typeof emails;
   engagement: typeof engagement;
+  otp: typeof otp;
   quotes: typeof quotes;
   seed: typeof seed;
   site_settings: typeof site_settings;

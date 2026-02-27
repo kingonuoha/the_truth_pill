@@ -80,12 +80,12 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             "name": "The Truth Pill",
             "logo": {
                 "@type": "ImageObject",
-                "url": "https://thetruthpill.com/logo.png",
+                "url": "https://thetruthpill.org/logo.png",
             },
         },
         "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": `https://thetruthpill.com/articles/${slug}`,
+            "@id": `https://thetruthpill.org/articles/${slug}`,
         },
     };
 

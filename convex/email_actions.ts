@@ -113,6 +113,28 @@ const templates: Record<string, string> = {
       </div>
     </div>
   `,
+  otp_verification: `
+    <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #f1f5f9; border-radius: 32px; overflow: hidden; box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.1);">
+      <div style="background: #09090b; padding: 60px 40px; text-align: center;">
+        <h1 style="color: white; margin: 0; font-family: 'Georgia', serif; font-size: 32px; letter-spacing: -0.03em;">Verification Code</h1>
+        <p style="color: #a1a1aa; font-size: 12px; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.3em; font-weight: 900;">Security Protocol</p>
+      </div>
+      <div style="padding: 60px 50px; text-align: center; color: #09090b;">
+        <p style="font-size: 16px; color: #4b5563; margin-bottom: 40px;">
+          Use the following code to complete your security protocol. This code will expire in 10 minutes.
+        </p>
+        <div style="background: #f1f5f9; border-radius: 20px; padding: 32px; display: inline-block; margin-bottom: 40px; border: 2px solid #e2e8f0;">
+          <span style="font-size: 42px; font-weight: 900; color: #2563eb; letter-spacing: 0.25em; font-family: 'Courier New', monospace;">{{otpCode}}</span>
+        </div>
+        <p style="font-size: 14px; color: #94a3b8; margin-top: 40px;">
+          If you did not request this code, please secure your account immediately.
+        </p>
+      </div>
+      <div style="background: #f8fafc; padding: 32px; text-align: center; border-top: 1px solid #f1f5f9;">
+        <p style="font-size: 12px; color: #94a3b8; margin: 0;">&copy; 2026 The Truth Pill. Evolution is mandatory.</p>
+      </div>
+    </div>
+  `,
 };
 
 const renderTemplate = (name: string, data: Record<string, string>) => {
@@ -229,7 +251,7 @@ export const requestPasswordReset = action({
     if (!userId) return { success: true }; // Don't leak existence
 
     const transporter = getTransporter();
-    const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com"}/auth/reset-password?token=${token}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org"}/auth/reset-password?token=${token}`;
 
     const html = renderTemplate("reset_password", { resetUrl });
 
