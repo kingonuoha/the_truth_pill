@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "The Truth Pill | Simple Insights into Human Nature",
     description: "Easy-to-read articles that help you understand yourself and others better.",
-    url: "https://thetruthpill.com",
+    url: "https://thetruthpill.org",
     siteName: "The Truth Pill",
     images: [
       {
@@ -33,28 +33,26 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [featuredArticles, latestArticles] = await Promise.all([
-    fetchQuery(api.articles.getFeatured, { limit: 5 }),
-    fetchQuery(api.articles.list, { limit: 6 }),
-  ]);
+  const featuredArticles = await fetchQuery(api.articles.getFeatured, { limit: 5 });
+  const latestArticles = await fetchQuery(api.articles.list, { limit: 6 });
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "The Truth Pill",
-    "url": "https://thetruthpill.com",
+    "url": "https://thetruthpill.org",
     "description": "Unfiltered insight into human behavior and psychology.",
     "publisher": {
       "@type": "Organization",
       "name": "The Truth Pill",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://thetruthpill.com/logo.png",
+        "url": "https://thetruthpill.org/logo.png",
       },
     },
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://thetruthpill.com/search?q={search_term_string}",
+      "target": "https://thetruthpill.org/search?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };

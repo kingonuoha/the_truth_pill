@@ -24,7 +24,7 @@ export default async function ArticlesPage() {
         "@type": "CollectionPage",
         "name": "Library of Insights",
         "description": "A comprehensive collection of psychological deep-dives, cultural observations, and philosophical inquiries.",
-        "url": "https://thetruthpill.com/articles",
+        "url": "https://thetruthpill.org/articles",
     };
 
     return (

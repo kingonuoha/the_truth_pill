@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Navbar } from "@/components/navbar";
-import { Calendar, User, Clock, ChevronRight, ChevronUp } from "lucide-react";
+import { Calendar, User, Clock, ChevronRight, ChevronUp, Eye } from "lucide-react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -21,6 +21,8 @@ const CommentsSection = dynamic(() => import("@/components/comments-section").th
     loading: () => <div className="h-40 bg-zinc-50 rounded-3xl animate-pulse" />,
     ssr: false
 });
+
+import { getCloudinaryUrl } from "@/lib/utils";
 
 type ArticleWithExtras = Doc<"articles"> & {
     authorName: string;
@@ -183,11 +185,12 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
             {/* Article Header */}
             <header className="relative w-full min-h-[70vh] bg-zinc-900 overflow-hidden flex flex-col justify-end">
                 <Image
-                    src={article.coverImage || "https://images.unsplash.com/photo-1507413245164-6160d8298b31"}
+                    src={getCloudinaryUrl(article.coverImage || "https://images.unsplash.com/photo-1507413245164-6160d8298b31", "q_auto,f_auto")}
                     alt={article.title}
                     fill
                     className="object-cover opacity-60"
                     priority
+                    unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-zinc-950 via-white/40 dark:via-zinc-950/40 to-transparent" />
 
@@ -247,6 +250,10 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                             <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 bg-white/50 dark:bg-card/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm">
                                 <Clock size={14} className="text-school-purple" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">{article.readingTime} Min Read</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 bg-white/50 dark:bg-card/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm">
+                                <Eye size={14} className="text-blue-500" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">{article.viewCount || 0} Imperial Views</span>
                             </div>
                         </div>
                     </motion.div>

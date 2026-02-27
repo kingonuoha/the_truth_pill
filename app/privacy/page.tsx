@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
                     <section className="mt-12">
                         <h2 className="text-2xl font-bold text-zinc-900 mb-4">4. Contact Us</h2>
                         <p>
-                            If you have any questions about this Privacy Policy, please contact us at privacy@thetruthpill.com.
+                            If you have any questions about this Privacy Policy, please contact us at privacy@thetruthpill.org.
                         </p>
                     </section>
                 </div>

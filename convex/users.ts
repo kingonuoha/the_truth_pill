@@ -35,8 +35,8 @@ export const register = mutation({
       templateName: "welcome",
       templateData: {
         name: args.name,
-        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com",
-        unsubscribeUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com"}/unsubscribe?email=${encodeURIComponent(args.email)}`,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org",
+        unsubscribeUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org"}/unsubscribe?email=${encodeURIComponent(args.email)}`,
       },
       status: "pending",
       scheduledFor: Date.now(),
@@ -90,8 +90,8 @@ export const store = mutation({
         templateData: {
           name: args.name,
           siteUrl:
-            process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com",
-          unsubscribeUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com"}/unsubscribe?email=${encodeURIComponent(args.email)}`,
+            process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org",
+          unsubscribeUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org"}/unsubscribe?email=${encodeURIComponent(args.email)}`,
         },
         status: "pending",
         scheduledFor: Date.now(),
@@ -189,7 +189,7 @@ export const subscribeToNewsletter = mutation({
       subject: "Action Required: Confirm your subscription to The Truth Pill",
       templateName: "confirm_subscription",
       templateData: {
-        confirmUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com"}/confirm-subscription?token=${token}`,
+        confirmUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org"}/confirm-subscription?token=${token}`,
       },
       status: "pending",
       scheduledFor: Date.now(),
@@ -372,7 +372,7 @@ export const resetPassword = mutation({
       resetTokenExpires: undefined,
     });
 
-    return { success: true };
+    return { success: true, message: "Password reset successful" };
   },
 });
 

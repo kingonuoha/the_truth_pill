@@ -23,7 +23,12 @@ export const getDashboardStats = query({
       (a) => a.source === "ai" && a.status === "draft",
     ).length;
 
+    const totalReach = (await ctx.db.query("visitorTracking").collect()).length;
     const totalViews = articles.reduce((sum, a) => sum + (a.viewCount || 0), 0);
+    const totalUniqueViews = articles.reduce(
+      (sum, a) => sum + (a.uniqueViewCount || 0),
+      0,
+    );
     const pendingCommentsCount = comments.filter(
       (c) => c.status === "pending",
     ).length;
@@ -38,6 +43,8 @@ export const getDashboardStats = query({
       },
       usersCount,
       totalViews,
+      totalUniqueViews,
+      totalReach,
       pendingCommentsCount,
     };
   },

@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.com";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org";
 
   // Fetch articles
   const articles = (await fetchQuery(api.articles.list, {

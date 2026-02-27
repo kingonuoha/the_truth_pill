@@ -224,4 +224,13 @@ export default defineSchema({
     footerText: v.optional(v.string()),
     updatedAt: v.float64(),
   }),
+  otpCodes: defineTable({
+    email: v.string(),
+    code: v.string(),
+    type: v.union(v.literal("password_reset"), v.literal("password_change")),
+    expiresAt: v.float64(),
+  })
+    .index("by_email", ["email"])
+    .index("by_code", ["code"])
+    .index("by_email_type", ["email", "type"]),
 });
