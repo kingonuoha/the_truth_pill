@@ -17,7 +17,7 @@ export default function EditArticlePage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <Loader2 className="animate-spin text-primary" size={32} />
-                <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest">Loading article data...</p>
+                <p className="text-zinc-500 font-black uppercase text-[10px] tracking-widest">Getting your post ready...</p>
             </div>
         );
     }
@@ -31,11 +31,11 @@ export default function EditArticlePage() {
                     className="flex items-center gap-2 text-zinc-400 hover:text-primary transition-colors text-[10px] font-black uppercase tracking-widest"
                 >
                     <ChevronLeft size={16} />
-                    Back to Articles
+                    Go back to your posts
                 </Link>
                 <div>
-                    <h1 className="text-3xl font-serif font-bold text-zinc-900">Edit Article</h1>
-                    <p className="text-zinc-500 mt-1 uppercase text-[10px] font-black tracking-widest">Updating: {article.title}</p>
+                    <h1 className="text-3xl font-serif font-bold text-zinc-900">Change your post</h1>
+                    <p className="text-zinc-500 mt-1 uppercase text-[10px] font-black tracking-widest">Currently editing: {article.title}</p>
                 </div>
             </div>
 

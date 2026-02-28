@@ -290,11 +290,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Main Content */}
             <main
                 className={cn(
-                    "flex-1 transition-all duration-300 min-h-screen pt-20 lg:pt-8 p-4 md:p-8",
+                    "flex-1 transition-all duration-300 min-h-screen pt-20 lg:pt-8 p-4 md:p-8 min-w-0",
                     isCollapsed ? "lg:ml-20" : "lg:ml-[260px]"
                 )}
             >
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-7xl mx-auto w-full">
                     {children}
                 </div>
             </main>

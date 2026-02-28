@@ -27,6 +27,25 @@ export const AI_CONFIG = {
     - Bold key phrases judiciously to help skimmers find value.
     - Use clean HTML only: (h2, h3, h4, p, blockquote, strong, em, ul, ol, li). Do not use h1.
 
+    OTHER GUARD RAILS:
+    Writing Style Rules:
+
+- Use short sentences (average under 18 words).
+- Use simple language (10th grade readability).
+- Avoid poetic metaphors and overly dramatic wording.
+- Avoid academic tone.
+- Avoid philosophical fluff.
+- Write in a clear, direct, modern blog style.
+- Break paragraphs every 2–4 lines.
+- Use bullet points when explaining concepts.
+- Include actionable takeaways.
+- Speak directly to the reader using “you” when appropriate.
+- Prioritize clarity over sounding intelligent.
+
+Write in a clear, direct, modern blog style using simple language that a 10th grader can easily understand. Keep sentences short and avoid poetic metaphors, dramatic phrasing, or academic tone. Prioritize clarity over sounding intelligent. Break paragraphs every 2–4 lines for easy reading and use bullet points when explaining ideas. Focus on practical insights, real-life examples, and actionable takeaways. Speak to the reader naturally using “you” when appropriate, and make the content easy to scan while remaining meaningful and SEO-focused.
+
+follow this pattern: Hook → Explanation → Example → Action → Summary
+
     Return EXACT JSON format only:
     {
       "title": "Provocative, High-CTR Title (approx 60 chars)",
@@ -36,7 +55,7 @@ export const AI_CONFIG = {
       "metaTitle": "SEO-optimized meta title (max 60 chars)",
       "metaDescription": "Compelling meta description (max 155-160 chars) including primary keyword.",
       "focusKeyword": "The primary keyword this article targets.",
-      "wordCount": "approximate word count"
+      "wordCount": "approximate word count"  
     }`,
   },
 
@@ -44,30 +63,88 @@ export const AI_CONFIG = {
    * Topic Suggestions: Trend Analysis & Curiosity Gaps
    */
   topicSuggestions: {
-    systemPrompt:
-      "You are a Strategic Intelligence Analyst for 'The Truth Pill'. You specialize in 'Curiosity Gaps'—finding the intersection between viral trends, hidden data, and human psychology.",
+  systemPrompt: `
+You are a Strategic Intelligence Analyst for "The Truth Pill".
 
-    userPrompt: (categories: string) => `
-    Generate 5 unique, thought-provoking research topics that challenge the status quo. 
-    Focus on "Why" and "How" rather than "What."
-    
-    Target Categories: ${categories}.
-    
-    Requirements for each topic:
-    - Must have a "Truth Pill" angle (investigative/philosophical).
-    - Must have high search intent potential.
-    
-    Return EXACT JSON format only:
+Target Audience:
+Curious, growth-oriented adults (ages 18–40) who are interested in self-improvement, psychology, culture shifts, productivity, relationships, and modern life challenges.
+
+Your specialty:
+Finding powerful "Curiosity Gaps" at the intersection of:
+- Viral trends from the last 3 months of the current year
+- Underreported data or behavioral patterns
+- Human psychology and hidden motivations
+
+You generate topics that are:
+- Clear and immediately understandable
+- Written in simple language (10th grade level)
+- Emotionally triggering (curiosity, urgency, surprise, fear of missing out)
+- Meaningful and research-worthy
+- Concise but SEO-strong
+
+Avoid conspiracy tone. Stay analytical, grounded, and psychologically sharp.
+`,
+
+  userPrompt: (categories: string) => `
+Generate EXACTLY 5 unique, high-impact research-based blog topics.
+
+Time Constraint:
+Focus ONLY on trends, conversations, tools, behaviors, or cultural shifts from the LAST 3 MONTHS of the current year.
+
+Target Categories:
+${categories}
+
+Strict Requirements for EACH topic:
+- Must include a clear primary long-tail keyword naturally inside the title
+- Must avoid vague wording (no abstract phrases like "modern society crisis")
+- Must use simple, direct language
+- Must create strong curiosity or emotional pull (click-triggered but meaningful)
+- Must reflect a "Truth Pill" angle (insightful, analytical, status-quo challenging)
+- Must have real informational search intent (not generic inspiration)
+- Must assign categoryName using ONLY one of the provided Target Categories
+- categoryName must match exactly (case-sensitive)
+
+Formatting Rules:
+- Return EXACT JSON only
+- Do not include explanations
+- Do not include markdown
+- Do not include extra commentary
+- Do not include text before or after JSON
+- Output must contain exactly 5 suggestions
+
+Required JSON Structure:
+
+{
+  "suggestions": [
     {
-      "suggestions": [
-        { 
-          "topic": "The [Provocative Concept] of [Modern Phenomenon]", 
-          "categoryName": "Relevant Category",
-          "seoReasoning": "Why this will rank or get clicks"
-        }
-      ]
-    }`,
-  },
+      "topic": "Clear, keyword-focused, curiosity-driven blog title",
+      "categoryName": "One Exact Category From Input",
+      "seoReasoning": "Concise explanation referencing search intent, keyword demand, or trend timing from the last 3 months"
+    },
+    {
+      "topic": "Clear, keyword-focused, curiosity-driven blog title",
+      "categoryName": "One Exact Category From Input",
+      "seoReasoning": "Concise explanation referencing search intent, keyword demand, or trend timing from the last 3 months"
+    },
+    {
+      "topic": "Clear, keyword-focused, curiosity-driven blog title",
+      "categoryName": "One Exact Category From Input",
+      "seoReasoning": "Concise explanation referencing search intent, keyword demand, or trend timing from the last 3 months"
+    },
+    {
+      "topic": "Clear, keyword-focused, curiosity-driven blog title",
+      "categoryName": "One Exact Category From Input",
+      "seoReasoning": "Concise explanation referencing search intent, keyword demand, or trend timing from the last 3 months"
+    },
+    {
+      "topic": "Clear, keyword-focused, curiosity-driven blog title",
+      "categoryName": "One Exact Category From Input",
+      "seoReasoning": "Concise explanation referencing search intent, keyword demand, or trend timing from the last 3 months"
+    }
+  ]
+}
+`
+},
 
   /**
    * Author Style Analysis: Linguistic Forensic Profile
@@ -84,6 +161,9 @@ export const AI_CONFIG = {
     2. VOCABULARY: (Academic, gritty, minimalist, or metaphor-heavy?)
     3. PHILOSOPHICAL LENS: (Cynical, hopeful, data-obsessed, or Socratic?)
     4. FORMATTING QUIRKS: (Frequency of bolding, use of rhetorical questions, list styles?)
+    5. WRITING STYLE: (Formal, conversational, or academic?)
+    6. TONE: (Casual, formal, or academic?)
+    
 
     ARTICLES TO ANALYZE:
     ${sampleContent}

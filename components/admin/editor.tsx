@@ -79,15 +79,17 @@ class CloudinaryUploadAdapter {
         this.loader = loader;
     }
 
-    upload(): Promise<{ default: string }> {
+    upload(): Promise<{ default: string; alt: string }> {
         return this.loader.file.then((file: File) => new Promise((resolve, reject) => {
+            const fileName = file.name.split('.').slice(0, -1).join('.') || file.name;
             const formData = new FormData();
             formData.append("file", file);
 
             uploadImage(formData)
                 .then((url) => {
                     resolve({
-                        default: url
+                        default: url,
+                        alt: fileName
                     });
                 })
                 .catch((error) => {
@@ -182,7 +184,185 @@ export default function Editor({ content, onChange, onLengthChange }: EditorProp
     };
 
     return (
-        <div className="prose-editor space-y-2">
+        <div className="prose-editor space-y-2 relative" data-lenis-prevent>
+            <style jsx global>{`
+                .prose-editor .ck-editor__editable {
+                    min-height: 500px;
+                    max-height: 65vh;
+                    overflow-y: auto !important;
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    padding: 2.5rem !important;
+                }
+                .prose-editor .ck-editor__main {
+                    background: transparent !important;
+                    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+                    border-top: none !important;
+                    border-bottom-left-radius: 1.5rem !important;
+                    border-bottom-right-radius: 1.5rem !important;
+                    overflow: hidden;
+                }
+                .dark .prose-editor .ck-editor__main {
+                    border-color: rgba(255, 255, 255, 0.05) !important;
+                }
+                .prose-editor .ck-toolbar {
+                    backdrop-filter: blur(12px);
+                    background: rgba(255, 255, 255, 0.8) !important;
+                    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+                    border-top-left-radius: 1.5rem !important;
+                    border-top-right-radius: 1.5rem !important;
+                    padding: 0.5rem !important;
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                }
+                .dark .prose-editor .ck-toolbar {
+                    background: rgba(24, 24, 27, 0.8) !important;
+                    border-color: rgba(255, 255, 255, 0.05) !important;
+                }
+                
+                /* Problematic Content Highlighting - Red Border Box & Blinking */
+                .ck-content h1:nth-of-type(n+2),
+                .ck-content h2:nth-of-type(n+10) {
+                    border: 2px dashed #ef4444 !important;
+                    background: rgba(239, 68, 68, 0.05) !important;
+                    padding: 1.5rem !important;
+                    margin: 2rem -1.5rem !important;
+                    border-radius: 12px;
+                    position: relative;
+                    animation: error-blink 2s infinite ease-in-out;
+                    cursor: help;
+                }
+                
+                .ck-content h1:nth-of-type(n+2)::after {
+                    content: "⚠️ Multiple H1s Found - Only one H1 is allowed for SEO. This extra title might confuse search engines.";
+                    position: absolute;
+                    bottom: 100%;
+                    left: 0;
+                    margin-bottom: 8px;
+                    background: #ef4444;
+                    color: white;
+                    font-size: 10px;
+                    padding: 6px 12px;
+                    border-radius: 8px;
+                    font-family: inherit;
+                    font-weight: 900;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    z-index: 100;
+                    white-space: normal;
+                    width: 280px;
+                    box-shadow: 0 10px 20px -5px rgba(239, 68, 68, 0.4);
+                    pointer-events: none;
+                    opacity: 0;
+                    transform: translateY(5px);
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .ck-content h1:nth-of-type(n+2):hover::after {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                .ck-content h2:nth-of-type(n+10)::after {
+                    content: "⚠️ Too Many Subheadings - Having more than 9 sub-headings can make the article hard to read. Consider breaking this into multiple articles or merging sections.";
+                    position: absolute;
+                    bottom: 100%;
+                    left: 0;
+                    margin-bottom: 8px;
+                    background: #f59e0b;
+                    color: white;
+                    font-size: 10px;
+                    padding: 6px 12px;
+                    border-radius: 8px;
+                    font-family: inherit;
+                    font-weight: 900;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    z-index: 100;
+                    white-space: normal;
+                    width: 280px;
+                    box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.4);
+                    pointer-events: none;
+                    opacity: 0;
+                    transform: translateY(5px);
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .ck-content h2:nth-of-type(n+10):hover::after {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                .ck-content img:not([alt]), 
+                .ck-content img[alt=""],
+                .ck-content img[alt="article-image"] {
+                    outline: 4px dashed #ef4444 !important;
+                    outline-offset: 4px;
+                    filter: saturate(0.2) contrast(0.8) grayscale(0.5);
+                    animation: error-blink 2s infinite ease-in-out;
+                    border-radius: 8px;
+                    cursor: help;
+                }
+                
+                .ck-content figure.image:has(img:not([alt])),
+                .ck-content figure.image:has(img[alt=""]),
+                .ck-content figure.image:has(img[alt="article-image"]) {
+                    position: relative;
+                }
+
+                .ck-content figure.image:has(img:not([alt]))::after,
+                .ck-content figure.image:has(img[alt=""])::after,
+                .ck-content figure.image:has(img[alt="article-image"])::after {
+                    content: "⚠️ Missing Alt Text - Please add a description for this image to help visually impaired readers and improve SEO.";
+                    position: absolute;
+                    top: 10px;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(5px);
+                    background: #ef4444;
+                    color: white;
+                    font-size: 10px;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    font-weight: 900;
+                    text-transform: uppercase;
+                    z-index: 100;
+                    white-space: normal;
+                    width: 240px;
+                    text-align: center;
+                    box-shadow: 0 10px 20px -5px rgba(239, 68, 68, 0.4);
+                    pointer-events: none;
+                    opacity: 0;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .ck-content figure.image:hover::after {
+                    opacity: 1;
+                    transform: translateX(-50%) translateY(0);
+                }
+
+                @keyframes error-blink {
+                    0% { border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 0px rgba(239, 68, 68, 0); }
+                    50% { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); }
+                    100% { border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 0px rgba(239, 68, 68, 0); }
+                }
+
+                /* Custom Scrollbar for Editor */
+                .prose-editor .ck-editor__editable::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .prose-editor .ck-editor__editable::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .prose-editor .ck-editor__editable::-webkit-scrollbar-thumb {
+                    background: rgba(0, 0, 0, 0.1);
+                    border-radius: 10px;
+                }
+                .dark .prose-editor .ck-editor__editable::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
+                }
+            `}</style>
             <CKEditor
                 editor={ClassicEditor}
                 data={content}
@@ -194,15 +374,50 @@ export default function Editor({ content, onChange, onLengthChange }: EditorProp
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     editor.editing.view.document.on('clipboardInput', (evt: any, data: any) => {
                         const dataTransfer = data.dataTransfer;
+                        const htmlData = dataTransfer.getData('text/html');
                         const textData = dataTransfer.getData('text/plain');
 
                         const isMarkdown = /^#\s|^\*|\*\*.+\*\*|^-\s|^>.+\n|^\[.+\]\(.+\)/m.test(textData);
-                        const hasHtml = dataTransfer.getData('text/html');
 
-                        if (isMarkdown && !hasHtml) {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            const html = DOMPurify.sanitize(marked.parse(textData) as any);
-                            data.content = editor.data.processor.toView(html);
+                        if (htmlData) {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(htmlData, 'text/html');
+                            let modified = false;
+
+                            // 1. Demote H1 to H2 to prevent multiple H1 issues
+                            // We only do this if it's NOT the very first block of the paste? 
+                            // Actually user said they want to detect and format properly.
+                            // Demoting is proactive.
+                            doc.querySelectorAll('h1').forEach(h => {
+                                const h2 = doc.createElement('h2');
+                                h2.innerHTML = h.innerHTML;
+                                h.parentNode?.replaceChild(h2, h);
+                                modified = true;
+                            });
+
+                            // 2. Ensure images have alt text if missing (use filename from src)
+                            doc.querySelectorAll('img').forEach(img => {
+                                if (!img.getAttribute('alt')) {
+                                    const src = img.getAttribute('src') || '';
+                                    const fileName = src.split('/').pop()?.split('.')[0] || 'article-image';
+                                    img.setAttribute('alt', fileName.replace(/[-_]/g, ' '));
+                                    modified = true;
+                                }
+                            });
+
+                            if (modified) {
+                                data.content = editor.data.processor.toView(doc.body.innerHTML);
+                            }
+                        } else if (isMarkdown && textData) {
+                            const html = DOMPurify.sanitize(marked.parse(textData) as string);
+                            // Process markdown-generated H1s to H2s
+                            const tempDoc = new DOMParser().parseFromString(html as string, 'text/html');
+                            tempDoc.querySelectorAll('h1').forEach(h => {
+                                const h2 = tempDoc.createElement('h2');
+                                h2.innerHTML = h.innerHTML;
+                                h.parentNode?.replaceChild(h2, h);
+                            });
+                            data.content = editor.data.processor.toView(tempDoc.body.innerHTML);
                         }
                     });
 

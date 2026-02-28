@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Bot, Save, Loader2, Key, Cpu, Sparkles, Clock, Calendar, Plus, Trash2, RefreshCw, CheckCircle2, Tag } from "lucide-react";
+import { Bot, Save, Loader2, Key, Cpu, Sparkles, Clock, Calendar, Plus, Trash2, RefreshCw, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Doc, Id } from "@/convex/_generated/dataModel";
@@ -198,13 +198,15 @@ export default function AISettingsPage() {
     const timezones = ["UTC", "GMT+1", "EST", "PST", "CET", "IST"];
 
     return (
-        <div className="max-w-4xl space-y-12 pb-20 px-4 md:px-0 dark:text-gray-100">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-3xl font-serif font-bold text-zinc-900 dark:text-white">AI Operations</h1>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-1 uppercase text-[10px] font-black tracking-widest hidden md:block">
-                        Master your digital ghostwriters & autonomous rhythms.
-                    </p>
+        <div className="max-w-5xl space-y-16 pb-20 px-4 md:px-0 dark:text-gray-100 font-sans">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-10 border-b border-gray-100 dark:border-gray-800/50">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-1 h-px bg-zinc-900 dark:bg-zinc-400 rounded-full" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Autonomous Intelligence</span>
+                    </div>
+                    <h1 className="text-5xl font-serif font-black tracking-tight text-zinc-900 dark:text-white leading-none">AI Operations</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400 font-medium max-w-lg">Master your digital ghostwriters & define the autonomous rhythms that generate truth.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     {settings?.isWriting && (
@@ -433,32 +435,34 @@ export default function AISettingsPage() {
                 </form>
 
                 <div className="grid md:grid-cols-2 gap-12">
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-xl font-serif font-bold text-zinc-900">Strategic Content Lab</h2>
-                                <p className="text-[10px] text-zinc-400 mt-1 uppercase font-black tracking-widest">Pending topics for AI Deep-Dives</p>
+                            <div className="space-y-1">
+                                <h2 className="text-2xl font-serif font-black text-zinc-900 dark:text-white tracking-tight">Strategic Content Lab</h2>
+                                <p className="text-[10px] text-zinc-400 mt-1 uppercase font-black tracking-[0.2em] italic">Queue of curated intelligence for processing</p>
                             </div>
                             <button
                                 onClick={() => handleShuffleTopics(true)}
                                 disabled={isShuffling || !formData.apiKey}
-                                className="p-2 text-zinc-400 hover:text-sky-500 transition-all hover:rotate-180 duration-500 disabled:opacity-50"
+                                className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 disabled:opacity-50"
                                 title="Full Refresh: Clear and generate new strategic topics"
                             >
                                 {isShuffling ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
                             </button>
                         </div>
 
-                        <div className="bg-white dark:bg-cardrounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-zinc-50 dark:border-zinc-800 space-y-4">
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={newResearchTopic}
-                                        onChange={e => setNewResearchTopic(e.target.value)}
-                                        placeholder="Add custom research..."
-                                        className="flex-1 bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/10 dark:text-white"
-                                    />
+                        <div className="bg-white/50 dark:bg-gray-950/40 backdrop-blur-xl rounded-[2.5rem] border border-gray-100 dark:border-gray-800/50 shadow-sm overflow-hidden">
+                            <div className="p-8 border-b border-gray-50 dark:border-gray-900 space-y-6">
+                                <div className="flex gap-3">
+                                    <div className="flex-1 relative group/input">
+                                        <input
+                                            type="text"
+                                            value={newResearchTopic}
+                                            onChange={e => setNewResearchTopic(e.target.value)}
+                                            placeholder="Specify intelligence to gather..."
+                                            className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl px-5 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-zinc-900/5 transition-all dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-700 font-serif italic"
+                                        />
+                                    </div>
                                     <button
                                         onClick={() => {
                                             if (newResearchTopic.trim()) {
@@ -469,75 +473,89 @@ export default function AISettingsPage() {
                                                 setNewResearchTopic("");
                                             }
                                         }}
-                                        className="p-2 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+                                        className="w-12 h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl"
                                     >
-                                        <Plus size={18} />
+                                        <Plus size={20} />
                                     </button>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Tag size={12} className="text-zinc-400" />
+                                <div className="flex items-center gap-4">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Target Taxonomy</span>
                                     <select
                                         value={selectedCategoryId}
                                         onChange={e => setSelectedCategoryId(e.target.value)}
-                                        className="flex-1 bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase outline-none dark:text-white"
+                                        className="bg-gray-50/50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none dark:text-gray-400 appearance-none cursor-pointer hover:bg-white dark:hover:bg-gray-900 transition-colors"
                                     >
-                                        <option value="">No Category</option>
+                                        <option value="">UNCATEGORIZED</option>
                                         {categories?.map((c: Doc<"categories">) => (
                                             <option key={c._id} value={c._id}>{c.name}</option>
                                         ))}
                                     </select>
                                 </div>
                             </div>
-                            <div className="divide-y divide-zinc-50 dark:divide-zinc-800 max-h-[400px] overflow-y-auto">
+                            <div className="divide-y divide-gray-50 dark:divide-gray-900 max-h-[450px] overflow-y-auto custom-scrollbar">
                                 {researchTopics?.map((topic: Doc<"researchTopics">) => (
-                                    <div key={topic._id} className="p-4 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors group">
-                                        <div className="flex-1 pr-4">
-                                            <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 leading-tight">{topic.topic}</p>
-                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                    <motion.div
+                                        layout
+                                        key={topic._id}
+                                        className="p-6 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-all group"
+                                    >
+                                        <div className="flex-1 pr-6 space-y-2">
+                                            <p className="text-sm font-bold text-gray-900 dark:text-gray-200 leading-snug font-serif tracking-tight group-hover:translate-x-1 transition-transform">{topic.topic}</p>
+                                            <div className="flex items-center gap-3">
                                                 <div className={cn(
-                                                    "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter",
-                                                    topic.status === "processed" ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400" : "bg-zinc-100 dark:bg-background-800 text-zinc-400"
+                                                    "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                                                    topic.status === "processed"
+                                                        ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
+                                                        : "bg-zinc-100/50 text-zinc-400 dark:bg-gray-900 dark:text-zinc-600"
                                                 )}>
-                                                    {topic.status === "processed" ? "Written" : "Strategic"}
+                                                    {topic.status === "processed" ? "ARCHIVED" : "QUEUED"}
                                                 </div>
                                                 {topic.categoryId && categories && (
-                                                    <p className="text-[9px] text-primary font-black uppercase tracking-tighter">
+                                                    <span className="text-[9px] font-black text-blue-600 dark:text-blue-400/60 uppercase tracking-[0.1em]">
                                                         {categories.find((c: Doc<"categories">) => c._id === topic.categoryId)?.name}
-                                                    </p>
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-2 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
                                             <button
                                                 onClick={() => handleRunResearch(topic.topic)}
-                                                className="p-1.5 text-zinc-400 hover:text-green-600 transition-colors"
+                                                className="w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-800 text-zinc-400 hover:text-emerald-500 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:scale-110"
+                                                title="Process Immediate"
                                             >
-                                                <Sparkles size={14} />
+                                                <Sparkles size={16} />
                                             </button>
                                             <button
                                                 onClick={() => deleteResearchTopic({ id: topic._id })}
-                                                className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
+                                                className="w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-800 text-zinc-400 hover:text-red-500 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:scale-110"
+                                                title="Remove Signal"
                                             >
-                                                <Trash2 size={14} />
+                                                <Trash2 size={16} />
                                             </button>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))}
+                                {researchTopics?.length === 0 && (
+                                    <div className="p-12 text-center text-zinc-400 space-y-2">
+                                        <Bot className="mx-auto opacity-20" size={32} />
+                                        <p className="text-[10px] uppercase font-black tracking-widest">No Intelligence Queued</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-xl font-serif font-bold text-zinc-900">Autonomous Rhythms</h2>
-                                <p className="text-[10px] text-zinc-400 mt-1 uppercase font-black tracking-widest">Global content pulses & heartbeats</p>
+                            <div className="space-y-1">
+                                <h2 className="text-2xl font-serif font-black text-zinc-900 dark:text-white tracking-tight italic">Autonomous Rhythms</h2>
+                                <p className="text-[10px] text-zinc-400 uppercase font-black tracking-[0.2em]">Global content pulses & heartbeats</p>
                             </div>
                             <button
                                 onClick={() => setIsAddingSchedule(true)}
-                                className="p-2 bg-zinc-50 text-zinc-400 rounded-lg hover:text-primary transition-colors border border-zinc-100"
+                                className="w-12 h-12 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl shadow-zinc-950/10 dark:shadow-white/5 group"
                             >
-                                <Plus size={18} />
+                                <Plus size={24} className="group-hover:rotate-90 transition-transform duration-500" />
                             </button>
                         </div>
 
@@ -545,15 +563,18 @@ export default function AISettingsPage() {
                             <AnimatePresence>
                                 {isAddingSchedule && (
                                     <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="overflow-hidden"
+                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        className="relative group/modal overflow-hidden p-[1px] rounded-[2rem] bg-gradient-to-br from-zinc-200 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900 shadow-2xl"
                                     >
-                                        <div className="bg-white dark:bg-cardp-6 rounded-3xl border-2 border-primary/20 shadow-xl space-y-6 mb-4">
-                                            <div className="space-y-4">
-                                                <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Target Days</label>
-                                                <div className="flex flex-wrap gap-2">
+                                        <div className="bg-white dark:bg-gray-950 p-8 rounded-[1.95rem] space-y-8">
+                                            <div className="space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 leading-none">Temporal Window</label>
+                                                    <div className="px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-900 text-[10px] font-bold text-zinc-500">Weekly Cycle</div>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2.5">
                                                     {days.map((day, i) => (
                                                         <button
                                                             key={day}
@@ -567,55 +588,59 @@ export default function AISettingsPage() {
                                                                 }
                                                             }}
                                                             className={cn(
-                                                                "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all border",
+                                                                "relative w-12 h-12 rounded-xl text-[11px] font-black uppercase transition-all border overflow-hidden",
                                                                 scheduleFormData.daysOfWeek.includes(i)
-                                                                    ? 'bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white border-zinc-900'
-                                                                    : 'bg-zinc-50 dark:bg-background-800 text-zinc-400 dark:text-zinc-500 border-zinc-100 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                                                                    ? 'bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white border-zinc-900 shadow-lg scale-105'
+                                                                    : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-400 border-zinc-100 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                                                             )}
                                                         >
-                                                            {day}
+                                                            {day.charAt(0)}
+                                                            {scheduleFormData.daysOfWeek.includes(i) && (
+                                                                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-current rounded-full" />
+                                                            )}
                                                         </button>
                                                     ))}
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Time</label>
+                                            <div className="grid grid-cols-2 gap-8 pt-4 border-t border-zinc-50 dark:border-zinc-900">
+                                                <div className="space-y-3">
+                                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Trigger Time</label>
                                                     <input
                                                         type="time"
                                                         value={scheduleFormData.time}
                                                         onChange={e => setScheduleFormData(prev => ({ ...prev, time: e.target.value }))}
-                                                        className="w-full bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2 text-xs font-bold outline-none dark:text-white"
+                                                        className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl px-4 py-3 font-serif font-black text-xl outline-none focus:ring-2 focus:ring-zinc-900/5 dark:text-white"
                                                     />
                                                 </div>
-                                                <div>
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Timezone</label>
+                                                <div className="space-y-3">
+                                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Zone</label>
                                                     <select
                                                         value={scheduleFormData.timezone}
                                                         onChange={e => setScheduleFormData(prev => ({ ...prev, timezone: e.target.value }))}
-                                                        className="w-full bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2 text-xs font-bold outline-none dark:text-white"
+                                                        className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl px-4 py-[1.125rem] text-xs font-black uppercase outline-none dark:text-white appearance-none cursor-pointer"
                                                     >
                                                         {timezones.map(tz => <option key={tz} value={tz}>{tz}</option>)}
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
+
+                                            <div className="flex gap-4 pt-4">
                                                 <button
                                                     onClick={() => {
                                                         setIsAddingSchedule(false);
                                                         setEditingScheduleId(null);
                                                         setScheduleFormData({ daysOfWeek: [1], time: "09:00", timezone: "GMT+1", isActive: true, topicsToResearch: [] });
                                                     }}
-                                                    className="flex-1 py-2 text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                                                    className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-2xl transition-all"
                                                 >
-                                                    Cancel
+                                                    Abort
                                                 </button>
                                                 <button
                                                     onClick={handleSaveSchedule}
-                                                    className="flex-1 py-2 bg-primary text-white text-[10px] font-black uppercase rounded-xl shadow-lg"
+                                                    className="flex-[2] py-4 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-2xl transition-transform hover:scale-[1.02] active:scale-95"
                                                 >
-                                                    {editingScheduleId ? "Update Pulse" : "Activate Pulse"}
+                                                    {editingScheduleId ? "Sync Pulse" : "Initialize Pulse"}
                                                 </button>
                                             </div>
                                         </div>
@@ -623,33 +648,42 @@ export default function AISettingsPage() {
                                 )}
                             </AnimatePresence>
 
-                            <div className="space-y-3">
+                            <div className="grid gap-6">
                                 {schedule?.map((item: Doc<"aiSchedule">) => (
-                                    <div key={item._id} className="bg-white dark:bg-cardp-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between group hover:border-primary/20 transition-all">
-                                        <div className="flex items-center gap-4">
+                                    <motion.div
+                                        layout
+                                        key={item._id}
+                                        className="bg-white/50 dark:bg-gray-950/40 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800/50 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all duration-500"
+                                    >
+                                        <div className="flex items-center gap-6">
                                             <div className={cn(
-                                                "w-10 h-10 rounded-2xl flex items-center justify-center transition-colors",
-                                                item.isActive ? "bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400" : "bg-zinc-50 dark:bg-background-800 text-zinc-400"
+                                                "w-16 h-16 rounded-[1.25rem] flex items-center justify-center transition-all duration-500 border",
+                                                item.isActive
+                                                    ? "bg-zinc-900 dark:bg-white text-white dark:text-gray-950 border-transparent shadow-lg shadow-zinc-950/20 dark:shadow-white/10"
+                                                    : "bg-gray-50 dark:bg-gray-900 text-gray-400 border-gray-100 dark:border-gray-800"
                                             )}>
-                                                <Calendar size={18} />
+                                                <Calendar size={28} strokeWidth={1.5} />
                                             </div>
-                                            <div>
-                                                <h4 className="font-bold text-zinc-900 dark:text-white text-sm">
-                                                    {(item.daysOfWeek || []).map((d: number) => days[d]).join(", ")}
+                                            <div className="space-y-1">
+                                                <h4 className="font-black text-gray-950 dark:text-white text-base tracking-tight italic">
+                                                    {(item.daysOfWeek || []).map((d: number) => days[d]).join(" • ")}
                                                 </h4>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">{item.time}</span>
-                                                    <span className="w-1 h-1 bg-zinc-200 dark:bg-background-800 rounded-full" />
-                                                    <span className="text-[9px] font-bold text-zinc-300 dark:text-zinc-600 uppercase">{item.timezone || 'GMT+1'}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Clock size={12} className="text-zinc-400" />
+                                                        <span className="text-[11px] font-black text-zinc-900 dark:text-zinc-400 uppercase tracking-widest">{item.time}</span>
+                                                    </div>
+                                                    <div className="w-1 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                                                    <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest italic">{item.timezone || 'GMT+1'}</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-4">
                                             <button
                                                 onClick={() => handleDeleteSchedule(item._id)}
-                                                className="p-2 text-zinc-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                className="p-3 text-zinc-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-90"
                                             >
-                                                <Trash2 size={14} />
+                                                <Trash2 size={18} />
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -664,14 +698,16 @@ export default function AISettingsPage() {
                                                     setIsAddingSchedule(true);
                                                 }}
                                                 className={cn(
-                                                    "w-10 h-10 rounded-2xl flex items-center justify-center transition-all",
-                                                    item.isActive ? "bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white shadow-md" : "bg-zinc-100 dark:bg-background-800 text-zinc-400 dark:text-zinc-500"
+                                                    "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                                    item.isActive
+                                                        ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50"
+                                                        : "bg-gray-50 text-gray-400 dark:bg-gray-900 dark:text-gray-600 border border-gray-100 dark:border-gray-800"
                                                 )}
                                             >
-                                                {item.isActive ? <Clock size={16} /> : <div className="w-2 h-2 bg-zinc-300 dark:bg-background-600 rounded-full" />}
+                                                {item.isActive ? "Live Pulse" : "Paused"}
                                             </button>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
                         </div>
