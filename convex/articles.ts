@@ -557,7 +557,13 @@ export const saveAIDraft = internalMutation({
     focusKeyword: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { metaTitle, metaDescription, focusKeyword, ...rest } = args;
+    const {
+      metaTitle,
+      metaDescription,
+      focusKeyword,
+      topic: _topic,
+      ...rest
+    } = args;
     const admins = await ctx.db
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", "admin"))
