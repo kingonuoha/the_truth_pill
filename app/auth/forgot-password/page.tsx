@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, ArrowLeft, Loader2, CheckCircle2, ShieldCheck, Lock, Hash } from "lucide-react";
+import { Mail, ArrowLeft, Loader2, CheckCircle2, ShieldCheck, Lock, Hash, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { sendOtpAction, verifyAndChangePasswordAction } from "@/app/actions/auth";
 
@@ -12,6 +12,8 @@ export default function ForgotPasswordPage() {
     const [step, setStep] = useState<"email" | "otp" | "success">("email");
     const [email, setEmail] = useState("");
     const [otpCode, setOtpCode] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     async function handleRequestOtp(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -160,11 +162,18 @@ export default function ForgotPasswordPage() {
                                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-blue-600 transition-colors" size={18} />
                                             <input
                                                 name="password"
-                                                type="password"
+                                                type={showPassword ? "text" : "password"}
                                                 placeholder="Min 8 characters"
                                                 required
-                                                className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all text-gray-900 dark:text-white font-medium"
+                                                className="w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all text-gray-900 dark:text-white font-medium"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors focus:outline-none"
+                                            >
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
                                         </div>
                                     </div>
 
@@ -174,11 +183,18 @@ export default function ForgotPasswordPage() {
                                             <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-blue-600 transition-colors" size={18} />
                                             <input
                                                 name="confirmPassword"
-                                                type="password"
+                                                type={showConfirmPassword ? "text" : "password"}
                                                 placeholder="Repeat password"
                                                 required
-                                                className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all text-gray-900 dark:text-white font-medium"
+                                                className="w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 transition-all text-gray-900 dark:text-white font-medium"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors focus:outline-none"
+                                            >
+                                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

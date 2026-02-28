@@ -11,7 +11,7 @@ import {
     User, Settings, Bookmark, MessageSquare, Heart,
     LogOut, ChevronRight, Shield,
     Trash2, ExternalLink, Activity, Loader2, Sparkles,
-    ArrowRight, Clock, Sun, Moon, Lock
+    ArrowRight, Clock, Sun, Moon, Lock, Eye, EyeOff
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Navbar } from "@/components/navbar";
@@ -452,6 +452,8 @@ function ChangePasswordSection({ email }: { email: string }) {
     const [isLoading, setIsLoading] = useState(false);
     const [step, setStep] = useState<"initial" | "otp">("initial");
     const [otpCode, setOtpCode] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleSendOtp = async () => {
         setIsLoading(true);
@@ -537,23 +539,41 @@ function ChangePasswordSection({ email }: { email: string }) {
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">New Password</label>
-                                <input
-                                    name="password"
-                                    type="password"
-                                    placeholder="Enter new password"
-                                    required
-                                    className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold"
-                                />
+                                <div className="relative group/input">
+                                    <input
+                                        name="password"
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Enter new password"
+                                        required
+                                        className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold pr-12"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors focus:outline-none"
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Confirm New Password</label>
-                                <input
-                                    name="confirmPassword"
-                                    type="password"
-                                    placeholder="Confirm new password"
-                                    required
-                                    className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold"
-                                />
+                                <div className="relative group/input">
+                                    <input
+                                        name="confirmPassword"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        placeholder="Confirm new password"
+                                        required
+                                        className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold pr-12"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors focus:outline-none"
+                                    >
+                                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-4 pt-2">
