@@ -14,11 +14,11 @@ export default function NewArticlePage() {
                     className="flex items-center gap-2 text-zinc-400 hover:text-primary transition-colors text-[10px] font-black uppercase tracking-widest"
                 >
                     <ChevronLeft size={16} />
-                    Back to Articles
+                    Go back to your posts
                 </Link>
                 <div>
-                    <h1 className="text-3xl font-serif font-bold dark:text-zinc-900">Create New Article</h1>
-                    <p className="text-zinc-500 mt-1 uppercase text-[10px] font-black tracking-widest">Craft your next viral piece of truth.</p>
+                    <h1 className="text-3xl font-serif font-bold dark:text-zinc-900">Write a new post</h1>
+                    <p className="text-zinc-500 mt-1 uppercase text-[10px] font-black tracking-widest">Share your ideas and stories with the world.</p>
                 </div>
             </div>
 

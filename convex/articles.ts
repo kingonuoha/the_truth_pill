@@ -202,9 +202,11 @@ export const create = mutation({
     metaTitle: v.optional(v.string()),
     metaDescription: v.optional(v.string()),
     focusKeyword: v.optional(v.string()),
+    coverImageAlt: v.optional(v.string()),
     adminEmail: v.optional(v.string()),
+    authorId: v.optional(v.id("users")),
   },
-  handler: async (ctx, { adminEmail, ...args }) => {
+  handler: async (ctx, { adminEmail, authorId: providedAuthorId, ...args }) => {
     // Validation for non-drafts
     if (args.status !== "draft") {
       if (!args.excerpt) throw new Error("Excerpt is required for publishing");
@@ -254,7 +256,7 @@ export const create = mutation({
     const now = Date.now();
     const articleId = await ctx.db.insert("articles", {
       ...args,
-      authorId: user._id,
+      authorId: providedAuthorId || user._id,
       viewCount: 0,
       uniqueViewCount: 0,
       readingTime: Math.ceil((args.content || "").length / 1300),
@@ -296,7 +298,9 @@ export const update = mutation({
     metaTitle: v.optional(v.string()),
     metaDescription: v.optional(v.string()),
     focusKeyword: v.optional(v.string()),
+    coverImageAlt: v.optional(v.string()),
     adminEmail: v.optional(v.string()),
+    authorId: v.optional(v.id("users")),
   },
   handler: async (ctx, { id, adminEmail, ...args }) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -553,13 +557,7 @@ export const saveAIDraft = internalMutation({
     focusKeyword: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const {
-      metaTitle,
-      metaDescription,
-      focusKeyword,
-      topic: _,
-      ...rest
-    } = args;
+    const { metaTitle, metaDescription, focusKeyword, ...rest } = args;
     const admins = await ctx.db
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", "admin"))
