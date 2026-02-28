@@ -35,6 +35,7 @@ export default defineSchema({
     excerpt: v.optional(v.string()),
     content: v.optional(v.string()), // rich text/markdown
     coverImage: v.optional(v.string()), // Cloudinary URL
+    coverImageAlt: v.optional(v.string()),
     authorId: v.id("users"),
     categoryId: v.optional(v.id("categories")),
     tags: v.optional(v.array(v.string())),

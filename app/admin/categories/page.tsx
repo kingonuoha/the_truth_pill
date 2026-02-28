@@ -98,65 +98,90 @@ export default function CategoriesPage() {
     }
 
     return (
-        <div className="space-y-10 pb-12 font-sans text-gray-950 dark:text-gray-100">
+        <div className="space-y-12 pb-20 font-sans text-gray-950 dark:text-gray-100">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl font-serif font-black tracking-tight dark:text-white">Taxonomy</h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium font-sans">Organize your truth and define the knowledge structure.</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-gray-100 dark:border-gray-800/50">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-1 h-px bg-blue-600 rounded-full" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400">Knowledge Architecture</span>
+                    </div>
+                    <h1 className="text-5xl font-serif font-black tracking-tight dark:text-white leading-none">Taxonomy</h1>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium max-w-lg">Organize your truth and define the knowledge structure that governs the digital experience.</p>
                 </div>
                 <button
                     onClick={() => { resetForm(); setIsModalOpen(true); }}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2.5 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-95 shadow-lg shadow-blue-100 dark:shadow-blue-900/20"
+                    className="group relative px-8 py-4 bg-gray-950 dark:bg-white text-white dark:text-gray-950 rounded-2xl font-black text-xs uppercase tracking-[0.15em] flex items-center gap-3 overflow-hidden transition-all hover:scale-[1.02] active:scale-95 shadow-2xl shadow-blue-500/10"
                 >
-                    <Plus size={20} />
-                    New Taxonomy
+                    <div className="absolute inset-0 bg-blue-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                    <Plus size={18} className="relative z-10" />
+                    <span className="relative z-10 group-hover:text-white transition-colors">Establish Path</span>
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {categories.map((cat: CategoryWithCount) => (
-                    <div key={cat._id} className="bg-white dark:bg-cardp-8 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm hover:shadow-xl hover:shadow-gray-200 dark:hover:shadow-black/50 transition-all duration-500 group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/10 rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                    <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={cat._id}
+                        className="group relative bg-white/70 dark:bg-zinc-950/40 backdrop-blur-xl rounded-3xl p-8 border border-white dark:border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.02)] dark:shadow-none hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] transition-all duration-700 overflow-hidden isolate"
+                    >
+                        {/* Interactive Background */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/[0.03] to-purple-600/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10" />
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -mr-24 -mt-24 group-hover:scale-150 transition-transform duration-1000 -z-10" />
 
-                        <div className="flex items-start justify-between mb-6 relative z-10">
-                            <div className="w-14 h-14 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800 group-hover:bg-blue-600 group-hover:text-white group-hover:rotate-6 transition-all duration-500">
-                                <Folder size={24} />
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-blue-600 blur-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
+                                <div className="relative w-16 h-16 rounded-[1.25rem] bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex items-center justify-center text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-white dark:group-hover:bg-gray-950 group-hover:border-blue-100 dark:group-hover:border-blue-900/50 transition-all duration-500">
+                                    <Folder size={28} strokeWidth={1.5} />
+                                </div>
                             </div>
-                            <div className="flex items-center gap-1 mt-1">
+                            <div className="flex items-center gap-2 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-500">
                                 <button
                                     onClick={() => handleEdit(cat)}
-                                    className="p-2.5 bg-gray-50 dark:bg-background-800 text-gray-400 dark:text-zinc-500 hover:bg-white dark:hover:bg-zinc-700 hover:text-blue-600 hover:shadow-sm rounded-xl border border-transparent hover:border-gray-100 dark:hover:border-zinc-700 transition-all active:scale-90"
-                                    title="Edit Topic"
+                                    className="p-3 bg-white dark:bg-gray-900 text-gray-400 hover:text-blue-600 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:scale-110 active:scale-90"
                                 >
                                     <Edit2 size={16} />
                                 </button>
                                 <button
                                     onClick={() => handleDelete(cat._id)}
-                                    className="p-2.5 bg-gray-50 dark:bg-background-800 text-gray-400 dark:text-zinc-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded-xl border border-transparent transition-all active:scale-90"
-                                    title="Delete Topic"
+                                    className="p-3 bg-white dark:bg-gray-900 text-gray-400 hover:text-red-500 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:scale-110 active:scale-90"
                                 >
                                     <Trash2 size={16} />
                                 </button>
                             </div>
                         </div>
 
-                        <div className="relative z-10">
-                            <h3 className="font-serif font-black text-2xl tracking-tight mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors dark:text-white">{cat.name}</h3>
-                            <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium min-h-[40px] line-clamp-2">{cat.description || "No classification details provided for this taxonomy."}</p>
-
-                            <div className="mt-8 pt-6 border-t border-gray-50 dark:border-zinc-800 flex items-center justify-between">
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-zinc-500">Structure</span>
-                                    <span className="text-xs font-bold text-gray-500 dark:text-zinc-400 font-mono mt-0.5">/{cat.slug}</span>
-                                </div>
-                                <div className="flex flex-col items-end">
-                                    <span className="text-lg font-black text-blue-600 dark:text-blue-400 tabular-nums leading-none">{cat.articleCount || 0}</span>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 dark:text-zinc-500 mt-1">Artifacts</span>
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="text-2xl font-serif font-black tracking-tight text-gray-950 dark:text-white leading-tight group-hover:translate-x-1 transition-transform duration-500">{cat.name}</h3>
+                                <div className="mt-1 flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600/60 dark:text-blue-400/60">Path:</span>
+                                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 font-mono tracking-tighter">tp://truthpill.org/{cat.slug}</span>
                                 </div>
                             </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium line-clamp-2 italic opacity-80">
+                                {cat.description || "The conceptual boundaries for this branch of truth have not yet been defined by an architect."}
+                            </p>
                         </div>
-                    </div>
+
+                        <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between group/footer">
+                            <div className="space-y-1">
+                                <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-600 group-hover:text-blue-600 transition-colors duration-500">Classification</span>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                                    <span className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-wider italic">Level 01 Entry</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                                <span className="text-3xl font-serif font-black text-gray-950 dark:text-white tabular-nums leading-none group-hover:scale-110 transition-transform duration-500">{cat.articleCount || 0}</span>
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-300 dark:text-gray-700 mt-2">Active Artifacts</span>
+                            </div>
+                        </div>
+                    </motion.div>
                 ))}
             </div>
 

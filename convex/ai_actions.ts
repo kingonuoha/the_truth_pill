@@ -160,6 +160,7 @@ export const generateContent = action({
                   : []),
                 { role: "user", content: args.prompt },
               ],
+              response_format: { type: "json_object" },
               temperature: 0.7,
             }),
           },
@@ -257,14 +258,16 @@ export const generateArticleFromTopic = action({
       }
 
       await ctx.runMutation(internal.articles.saveAIDraft, {
-        title: data.title,
-        content: data.content,
-        excerpt: data.excerpt,
-        tags: data.tags || [],
+        title: String(data.title),
+        content: String(data.content),
+        excerpt: String(data.excerpt),
+        tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
         topic: args.topic,
-        metaTitle: data.metaTitle,
-        metaDescription: data.metaDescription,
-        focusKeyword: data.focusKeyword,
+        metaTitle: data.metaTitle ? String(data.metaTitle) : undefined,
+        metaDescription: data.metaDescription
+          ? String(data.metaDescription)
+          : undefined,
+        focusKeyword: data.focusKeyword ? String(data.focusKeyword) : undefined,
       });
 
       // Mark the research topic as processed if it exists

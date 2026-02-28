@@ -1,35 +1,36 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
-    FileText,
-    Eye,
-    MessageSquare,
-    Plus,
-    Sparkles,
+    Activity,
     ArrowUpRight,
     ArrowDownRight,
-    Clock,
-    UserPlus,
-    MessageCircle,
-    Activity,
-    ChevronRight,
+    Plus,
+    Sparkles,
     TrendingUp,
-    Users
+    Users,
+    ChevronRight,
+    Clock,
+    MessageCircle,
+    UserPlus,
+    FileText,
+    MessageSquare,
+    Eye,
 } from "lucide-react";
-import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
 import {
+    AreaChart,
+    Area,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
-    ResponsiveContainer,
-    AreaChart,
-    Area
-} from "recharts";
-import { useSession } from "next-auth/react";
+    ResponsiveContainer
+} from 'recharts';
+import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export default function AdminDashboard() {
@@ -42,12 +43,20 @@ export default function AdminDashboard() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 transition-colors duration-500">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-900/50 shadow-sm relative overflow-hidden">
-                    <div className="absolute inset-0 bg-blue-600/10 animate-pulse" />
-                    <Activity className="text-blue-600 dark:text-blue-400 animate-pulse" size={24} />
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 transition-colors duration-500">
+                <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-2xl overflow-hidden">
+                        <Activity className="text-blue-500 animate-pulse" size={32} />
+                    </div>
+                    <div className="absolute inset-x-0 -bottom-8 flex justify-center">
+                        <div className="flex gap-1">
+                            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 rounded-full bg-blue-500/60" />
+                            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 rounded-full bg-blue-500/30" />
+                        </div>
+                    </div>
                 </div>
-                <p className="text-gray-400 dark:text-gray-500 font-bold text-[10px] uppercase tracking-[0.2em] animate-pulse">Synchronizing command center...</p>
+                <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.3em] ml-1">Loading Dashboard</p>
             </div>
         );
     }
@@ -59,140 +68,154 @@ export default function AdminDashboard() {
     }));
 
     return (
-        <div className="space-y-10 pb-12 font-sans">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl font-serif font-black text-gray-950 dark:text-white tracking-tight italic transition-colors">Pulse</h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium font-sans">
-                        Control console for <span className="text-gray-950 dark:text-blue-400 font-bold">The Truth Pill</span>.
-                        Welcome back, <span className="text-blue-600 dark:text-blue-500 font-bold">{session?.user?.name || 'Administrator'}</span>.
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Link
-                        href="/admin/ai-drafts"
-                        className="flex items-center gap-2.5 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 font-black text-[10px] uppercase tracking-widest text-gray-950 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all active:scale-95 shadow-sm"
-                    >
-                        <Sparkles size={16} className="text-purple-500" />
-                        AI Laboratory
-                    </Link>
-                    <Link
-                        href="/admin/articles/new"
-                        className="bg-blue-600 dark:bg-blue-500 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2.5 hover:bg-blue-700 dark:hover:bg-blue-600 shadow-xl shadow-blue-600/20 transition-all active:scale-95"
-                    >
-                        <Plus size={16} />
-                        New Transmission
-                    </Link>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-12 pb-20"
+        >
+            {/* Header Section */}
+            <div className="relative group">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-8 bg-blue-600 rounded-full" />
+                            <h1 className="text-6xl font-serif font-black text-zinc-950 dark:text-white tracking-tighter leading-none italic">
+                                Pulse
+                            </h1>
+                        </div>
+                        <p className="text-zinc-500 dark:text-zinc-400 font-sans max-w-lg text-sm leading-relaxed">
+                            Command & Control center for <span className="text-zinc-900 dark:text-white font-bold underline decoration-blue-500/30 underline-offset-4">The Truth Pill</span>.
+                            Greetings, <span className="text-blue-600 dark:text-blue-400 font-black tracking-tight">{session?.user?.name || 'Administrator'}</span>.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/admin/ai-drafts"
+                            className="h-12 px-6 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-zinc-950 dark:text-white hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-xl transition-all active:scale-95 group/btn"
+                        >
+                            <Sparkles size={16} className="text-purple-500 group-hover/btn:rotate-12 transition-transform" />
+                            AI Drafts
+                        </Link>
+                        <Link
+                            href="/admin/articles/new"
+                            className="h-12 px-6 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 shadow-2xl shadow-zinc-950/20 dark:shadow-white/10 transition-all active:scale-95"
+                        >
+                            <Plus size={18} strokeWidth={3} />
+                            New Post
+                        </Link>
+                    </div>
                 </div>
             </div>
 
-            {/* Stats Grid */}
+            {/* Metrics Ecosystem */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    label="Circulation"
+                    label="Articles"
                     value={stats.articles.published.toString()}
-                    subValue={`${stats.articles.total} Total Entities`}
+                    subValue={`${stats.articles.total} Total Posts`}
                     icon={FileText}
                     trend="+12.4%"
                     trendUp={true}
                     color="blue"
+                    delay={0.1}
                 />
                 <StatCard
-                    label="AI Resonance"
+                    label="AI Drafts"
                     value={stats.articles.aiDrafts.toString()}
-                    subValue="Awaiting Review"
+                    subValue="Pending Review"
                     icon={Sparkles}
                     color="purple"
+                    delay={0.2}
                 />
                 <StatCard
-                    label="Reach Intensity"
+                    label="Total Views"
                     value={stats.totalReach.toLocaleString()}
-                    subValue="Unique Truth Seekers"
+                    subValue="Unique Visitors"
                     icon={Eye}
                     trend={`${trafficStats.isTrendUp ? '+' : ''}${trafficStats.trend}%`}
                     trendUp={trafficStats.isTrendUp}
                     color="blue"
+                    delay={0.3}
                 />
                 <StatCard
-                    label="Public Discourse"
+                    label="New Comments"
                     value={stats.pendingCommentsCount.toString()}
-                    subValue="Moderation Queue"
+                    subValue="Needs Moderation"
                     icon={MessageSquare}
                     trend="-2.1%"
                     trendUp={false}
                     color="cyan"
+                    delay={0.4}
                 />
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
-                {/* Analytics Chart */}
+                {/* Reach Dynamics Observatory */}
                 <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white dark:bg-card p-8 rounded-[2rem] border-2 border-primary/10 shadow-xl overflow-hidden relative group">
-                        <div className="flex items-center justify-between mb-12">
-                            <div>
-                                <h3 className="text-2xl font-serif font-black text-gray-950 dark:text-white flex items-center gap-3 italic transition-colors">
-                                    <TrendingUp size={24} className="text-blue-600 dark:text-blue-400" />
-                                    Reach Dynamics
+                    <div className="bg-white/40 dark:bg-zinc-950/40 backdrop-blur-3xl p-10 rounded-[3rem] border border-zinc-100 dark:border-zinc-800 shadow-sm relative group overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full -mr-32 -mt-32" />
+
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12 relative z-10">
+                            <div className="space-y-1">
+                                <h3 className="text-3xl font-serif font-black text-zinc-950 dark:text-white flex items-center gap-3 italic">
+                                    Visitor Traffic
                                 </h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mt-1">7-Day signal volume analysis</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500 italic">Daily analysis of website visits</p>
                             </div>
                             <Link
                                 href="/admin/analytics"
-                                className="bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-700 border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white transition-all active:scale-95"
+                                className="h-10 px-5 rounded-xl flex items-center gap-2 text-[9px] font-black uppercase tracking-widest bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-95"
                             >
-                                Detailed Observatory
+                                Detailed Analytics
+                                <ArrowUpRight size={12} />
                             </Link>
                         </div>
 
-                        <div className="h-[340px] w-full">
+                        <div className="h-[400px] w-full relative z-10">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={chartData}>
                                     <defs>
-                                        <linearGradient id="gradient-primary" x1="0" y1="0" x2="1" y2="0">
-                                            <stop offset="0%" stopColor="#2563eb" />
-                                            <stop offset="100%" stopColor="#7c3aed" />
-                                        </linearGradient>
                                         <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
-                                            <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1} />
+                                            <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-gray-800 transition-colors" />
+                                    <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="currentColor" className="text-zinc-100 dark:text-zinc-800/50 transition-colors" />
                                     <XAxis
                                         dataKey="name"
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }}
-                                        dy={12}
+                                        tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 900 }}
+                                        dy={15}
                                     />
                                     <YAxis
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }}
+                                        tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 900 }}
                                         dx={-10}
                                     />
                                     <Tooltip
-                                        contentStyle={{
-                                            borderRadius: '16px',
-                                            border: '1px solid #f1f5f9',
-                                            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.05)',
-                                            fontSize: '10px',
-                                            fontWeight: '900',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.1em'
+                                        content={({ active, payload }) => {
+                                            if (active && payload && payload.length) {
+                                                return (
+                                                    <div className="bg-zinc-950/90 backdrop-blur-xl border border-zinc-800 p-4 rounded-2xl shadow-2xl">
+                                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">{payload[0].payload.name}</p>
+                                                        <p className="text-xl font-serif font-black text-white italic">{payload[0].value} <span className="text-[10px] not-italic text-zinc-500 ml-1">VIEWS</span></p>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
                                         }}
-                                        cursor={{ stroke: '#2563eb', strokeWidth: 2, strokeDasharray: '4 4' }}
+                                        cursor={{ stroke: '#2563eb', strokeWidth: 1, strokeDasharray: '4 4' }}
                                     />
                                     <Area
                                         type="monotone"
                                         dataKey="views"
-                                        stroke="url(#gradient-primary)"
+                                        stroke="#2563eb"
                                         strokeWidth={4}
                                         fillOpacity={1}
                                         fill="url(#colorViews)"
-                                        animationDuration={1500}
-                                        activeDot={{ r: 6, strokeWidth: 0, fill: "#2563eb" }}
+                                        animationDuration={2000}
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -200,71 +223,78 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Secondary Metrics */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-gray-950 dark:bg-black text-white p-6 rounded-2xl group relative overflow-hidden shadow-2xl border border-transparent dark:border-gray-900 transition-all duration-500">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl rounded-full -mr-16 -mt-16" />
-                            <div className="relative z-10 flex items-center justify-between">
-                                <div>
-                                    <p className="text-gray-500 dark:text-gray-600 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Audience Base</p>
-                                    <h4 className="text-4xl font-serif font-black">{stats.usersCount}</h4>
-                                    <div className="flex items-center gap-2 mt-4">
-                                        <span className="bg-green-500/10 text-green-400 text-[10px] px-2.5 py-1 rounded-lg font-black flex items-center tracking-widest">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="bg-zinc-950 dark:bg-black p-8 rounded-[2.5rem] group relative overflow-hidden shadow-2xl border border-white/5 transition-all duration-500">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/20 blur-[80px] rounded-full -mr-24 -mt-24 group-hover:bg-blue-600/30 transition-all duration-700" />
+                            <div className="relative z-10 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-zinc-500 dark:text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em] italic">Total Users</p>
+                                    <div className="w-10 h-10 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-zinc-400">
+                                        <Users size={20} />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <h4 className="text-5xl font-serif font-black text-white italic tracking-tighter">{stats.usersCount}</h4>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-emerald-400 text-[9px] font-black tracking-[0.2em] flex items-center uppercase">
                                             <ArrowUpRight size={12} className="mr-1" />
-                                            14% ACCRETION
+                                            14% GROWTH
                                         </span>
                                     </div>
                                 </div>
-                                <div className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 dark:text-gray-500 font-bold transition-all">
-                                    <Users size={24} />
-                                </div>
                             </div>
                         </div>
-                        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm group relative overflow-hidden transition-all duration-500">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl rounded-full -mr-16 -mt-16" />
-                            <div className="relative z-10 flex items-center justify-between">
-                                <div>
-                                    <p className="text-gray-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Conversion Core</p>
-                                    <h4 className="text-4xl font-serif font-black text-gray-950 dark:text-white">2.4%</h4>
-                                    <div className="flex items-center gap-2 mt-4">
-                                        <span className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] px-2.5 py-1 rounded-lg font-black flex items-center tracking-widest border border-blue-100 dark:border-blue-900/50">
+
+                        <div className="bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-800/50 shadow-sm group relative overflow-hidden transition-all duration-500">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-purple-600/5 blur-[80px] rounded-full -mr-24 -mt-24 group-hover:bg-purple-600/10 transition-all duration-700" />
+                            <div className="relative z-10 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-zinc-400 dark:text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] italic">Engagement Rate</p>
+                                    <div className="w-10 h-10 bg-blue-500/10 rounded-xl border border-blue-500/20 flex items-center justify-center text-blue-600">
+                                        <Sparkles size={20} />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <h4 className="text-5xl font-serif font-black text-zinc-900 dark:text-white italic tracking-tighter">2.4%</h4>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-blue-600 dark:text-blue-400 text-[9px] font-black tracking-[0.2em] flex items-center uppercase italic">
                                             <TrendingUp size={12} className="mr-1" />
                                             OPTIMIZED
                                         </span>
                                     </div>
                                 </div>
-                                <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                    <Sparkles size={24} />
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Recent Activity */}
+                {/* Live Stream: Real-time Pulses */}
                 <div className="space-y-4">
-                    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm h-full flex flex-col transition-all duration-500">
-                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-50 dark:border-gray-800">
-                            <div>
-                                <h3 className="text-2xl font-serif font-black text-gray-950 dark:text-white italic">Live Stream</h3>
-                                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest mt-1">Real-time pulses</p>
+                    <div className="bg-white/60 dark:bg-zinc-950/60 backdrop-blur-3xl p-8 rounded-[3rem] border border-zinc-100 dark:border-zinc-800/50 shadow-sm h-full flex flex-col transition-all duration-500">
+                        <div className="flex items-center justify-between mb-10 pb-6 border-b border-zinc-50 dark:border-zinc-900">
+                            <div className="space-y-1">
+                                <h3 className="text-3xl font-serif font-black text-zinc-950 dark:text-white italic">Recent Activity</h3>
+                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-[0.2em] italic">Latest system events</p>
                             </div>
                             <Link
                                 href="/admin/activity"
-                                className="w-10 h-10 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all active:scale-90"
+                                className="w-12 h-12 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-400 hover:text-blue-600 transition-all active:scale-90 shadow-sm"
                             >
                                 <ChevronRight size={20} />
                             </Link>
                         </div>
 
-                        <div className="space-y-4 flex-1">
-                            {activity.map((item: { id: string; type: string; content: string; timestamp: number }) => (
-                                <ActivityItem key={item.id} item={item} />
-                            ))}
+                        <div className="space-y-1 flex-1 overflow-y-auto custom-scrollbar">
+                            <AnimatePresence mode="popLayout">
+                                {activity.map((item: { id: string; type: string; content: string; timestamp: number }, idx: number) => (
+                                    <ActivityItem key={item.id} item={item} index={idx} />
+                                ))}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }
 
@@ -275,7 +305,8 @@ function StatCard({
     icon: Icon,
     trend,
     trendUp,
-    color
+    color,
+    delay = 0
 }: {
     label: string,
     value: string,
@@ -283,26 +314,34 @@ function StatCard({
     icon: React.ElementType,
     trend?: string,
     trendUp?: boolean,
-    color: 'blue' | 'purple' | 'cyan'
+    color: 'blue' | 'purple' | 'cyan',
+    delay?: number
 }) {
     const variants = {
-        blue: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/50",
-        purple: "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/50",
-        cyan: "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-100 dark:border-cyan-900/50"
+        blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500",
+        purple: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 group-hover:bg-purple-600 group-hover:text-white transition-all duration-500",
+        cyan: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20 group-hover:bg-cyan-600 group-hover:text-white transition-all duration-500"
     };
 
     return (
-        <div className="p-6 rounded-3xl transition-all border border-zinc-100 dark:border-white/5 bg-white dark:bg-card shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-500 group relative overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-8">
-                <div className={cn("w-12 h-12 rounded-xl border flex items-center justify-center transition-all duration-500 group-hover:scale-110", variants[color])}>
-                    <Icon size={20} />
+        <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay }}
+            className="p-8 rounded-[2.5rem] transition-all border border-zinc-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/40 backdrop-blur-xl shadow-sm hover:shadow-2xl hover:border-blue-500/20 transition-all duration-700 group relative overflow-hidden flex flex-col min-h-[220px]"
+        >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[60px] rounded-full -mr-16 -mt-16 group-hover:bg-blue-500/10 transition-all duration-700" />
+
+            <div className="flex items-start justify-between mb-8 relative z-10">
+                <div className={cn("w-14 h-14 rounded-2xl border flex items-center justify-center shadow-sm", variants[color])}>
+                    <Icon size={24} />
                 </div>
                 {trend && (
                     <span className={cn(
-                        "text-[9px] font-black flex items-center px-2 py-1 rounded-lg transition-all tracking-widest uppercase",
+                        "text-[9px] font-black flex items-center px-3 py-1.5 rounded-xl transition-all tracking-[0.1em] uppercase shadow-sm border",
                         trendUp
-                            ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-100 dark:border-green-900/50'
-                            : 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50'
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50'
+                            : 'bg-red-50 text-red-600 border-red-100 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/50'
                     )}>
                         {trendUp ? <ArrowUpRight size={10} className="mr-1" /> : <ArrowDownRight size={10} className="mr-1" />}
                         {trend}
@@ -310,19 +349,19 @@ function StatCard({
                 )}
             </div>
 
-            <div className="mt-auto">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-1 group-hover:text-gray-950 dark:group-hover:text-white transition-colors">{label}</p>
-                <h3 className="text-4xl font-serif font-black text-gray-950 dark:text-white tracking-tight leading-none mb-4 transition-colors">{value}</h3>
-                <div className="flex items-center gap-2 pt-4 border-t border-gray-50 dark:border-gray-800">
-                    <div className={cn("w-1.5 h-1.5 rounded-full", variants[color].split(' ')[1])} />
-                    <p className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest">{subValue}</p>
+            <div className="mt-auto relative z-10">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 dark:text-zinc-500 mb-2 truncate group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors italic">{label}</p>
+                <h3 className="text-5xl font-serif font-black text-zinc-950 dark:text-white tracking-tighter leading-none italic mb-4 transition-transform group-hover:scale-105 origin-left transition-all duration-500">{value}</h3>
+                <div className="flex items-center gap-3 pt-5 border-t border-zinc-100 dark:border-zinc-800/50">
+                    <div className={cn("w-2 h-2 rounded-full", color === 'blue' ? 'bg-blue-500' : color === 'purple' ? 'bg-purple-500' : 'bg-cyan-500')} />
+                    <p className="text-[9px] font-black uppercase text-zinc-400 dark:text-zinc-600 tracking-[0.15em]">{subValue}</p>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }
 
-function ActivityItem({ item }: { item: { type: string; content: string; timestamp: number } }) {
+function ActivityItem({ item, index }: { item: { type: string; content: string; timestamp: number }, index: number }) {
     const icons = {
         comment: <MessageCircle size={14} />,
         signup: <UserPlus size={14} />,
@@ -330,27 +369,37 @@ function ActivityItem({ item }: { item: { type: string; content: string; timesta
     };
 
     const variants = {
-        comment: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/50",
-        signup: "bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-900/50",
-        article: "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/50"
+        comment: "bg-blue-500/10 text-blue-600 border-blue-500/20 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500",
+        signup: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500",
+        article: "bg-purple-500/10 text-purple-600 border-purple-500/20 group-hover:bg-purple-600 group-hover:text-white transition-all duration-500"
     };
 
     return (
-        <div className="flex gap-4 p-4 rounded-xl border border-transparent hover:border-gray-100 dark:hover:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800 transition-all group">
-            <div className={cn("w-10 h-10 border rounded-xl flex items-center justify-center flex-shrink-0 transition-all shadow-sm group-hover:scale-110 group-active:scale-95", variants[item.type as keyof typeof variants] || "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-gray-700 font-bold")}>
-                {icons[item.type as keyof typeof icons] || <Activity size={14} />}
+        <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="flex gap-5 p-5 rounded-[2rem] border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800/50 hover:bg-white/60 dark:hover:bg-zinc-900/40 backdrop-blur-xl transition-all group relative overflow-hidden"
+        >
+            <div className={cn("w-12 h-12 border rounded-2xl flex items-center justify-center flex-shrink-0 transition-all shadow-sm group-hover:scale-110 group-hover:rotate-3", variants[item.type as keyof typeof variants] || "bg-zinc-100 text-zinc-400 border-zinc-200")}>
+                {icons[item.type as keyof typeof icons] || <Activity size={18} />}
             </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold text-gray-900 dark:text-gray-100 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <p className="text-sm font-bold text-zinc-900 dark:text-zinc-200 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 font-serif tracking-tight">
                     {item.content}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                    <Clock size={10} className="text-gray-400 dark:text-gray-500" />
-                    <span className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                    <Clock size={10} className="text-zinc-400" />
+                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest italic">
                         {formatDistanceToNow(item.timestamp)} ago
                     </span>
                 </div>
             </div>
-        </div>
+            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all">
+                <div className="p-2 bg-zinc-50 dark:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-white">
+                    <ChevronRight size={16} />
+                </div>
+            </div>
+        </motion.div>
     );
 }
