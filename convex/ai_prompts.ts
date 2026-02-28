@@ -56,14 +56,16 @@ follow this pattern: Hook → Explanation → Example → Action → Summary
       "metaDescription": "Compelling meta description (max 155-160 chars) including primary keyword.",
       "focusKeyword": "The primary keyword this article targets.",
       "wordCount": "approximate word count"  
-    }`,
+    }
+    
+    STRICT: Do not include any fields other than those listed above. Do not include 'topic' or any ID fields in the JSON.`,
   },
 
   /**
    * Topic Suggestions: Trend Analysis & Curiosity Gaps
    */
   topicSuggestions: {
-  systemPrompt: `
+    systemPrompt: `
 You are a Strategic Intelligence Analyst for "The Truth Pill".
 
 Target Audience:
@@ -85,7 +87,7 @@ You generate topics that are:
 Avoid conspiracy tone. Stay analytical, grounded, and psychologically sharp.
 `,
 
-  userPrompt: (categories: string) => `
+    userPrompt: (categories: string) => `
 Generate EXACTLY 5 unique, high-impact research-based blog topics.
 
 Time Constraint:
@@ -143,8 +145,8 @@ Required JSON Structure:
     }
   ]
 }
-`
-},
+`,
+  },
 
   /**
    * Author Style Analysis: Linguistic Forensic Profile
