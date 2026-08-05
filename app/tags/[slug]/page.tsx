@@ -8,12 +8,16 @@ import Image from "next/image";
 import { EmptyState } from "@/components/empty-state";
 import { Metadata } from "next";
 import { JoinedArticle } from "@/components/blog-grid";
+import { getCanonical } from "@/lib/site-url";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
     return {
-        title: `Tag: ${slug.split('-').join(' ')} | The Truth Pill`,
+        title: `Tag: ${slug.split('-').join(' ')}`,
         description: `Explore all articles tagged with ${slug.split('-').join(' ')}.`,
+        alternates: {
+            canonical: getCanonical(`tags/${slug}`),
+        },
     };
 }
 
@@ -25,10 +29,7 @@ export default async function TagPage({
     const { slug } = await params;
     const displayTag = slug.split('-').join(' ');
     
-    const listResult = await fetchQuery(api.articles.list, { 
-        paginationOpts: { numItems: 50, cursor: null }
-    });
-    const articles = listResult?.page || [];
+    const articles = await fetchQuery(api.articles.listByTag, { tag: displayTag }) || [];
 
     return (
         <main className="min-h-screen bg-[#f8f9fa] dark:bg-gray-950">

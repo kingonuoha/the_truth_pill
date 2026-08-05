@@ -4,6 +4,7 @@ import { ArticleContent } from "./article-content";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getOgImageUrl, truncate } from "@/lib/utils";
+import { getCanonical, getSiteUrl } from "@/lib/site-url";
 
 export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
     if (!article) {
         return {
-            title: "Article Not Found | The Truth Pill",
+            title: "Article Not Found",
         };
     }
 
@@ -39,12 +40,15 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     }
 
     description = truncate(description, 155);
-    const title = truncate(`${article.title} | The Truth Pill`, 60);
+    const title = truncate(article.title, 60);
     const image = article.coverImage || getOgImageUrl(article.title);
 
     return {
         title,
         description,
+        alternates: {
+            canonical: getCanonical(slug),
+        },
         openGraph: {
             title,
             description,
@@ -95,12 +99,12 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             "name": "The Truth Pill",
             "logo": {
                 "@type": "ImageObject",
-                "url": "https://thetruthpill.org/truthpill/logo-text-hor-dark.png",
+                "url": `${getSiteUrl()}/truthpill/logo-text-hor-dark.png`,
             },
         },
         "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": `https://thetruthpill.org/${slug}`,
+            "@id": getCanonical(slug),
         },
     };
 

@@ -147,6 +147,43 @@ export const listRecent = query({
   },
 });
 
+export const listByTag = query({
+  args: { tag: v.string() },
+  handler: async (ctx, args) => {
+    const articles = await ctx.db
+      .query("articles")
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .filter((q) => q.neq(q.field("isArchived"), true))
+      .take(500);
+
+    const tagged = articles.filter((a) => a.tags?.includes(args.tag));
+
+    return await Promise.all(
+      tagged.map(async (article) => {
+        const author = await ctx.db.get(article.authorId);
+        const category = article.categoryId
+          ? await ctx.db.get(article.categoryId)
+          : null;
+
+        return {
+          _id: article._id,
+          title: article.title,
+          slug: article.slug,
+          excerpt: article.excerpt,
+          coverImage: article.coverImage,
+          publishedAt: article.publishedAt,
+          updatedAt: article.updatedAt,
+          authorName: author?.name || "Unknown Author",
+          authorImage: author?.profileImage,
+          categoryName: category?.name || "Uncategorized",
+          viewCount: article.viewCount || 0,
+          tags: article.tags || [],
+        };
+      }),
+    );
+  },
+});
+
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {

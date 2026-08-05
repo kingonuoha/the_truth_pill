@@ -6,12 +6,16 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { JoinedArticle } from "@/components/blog-grid";
 import { CategoryShowcase } from "@/components/category-showcase";
+import { getCanonical } from "@/lib/site-url";
 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Insights & Articles | The Truth Pill",
   description: "Explore our full archive of insights into human behavior and psychology.",
+  alternates: {
+    canonical: getCanonical("articles"),
+  },
 };
 
 export default async function ArticlesPage() {

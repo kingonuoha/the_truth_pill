@@ -10,16 +10,20 @@ import { ArrowRight } from "lucide-react";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { JoinedArticle } from "@/components/blog-grid";
+import { getSiteUrl, getCanonical } from "@/lib/site-url";
 
 export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
 export const metadata: Metadata = {
   title: "The Truth Pill | Learning Why People Do What They Do",
   description: "Join 50,000+ people who want to understand life and human behavior better.",
+  alternates: {
+    canonical: getCanonical("/"),
+  },
   openGraph: {
     title: "The Truth Pill | Simple Insights into Human Nature",
     description: "Easy-to-read articles that help you understand yourself and others better.",
-    url: "https://thetruthpill.org",
+    url: getSiteUrl(),
     siteName: "The Truth Pill",
     images: [
       {
@@ -40,20 +44,15 @@ export default async function Home() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "The Truth Pill",
-    "url": "https://thetruthpill.org",
+    "url": getSiteUrl(),
     "description": "Unfiltered insight into human behavior and psychology.",
     "publisher": {
       "@type": "Organization",
       "name": "The Truth Pill",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://thetruthpill.org/truthpill/logo-text-hor-dark.png",
+        "url": `${getSiteUrl()}/truthpill/logo-text-hor-dark.png`,
       },
-    },
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://thetruthpill.org/search?q={search_term_string}",
-      "query-input": "required name=search_term_string",
     },
   };
 

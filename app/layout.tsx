@@ -11,6 +11,7 @@ import { AdSenseScript } from "@/components/adsense-script";
 import { SmoothScroll } from "@/components/smooth-scroll";
 import { ThemeShortcut } from "@/components/theme-shortcut";
 import { GTMHead, GTMBody } from "@/components/google-tag-manager";
+import { getSiteUrl } from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://thetruthpill.org'),
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "The Truth Pill | Insight into Human Behavior",
     template: "%s | The Truth Pill"
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://thetruthpill.org",
+    url: getSiteUrl(),
     siteName: "The Truth Pill",
     title: "The Truth Pill | Insight into Human Behavior",
     description: "A psychology-focused content platform for living a full life and understanding human behavior.",
