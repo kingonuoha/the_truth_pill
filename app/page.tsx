@@ -15,7 +15,7 @@ import { getSiteUrl, getCanonical } from "@/lib/site-url";
 export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
 export const metadata: Metadata = {
-  title: "The Truth Pill | Learning Why People Do What They Do",
+  title: "Learning Why People Do What They Do",
   description: "Join 50,000+ people who want to understand life and human behavior better.",
   alternates: {
     canonical: getCanonical("/"),
