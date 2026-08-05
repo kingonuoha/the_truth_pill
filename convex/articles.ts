@@ -533,6 +533,13 @@ export const create = mutation({
 
     if (!user || user.role !== "admin") throw new Error("Unauthorized");
 
+    // Reject slugs already claimed by another article
+    const slugTaken = await ctx.db
+      .query("articles")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .first();
+    if (slugTaken) throw new Error("Slug already exists");
+
     const now = Date.now();
     const articleId = await ctx.db.insert("articles", {
       ...args,
@@ -629,6 +636,17 @@ export const update = mutation({
 
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("Article not found");
+
+    // Reject a slug already used by another article (self excluded)
+    if (args.slug && args.slug !== existing.slug) {
+      const newSlug = args.slug;
+      const slugRows = await ctx.db
+        .query("articles")
+        .withIndex("by_slug", (q) => q.eq("slug", newSlug))
+        .take(2);
+      const conflict = slugRows.find((a) => a._id !== id);
+      if (conflict) throw new Error("Slug already exists");
+    }
 
     // Validation if setting to published
     const finalStatus = args.status || existing.status;

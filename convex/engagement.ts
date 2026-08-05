@@ -94,6 +94,12 @@ export const toggleReaction = mutation({
     if (existing) {
       if (existing.type === args.type) {
         await ctx.db.delete(existing._id);
+        const article = await ctx.db.get(args.articleId);
+        if (article) {
+          await ctx.db.patch(args.articleId, {
+            reactionsCount: Math.max(0, (article.reactionsCount || 0) - 1),
+          });
+        }
       } else {
         await ctx.db.patch(existing._id, { type: args.type });
       }
@@ -104,6 +110,12 @@ export const toggleReaction = mutation({
         type: args.type,
         createdAt: Date.now(),
       });
+      const article = await ctx.db.get(args.articleId);
+      if (article) {
+        await ctx.db.patch(args.articleId, {
+          reactionsCount: (article.reactionsCount || 0) + 1,
+        });
+      }
     }
   },
 });

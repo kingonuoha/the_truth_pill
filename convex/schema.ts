@@ -74,6 +74,7 @@ export default defineSchema({
     publishedAt: v.optional(v.float64()),
     viewCount: v.number(),
     uniqueViewCount: v.number(),
+    reactionsCount: v.optional(v.number()), // denormalized counter for getTopContent
     readingTime: v.number(), // estimated minutes
     actualReadingTime: v.optional(v.number()), // total seconds spent by all users
     metaTitle: v.optional(v.string()),

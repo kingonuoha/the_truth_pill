@@ -104,6 +104,14 @@ export default function AnalyticsPage() {
 
     const totalUniqueVisitors = (geoStats as { country: string; count: number }[]).reduce((acc: number, curr: { count: number }) => acc + curr.count, 0);
 
+    // Real trend for Total Traffic from getTrafficStats
+    const trafficTrend = `${trafficStats.isTrendUp ? "+" : ""}${trafficStats.trend}%`;
+
+    // Engagement rate computed from real top-content data (reactions / unique readers)
+    const totalReactions = (topContent as { reactions?: number }[]).reduce((acc: number, a) => acc + (a.reactions || 0), 0);
+    const engagementReach = (topContent as { uniqueViews?: number }[]).reduce((acc: number, a) => acc + (a.uniqueViews || 0), 0);
+    const engagementRate = engagementReach > 0 ? ((totalReactions / engagementReach) * 100).toFixed(1) : "0";
+
     return (
         <div className="space-y-12 pb-20 font-sans">
             {/* Header */}
@@ -162,21 +170,21 @@ export default function AnalyticsPage() {
                     label="Total Traffic"
                     value={trafficStats.totalVisits.toLocaleString()}
                     icon={Users}
-                    trend="+12.5%"
+                    trend={trafficTrend}
                     color="blue"
                 />
                 <StatCard
                     label="Unique Reach"
                     value={totalUniqueVisitors.toLocaleString()}
                     icon={Globe}
-                    trend="+8.2%"
+                    trend="—"
                     color="purple"
                 />
                 <StatCard
                     label="Engagement rate"
-                    value="64.8%"
+                    value={`${engagementRate}%`}
                     icon={TrendingUp}
-                    trend="+2.4%"
+                    trend="—"
                     color="blue"
                 />
                 <StatCard

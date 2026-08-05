@@ -3,6 +3,10 @@ import { mutation, query } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { internal } from "./_generated/api";
 
+// Non-public routes (admin, auth flows) should not inflate globalStats.
+const isPublicRoute = (url: string): boolean =>
+  !/(^|\/)(admin|dashboard|login|signup|auth)(\/|$)/.test(url);
+
 export const logPageVisit = mutation({
   args: {
     visitorId: v.string(),
@@ -61,10 +65,12 @@ export const logPageVisit = mutation({
       timestamp: now,
     });
 
-    // 3. Update Global Stats
-    await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
-      update: { totalViews: 1, totalUniqueViews: isNewVisitor ? 1 : 0 },
-    });
+    // 3. Update Global Stats (public routes only — admin/auth browsing shouldn't count)
+    if (isPublicRoute(args.url)) {
+      await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
+        update: { totalViews: 1, totalUniqueViews: isNewVisitor ? 1 : 0 },
+      });
+    }
   },
 });
 
@@ -259,34 +265,29 @@ export const getTopContent = query({
     const articles = await ctx.db
       .query("articles")
       .withIndex("by_status", (q) => q.eq("status", "published"))
-      .collect();
+      .take(200);
 
-    const stats = await Promise.all(
-      articles.map(async (a) => {
-        const reactions = await ctx.db
-          .query("reactions")
-          .withIndex("by_article_user", (q) => q.eq("articleId", a._id))
-          .collect();
+    const stats = articles.map((a) => {
+      const reactionsCount = a.reactionsCount || 0;
 
-        const avgReadTime =
-          a.actualReadingTime && a.uniqueViewCount > 0
-            ? Math.round(a.actualReadingTime / a.uniqueViewCount)
-            : 0;
+      const avgReadTime =
+        a.actualReadingTime && a.uniqueViewCount > 0
+          ? Math.round(a.actualReadingTime / a.uniqueViewCount)
+          : 0;
 
-        return {
-          id: a._id,
-          title: a.title,
-          views: a.viewCount,
-          uniqueViews: a.uniqueViewCount,
-          reactions: reactions.length,
-          avgReadTime, // in seconds
-          engagementRate:
-            a.uniqueViewCount > 0
-              ? (reactions.length / a.uniqueViewCount) * 100
-              : 0,
-        };
-      }),
-    );
+      return {
+        id: a._id,
+        title: a.title,
+        views: a.viewCount,
+        uniqueViews: a.uniqueViewCount,
+        reactions: reactionsCount,
+        avgReadTime, // in seconds
+        engagementRate:
+          a.uniqueViewCount > 0
+            ? (reactionsCount / a.uniqueViewCount) * 100
+            : 0,
+      };
+    });
 
     return stats.sort((a, b) => b.uniqueViews - a.uniqueViews).slice(0, 10);
   },
