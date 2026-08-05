@@ -15,7 +15,7 @@ export const listByCategory = query({
 export const listAll = query({
   args: {},
   handler: async (ctx) => {
-    const pillars = await ctx.db.query("pillars").order("asc").collect();
+    const pillars = await ctx.db.query("pillars").order("asc").take(200);
     return await Promise.all(
       pillars.map(async (pillar) => {
         const category = await ctx.db.get(pillar.categoryId);

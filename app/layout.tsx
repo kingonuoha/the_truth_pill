@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Lora, Outfit } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "./providers";
+import { CategoriesProvider } from "@/components/categories-provider";
 import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { AuthRedirect } from "@/components/auth-redirect";
 import { FooterWrapper } from "@/components/footer-wrapper";
@@ -77,6 +78,7 @@ export default function RootLayout({
         <GTMBody />
         <GTMHead />
         <ConvexClientProvider>
+          <CategoriesProvider>
           <SmoothScroll>
             <Suspense fallback={null}>
               <AnalyticsTracker />
@@ -88,6 +90,7 @@ export default function RootLayout({
             {children}
             <FooterWrapper />
           </SmoothScroll>
+          </CategoriesProvider>
         </ConvexClientProvider>
       </body>
     </html>

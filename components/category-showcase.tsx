@@ -1,18 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { Doc } from "../convex/_generated/dataModel";
 import { CategorySkeleton } from "./skeletons";
 import { DynamicCategoryImage } from "./dynamic-category-image";
-
-interface CategoryWithCount extends Doc<"categories"> {
-    articleCount: number;
-}
+import { useCategories, CategorySummary } from "./categories-provider";
 
 export function CategoryShowcase() {
-    const categories = useQuery(api.categories.listAll) as CategoryWithCount[] | undefined;
+    const categories = useCategories() as CategorySummary[] | undefined;
 
     if (categories === undefined) {
         return <CategorySkeleton />;
@@ -24,7 +18,7 @@ export function CategoryShowcase() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((cat: CategoryWithCount) => (
+            {categories.map((cat: CategorySummary) => (
                 <Link
                     key={cat.slug}
                     href={`/category/${cat.slug}`}

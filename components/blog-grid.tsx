@@ -3,7 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Calendar, ChevronDown, Eye, Search } from "lucide-react";
-import { usePaginatedQuery } from "convex/react";
+import { useEffect, useRef, useState } from "react";
+import { useConvex } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import { BlogSkeleton } from "./skeletons";
@@ -34,16 +35,73 @@ export type JoinedArticle = {
     readingTime?: number;
 };
 
-export function BlogGrid({ categoryId, pillar, type, initialArticles }: BlogGridProps & { initialArticles?: JoinedArticle[] }) {
-    const { results, status, loadMore } = usePaginatedQuery(
-        api.articles.list,
-        { categoryId, pillar, type },
-        { initialNumItems: initialArticles?.length || 6 }
-    );
+interface BlogGridInjectedProps {
+    initialArticles?: JoinedArticle[];
+    initialCursor?: string | null;
+    initialHasMore?: boolean;
+}
 
-    const articles = results.length > 0 ? results : initialArticles;
+const PAGE_SIZE = 6;
 
-    if (articles === undefined && status === "LoadingFirstPage") {
+export function BlogGrid({ categoryId, pillar, type, initialArticles, initialCursor, initialHasMore }: BlogGridProps & BlogGridInjectedProps) {
+    const convex = useConvex();
+    const [articles, setArticles] = useState<JoinedArticle[]>(initialArticles || []);
+    const [cursor, setCursor] = useState<string | null>(initialCursor ?? null);
+    const [hasMore, setHasMore] = useState<boolean>(initialHasMore ?? true);
+    const [isInitialLoading, setIsInitialLoading] = useState(!initialArticles);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const fetchedInitialRef = useRef(Boolean(initialArticles));
+
+    // No live subscription: fetch the first page ONCE on mount when the page
+    // did not SSR initial data (e.g. filtered category/pillar grids).
+    useEffect(() => {
+        if (fetchedInitialRef.current) return;
+        fetchedInitialRef.current = true;
+        let cancelled = false;
+        (async () => {
+            try {
+                const result = await convex.query(api.articles.list, {
+                    categoryId,
+                    pillar,
+                    type,
+                    paginationOpts: { numItems: PAGE_SIZE, cursor: null },
+                });
+                if (cancelled) return;
+                setArticles(result.page as JoinedArticle[]);
+                setCursor(result.continueCursor);
+                setHasMore(!result.isDone);
+            } finally {
+                if (!cancelled) setIsInitialLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [convex, categoryId, pillar, type]);
+
+    const handleLoadMore = async () => {
+        if (isLoadingMore) return;
+        setIsLoadingMore(true);
+        try {
+            const result = await convex.query(api.articles.list, {
+                categoryId,
+                pillar,
+                type,
+                paginationOpts: { numItems: PAGE_SIZE, cursor },
+            });
+            const page = result.page as JoinedArticle[];
+            setArticles((prev) => {
+                const seen = new Set(prev.map((a) => a._id));
+                return [...prev, ...page.filter((a) => !seen.has(a._id))];
+            });
+            setCursor(result.continueCursor);
+            setHasMore(!result.isDone);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
+    if (isInitialLoading) {
         return <BlogSkeleton />;
     }
 
@@ -65,12 +123,6 @@ export function BlogGrid({ categoryId, pillar, type, initialArticles }: BlogGrid
             />
         );
     }
-
-    const hasMore = status === "CanLoadMore";
-
-    const handleLoadMore = () => {
-        loadMore(6);
-    };
 
     return (
         <div className="w-full">
@@ -138,9 +190,10 @@ export function BlogGrid({ categoryId, pillar, type, initialArticles }: BlogGrid
                 {hasMore ? (
                     <button
                         onClick={handleLoadMore}
-                        className="flex items-center gap-2 px-10 py-4 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all duration-300 group shadow-xl shadow-blue-500/20 active:scale-95"
+                        disabled={isLoadingMore}
+                        className="flex items-center gap-2 px-10 py-4 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all duration-300 group shadow-xl shadow-blue-500/20 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Load More Articles
+                        {isLoadingMore ? "Loading..." : "Load More Articles"}
                         <ChevronDown size={14} className="group-hover:translate-y-1 transition-transform" />
                     </button>
                 ) : (

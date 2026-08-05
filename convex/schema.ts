@@ -176,6 +176,13 @@ export default defineSchema({
     .index("by_trackingCode", ["trackingCode"])
     .index("by_userId", ["userId"]),
 
+  dailyStats: defineTable({
+    date: v.string(), // YYYY-MM-DD (UTC)
+    visits: v.number(), // total page visits for the day
+    uniqueVisitors: v.number(), // distinct visitorTracking codes for the day
+    lastRollup: v.optional(v.float64()), // watermark: timestamp of the last pageVisit folded in
+  }).index("by_date", ["date"]),
+
   aiSchedule: defineTable({
     daysOfWeek: v.array(v.number()), // [0-6]
     time: v.string(), // HH:MM

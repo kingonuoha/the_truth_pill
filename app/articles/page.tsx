@@ -42,7 +42,7 @@ export default async function ArticlesPage() {
             </p>
           </div>
           
-          <BlogGrid initialArticles={initialArticles.page as JoinedArticle[]} />
+          <BlogGrid initialArticles={initialArticles.page as JoinedArticle[]} initialCursor={initialArticles.continueCursor} initialHasMore={!initialArticles.isDone} />
         </div>
       </section>
 

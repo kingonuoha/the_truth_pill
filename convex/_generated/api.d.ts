@@ -25,6 +25,7 @@ import type * as migrations from "../migrations.js";
 import type * as otp from "../otp.js";
 import type * as pillars from "../pillars.js";
 import type * as quotes from "../quotes.js";
+import type * as rollup from "../rollup.js";
 import type * as seed from "../seed.js";
 import type * as site_settings from "../site_settings.js";
 import type * as stats from "../stats.js";
@@ -54,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   otp: typeof otp;
   pillars: typeof pillars;
   quotes: typeof quotes;
+  rollup: typeof rollup;
   seed: typeof seed;
   site_settings: typeof site_settings;
   stats: typeof stats;

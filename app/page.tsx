@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   const featuredArticles = await fetchQuery(api.articles.getFeatured, { limit: 5 });
-  const latestArticles = await fetchQuery(api.articles.listRecent, { limit: 6 });
+  const latestArticles = await fetchQuery(api.articles.list, { paginationOpts: { numItems: 6, cursor: null } });
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -91,7 +91,7 @@ export default async function Home() {
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
-          <BlogGrid initialArticles={latestArticles as JoinedArticle[]} />
+          <BlogGrid initialArticles={latestArticles.page as JoinedArticle[]} initialCursor={latestArticles.continueCursor} initialHasMore={!latestArticles.isDone} />
         </div>
       </section>
 

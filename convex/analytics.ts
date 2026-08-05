@@ -130,41 +130,68 @@ export const logArticleView = mutation({
 export const getTrafficStats = query({
   args: { days: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const days = args.days || 30;
+    const days = Math.min(args.days || 30, 90);
     const now = Date.now();
-    const startTime = now - days * 24 * 60 * 60 * 1000;
-    const prevStartTime = startTime - days * 24 * 60 * 60 * 1000;
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const startTime = now - days * DAY_MS;
+    const prevStartTime = startTime - days * DAY_MS;
 
-    const currentVisits = await ctx.db
-      .query("pageVisits")
-      .withIndex("by_timestamp", (q) => q.gt("timestamp", startTime))
-      .take(5000); // Safety cap for bandwidth
-
-    const prevVisits = await ctx.db
-      .query("pageVisits")
-      .withIndex("by_timestamp", (q) =>
-        q.gt("timestamp", prevStartTime).lt("timestamp", startTime),
-      )
-      .take(5000); // Safety cap for bandwidth
-
-    // Group by day for the chart
-    const stats: Record<string, { date: string; visits: number }> = {};
+    // Zero-fill the requested window so days without traffic still render.
+    const dateKeys: string[] = [];
+    const stats: Record<string, { date: string; visits: number; uniqueVisitors: number }> = {};
     for (let i = 0; i < days; i++) {
-      const date = new Date(now - (days - 1 - i) * 24 * 60 * 60 * 1000);
-      const dateKey = date.toISOString().split("T")[0];
-      stats[dateKey] = { date: dateKey, visits: 0 };
+      const key = new Date(now - (days - 1 - i) * DAY_MS)
+        .toISOString()
+        .split("T")[0];
+      dateKeys.push(key);
+      stats[key] = { date: key, visits: 0, uniqueVisitors: 0 };
     }
 
-    currentVisits.forEach((v) => {
-      const dateKey = new Date(v.timestamp).toISOString().split("T")[0];
-      if (stats[dateKey]) {
-        stats[dateKey].visits++;
-      }
-    });
+    // Prefer the pre-aggregated dailyStats rows (a handful per window instead
+    // of scanning up to 5000 raw pageVisits per request).
+    const dailyRows = await ctx.db
+      .query("dailyStats")
+      .withIndex("by_date", (q) =>
+        q.gte("date", dateKeys[0]).lte("date", dateKeys[dateKeys.length - 1]),
+      )
+      .take(500);
 
-    // Calculate Trend
-    const currentCount = currentVisits.length;
-    const prevCount = prevVisits.length;
+    let currentCount = 0;
+    let prevCount = 0;
+
+    if (dailyRows.length > 0) {
+      for (const row of dailyRows) {
+        if (stats[row.date]) {
+          stats[row.date].visits = row.visits;
+          stats[row.date].uniqueVisitors = row.uniqueVisitors;
+        }
+        currentCount += row.visits;
+      }
+
+      // Trend vs the previous window of equal length.
+      const prevStartKey = new Date(prevStartTime)
+        .toISOString()
+        .split("T")[0];
+      const prevRows = await ctx.db
+        .query("dailyStats")
+        .withIndex("by_date", (q) =>
+          q.gte("date", prevStartKey).lt("date", dateKeys[0]),
+        )
+        .take(500);
+      prevCount = prevRows.reduce((sum, row) => sum + row.visits, 0);
+    } else {
+      // Cold start: bounded raw fallback until the first daily rollup runs.
+      const visits = await ctx.db
+        .query("pageVisits")
+        .withIndex("by_timestamp", (q) => q.gt("timestamp", startTime))
+        .take(100);
+      for (const visit of visits) {
+        const key = new Date(visit.timestamp).toISOString().split("T")[0];
+        if (stats[key]) stats[key].visits++;
+      }
+      currentCount = visits.length;
+    }
+
     const trend =
       prevCount === 0 ? 100 : ((currentCount - prevCount) / prevCount) * 100;
 

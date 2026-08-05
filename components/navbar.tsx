@@ -15,6 +15,7 @@ import { api } from "@/convex/_generated/api";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { JoinedArticle } from "./blog-grid";
+import { useCategories, usePillars } from "./categories-provider";
 
 interface NavbarProps {
     solid?: boolean;
@@ -98,8 +99,8 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
     };
 
     const searchResults = useQuery(api.articles.search, { query: query.length > 2 ? query : "" });
-    const categoriesAll = useQuery(api.categories.listAll);
-    const pillarsAll = useQuery(api.pillars.listAll);
+    const categoriesAll = useCategories();
+    const pillarsAll = usePillars();
     const topTags = useQuery(api.articles.getTopPostTags, { limit: 5 });
 
     // Filter and sort categories: Top 3 by articleCount
