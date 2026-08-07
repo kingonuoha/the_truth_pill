@@ -22,7 +22,7 @@ export const getById = query({
 export const listAll = query({
   args: {},
   handler: async (ctx) => {
-    const categories = await ctx.db.query("categories").collect();
+    const categories = await ctx.db.query("categories").take(200);
     return await Promise.all(
       categories.map(async (category) => {
         const pillars = await ctx.db

@@ -9,13 +9,17 @@ import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { Metadata } from "next";
 import { JoinedArticle } from "@/components/blog-grid";
+import { getCanonical } from "@/lib/site-url";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
     const pillar = await fetchQuery(api.pillars.getBySlug, { slug });
     return {
-        title: `${pillar?.name || "Pillar"} | The Truth Pill`,
+        title: pillar?.name || "Pillar",
         description: pillar?.description || "Exploring the deep psychological dimensions of this research pillar.",
+        alternates: {
+            canonical: getCanonical(`pillars/${slug}`),
+        },
     };
 }
 

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getOgImageUrl } from "@/lib/utils";
+import { getCanonical } from "@/lib/site-url";
 
 export const revalidate = 60; // ISR: Revalidate every 60 seconds
 
@@ -19,13 +20,16 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
     if (!category) {
         return {
-            title: "Category Not Found | The Truth Pill",
+            title: "Category Not Found",
         };
     }
 
     return {
-        title: `${category.name} | The Truth Pill`,
+        title: category.name,
         description: category.description || `Exploring the depth of ${category.name.toLowerCase()} and the underlying patterns of existence.`,
+        alternates: {
+            canonical: getCanonical(`category/${slug}`),
+        },
         openGraph: {
             title: `${category.name} | The Truth Pill`,
             description: category.description || `Deep dives into ${category.name}.`,
@@ -63,7 +67,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         "@type": "CollectionPage",
         "name": category.name,
         "description": category.description,
-        "url": `https://thetruthpill.org/categories/${category.slug}`,
+        "url": getCanonical(`category/${category.slug}`),
     };
 
     return (
