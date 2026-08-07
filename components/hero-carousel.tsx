@@ -3,15 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
 import { JoinedArticle } from "./blog-grid";
 import { getCloudinaryUrl } from "@/lib/utils";
 
 export function HeroCarousel({ initialArticles }: { initialArticles?: JoinedArticle[] }) {
-    const featuredArticles = useQuery(api.articles.getFeatured, { limit: 5 }) as JoinedArticle[] | undefined || initialArticles;
+    const featuredArticles = initialArticles;
     const [current, setCurrent] = useState(0);
     const [direction, setDirection] = useState(0);
 
@@ -32,14 +30,6 @@ export function HeroCarousel({ initialArticles }: { initialArticles?: JoinedArti
         const timer = setInterval(next, 8000);
         return () => clearInterval(timer);
     }, [featuredArticles, next]);
-
-    if (featuredArticles === undefined) {
-        return (
-            <div className="h-[98vh] w-full flex items-center justify-center bg-gray-950">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin opacity-50" />
-            </div>
-        );
-    }
 
     if (!featuredArticles || featuredArticles.length === 0) {
         return null;

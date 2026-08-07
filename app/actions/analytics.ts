@@ -5,11 +5,24 @@ import { fetchMutation } from "convex/nextjs";
 import { api } from "../../convex/_generated/api";
 import { UAParser } from "ua-parser-js";
 
+const EXCLUDED_PATH_PREFIXES = ["/admin", "/dashboard"];
+
 export async function trackVisit(data: {
   visitorId: string;
   url: string;
   referrer?: string;
 }) {
+  // Skip tracking for admin and dashboard pages
+  try {
+    const urlPath = new URL(data.url).pathname;
+    if (EXCLUDED_PATH_PREFIXES.some((prefix) => urlPath.startsWith(prefix))) {
+      return;
+    }
+  } catch {
+    // If URL is malformed, skip tracking to be safe
+    return;
+  }
+
   const headerList = await headers();
   const ip = headerList.get("x-forwarded-for") || "127.0.0.1";
   const userAgent = headerList.get("user-agent") || "unknown";

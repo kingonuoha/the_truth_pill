@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 export const getEngagement = query({
   args: {
@@ -10,18 +11,18 @@ export const getEngagement = query({
     const reactions = await ctx.db
       .query("reactions")
       .withIndex("by_article_user", (q) => q.eq("articleId", args.articleId))
-      .collect();
+      .take(1000); // Safety cap
 
     const bookmarksCountList = await ctx.db
       .query("bookmarks")
       .filter((q) => q.eq(q.field("articleId"), args.articleId))
-      .collect();
+      .take(1000); // Safety cap
 
     const commentsCountList = await ctx.db
       .query("comments")
       .withIndex("by_articleId", (q) => q.eq("articleId", args.articleId))
       .filter((q) => q.eq(q.field("status"), "approved"))
-      .collect();
+      .take(1000); // Safety cap
 
     let userReaction = null;
     let isBookmarked = false;
@@ -93,6 +94,12 @@ export const toggleReaction = mutation({
     if (existing) {
       if (existing.type === args.type) {
         await ctx.db.delete(existing._id);
+        const article = await ctx.db.get(args.articleId);
+        if (article) {
+          await ctx.db.patch(args.articleId, {
+            reactionsCount: Math.max(0, (article.reactionsCount || 0) - 1),
+          });
+        }
       } else {
         await ctx.db.patch(existing._id, { type: args.type });
       }
@@ -103,6 +110,12 @@ export const toggleReaction = mutation({
         type: args.type,
         createdAt: Date.now(),
       });
+      const article = await ctx.db.get(args.articleId);
+      if (article) {
+        await ctx.db.patch(args.articleId, {
+          reactionsCount: (article.reactionsCount || 0) + 1,
+        });
+      }
     }
   },
 });
@@ -163,6 +176,13 @@ export const addComment = mutation({
       createdAt: Date.now(),
     });
 
+    // Update globalStats
+    await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
+      update: {
+        commentsCount: 1,
+      },
+    });
+
     // Notify Admin
     const article = await ctx.db.get(args.articleId);
     await ctx.db.insert("emailQueue", {
@@ -192,7 +212,7 @@ export const listComments = query({
       .withIndex("by_articleId", (q) => q.eq("articleId", args.articleId))
       .filter((q) => q.eq(q.field("status"), "approved"))
       .order("desc")
-      .collect();
+      .take(1000); // Safety cap
 
     return await Promise.all(
       comments.map(async (c) => {
@@ -209,7 +229,7 @@ export const listComments = query({
 export const listAllComments = query({
   args: {},
   handler: async (ctx) => {
-    const comments = await ctx.db.query("comments").order("desc").collect();
+    const comments = await ctx.db.query("comments").order("desc").take(100);
     return await Promise.all(
       comments.map(async (c) => {
         const user = await ctx.db.get(c.userId);
@@ -247,7 +267,23 @@ export const updateCommentStatus = mutation({
 
     if (user?.role !== "admin") throw new Error("Forbidden");
 
-    await ctx.db.patch(args.id, { status: args.status });
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Comment not found");
+
+    if (existing.status !== args.status) {
+      await ctx.db.patch(args.id, { status: args.status });
+
+      // Update globalStats pending counter
+      let pendingUpdate = 0;
+      if (existing.status === "pending") pendingUpdate = -1;
+      if (args.status === "pending") pendingUpdate = 1;
+
+      if (pendingUpdate !== 0) {
+        await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
+          update: { pendingCommentsCount: pendingUpdate }
+        });
+      }
+    }
   },
 });
 
@@ -255,5 +291,12 @@ export const deleteComment = mutation({
   args: { id: v.id("comments") },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.id);
+    
+    // Update globalStats
+    await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
+      update: {
+        commentsCount: -1,
+      },
+    });
   },
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, usePaginatedQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
     Archive, Edit2, Eye, FileText,
@@ -31,13 +31,17 @@ export default function AdminArticlesPage() {
     const [hasInitialLoaded, setHasInitialLoaded] = useState(false);
 
     // Data Fetching
-    const articles = useQuery(api.articles.listAdmin, {
-        search: search || undefined,
-        status: statusFilter === "all" ? undefined : statusFilter,
-        source: sourceFilter === "all" ? undefined : sourceFilter,
-        categoryId: categoryFilter === "all" ? undefined : categoryFilter as Id<"categories">,
-        isArchived: showArchived
-    });
+    const { results: articles, status: paginatedStatus, loadMore } = usePaginatedQuery(
+        api.articles.listAdmin,
+        {
+            search: search || undefined,
+            status: statusFilter === "all" ? undefined : statusFilter,
+            source: sourceFilter === "all" ? undefined : sourceFilter,
+            categoryId: categoryFilter === "all" ? undefined : categoryFilter as Id<"categories">,
+            isArchived: showArchived
+        },
+        { initialNumItems: 10 }
+    );
 
     const categories = useQuery(api.categories.listAll);
 
@@ -198,8 +202,8 @@ export default function AdminArticlesPage() {
         setHasInitialLoaded(true);
     }
 
-    const isLoading = !hasInitialLoaded;
-    const isRefetching = hasInitialLoaded && (articles === undefined || stats === undefined);
+    const isLoading = paginatedStatus === "LoadingFirstPage";
+    const isRefetching = hasInitialLoaded && (paginatedStatus === "LoadingMore" || stats === undefined);
 
     if (isLoading) {
         return (
@@ -675,6 +679,18 @@ export default function AdminArticlesPage() {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+            
+            {/* Load More Pagination */}
+            {paginatedStatus === "CanLoadMore" && (
+                <div className="flex items-center justify-center mt-8">
+                    <button 
+                        onClick={() => loadMore(10)}
+                        className="px-6 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm"
+                    >
+                        Load More Results
+                    </button>
                 </div>
             )}
 

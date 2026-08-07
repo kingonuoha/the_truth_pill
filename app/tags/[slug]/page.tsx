@@ -7,19 +7,17 @@ import { Clock, ArrowRight, Tag as TagIcon } from "lucide-react";
 import Image from "next/image";
 import { EmptyState } from "@/components/empty-state";
 import { Metadata } from "next";
-import { Doc } from "@/convex/_generated/dataModel";
-
-type ArticleWithDetails = Doc<"articles"> & { 
-    authorName?: string; 
-    authorImage?: string; 
-    readingTime?: number; 
-};
+import { JoinedArticle } from "@/components/blog-grid";
+import { getCanonical } from "@/lib/site-url";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
     return {
-        title: `Tag: ${slug.split('-').join(' ')} | The Truth Pill`,
+        title: `Tag: ${slug.split('-').join(' ')}`,
         description: `Explore all articles tagged with ${slug.split('-').join(' ')}.`,
+        alternates: {
+            canonical: getCanonical(`tags/${slug}`),
+        },
     };
 }
 
@@ -31,10 +29,7 @@ export default async function TagPage({
     const { slug } = await params;
     const displayTag = slug.split('-').join(' ');
     
-    const articles = await fetchQuery(api.articles.list, { 
-        tag: slug,
-        limit: 50
-    }) || [];
+    const articles = await fetchQuery(api.articles.listByTag, { tag: displayTag }) || [];
 
     return (
         <main className="min-h-screen bg-[#f8f9fa] dark:bg-gray-950">
@@ -57,7 +52,7 @@ export default async function TagPage({
 
                 {articles.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {articles.map((article: ArticleWithDetails) => (
+                        {articles.map((article: JoinedArticle) => (
                             <ArticleCard key={article._id} article={article} />
                         ))}
                     </div>
@@ -83,7 +78,7 @@ export default async function TagPage({
     );
 }
 
-function ArticleCard({ article }: { article: ArticleWithDetails }) {
+function ArticleCard({ article }: { article: JoinedArticle }) {
     return (
         <Link 
             href={`/${article.slug}`}

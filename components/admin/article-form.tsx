@@ -20,6 +20,7 @@ import { cn, getCloudinaryUrl } from "@/lib/utils";
 import { Id, Doc } from "@/convex/_generated/dataModel";
 import { uploadImage } from "@/app/actions/upload-image";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTour } from "@/hooks/use-tour";
 
 interface ArticleFormProps {
     isEditing?: boolean;
@@ -113,6 +114,9 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
     const [isUploading, setIsUploading] = useState(false);
     const [charCount, setCharCount] = useState(0);
     const [headingStructure, setHeadingStructure] = useState<{ hasH2: boolean; multipleH1: boolean }>({ hasH2: false, multipleH1: false });
+    
+    // Initialize Tour
+    const { startTour } = useTour("admin-blog-creation", true);
     const [missingAltCount, setMissingAltCount] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -395,7 +399,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
             <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
                     {/* Featured Image - Primary Banner */}
-                    <div className="bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-zinc-200 dark:border-white/5 shadow-2xl relative overflow-hidden group/hero">
+                    <div id="tour-article-banner" className="bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-zinc-200 dark:border-white/5 shadow-2xl relative overflow-hidden group/hero">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-1000 group-hover/hero:scale-150" />
 
                         <div className="space-y-6 relative z-10">
@@ -406,7 +410,16 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                     </div>
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">Banner Image (Hero)</h4>
                                 </div>
-                                <span className="text-[9px] font-black uppercase text-blue-500/60 tracking-widest">Recommended size: 1600 x 900 pixels</span>
+                                <div className="flex items-center gap-4">
+                                    <span className="text-[9px] font-black uppercase text-blue-500/60 tracking-widest hidden sm:inline-block">1600 x 900 recommended</span>
+                                    <button
+                                        type="button"
+                                        onClick={startTour}
+                                        className="text-[10px] font-black uppercase tracking-widest text-blue-600 border border-blue-600/30 bg-blue-600/10 px-4 py-2 rounded-xl hover:bg-blue-600/20 transition-colors"
+                                    >
+                                        Restart Tour
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="aspect-[21/9] bg-zinc-100/50 dark:bg-zinc-900/50 rounded-3xl overflow-hidden relative border border-zinc-200 dark:border-zinc-800 group/image group-hover:border-blue-500/30 transition-all duration-500 shadow-inner">
@@ -492,7 +505,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                     {/* Author & Stats Section */}
                     <div className="bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-zinc-200 dark:border-white/5 shadow-sm">
                         <div className="grid md:grid-cols-2 gap-8 items-center">
-                            <div className="space-y-4">
+                            <div id="tour-article-author" className="space-y-4">
                                 <div className="flex items-center gap-2">
                                     <div className="p-2 bg-purple-500/10 rounded-xl">
                                         <Users className="w-4 h-4 text-purple-500" />
@@ -546,6 +559,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                             Main Article
                         </button>
                         <button
+                            id="tour-article-seo"
                             type="button"
                             onClick={() => setActiveTab("advanced")}
                             className={cn(
@@ -563,7 +577,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                         {activeTab === 'general' ? (
                             <>
                                 {/* Article Title */}
-                                <div className="space-y-4">
+                                <div id="tour-article-title" className="space-y-4">
                                     <div className="flex items-center gap-2">
                                         <div className="w-8 h-[2px] bg-blue-600 rounded-full" />
                                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600">Main Title</label>
@@ -610,7 +624,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                 </div>
 
                                 {/* Editor */}
-                                <div className="space-y-4">
+                                <div id="tour-article-editor" className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <div className="w-8 h-[2px] bg-purple-600 rounded-full" />
@@ -910,9 +924,10 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
 
                         <div className="space-y-3">
                             <button
+                                id="tour-article-save"
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+                                className="cursor-pointer w-full bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
                             >
                                 {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                                 {isEditing ? "Update Article" : "Publish Article"}

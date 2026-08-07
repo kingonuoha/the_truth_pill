@@ -2,17 +2,23 @@ import { MetadataRoute } from "next";
 import { fetchQuery } from "convex/nextjs";
 import { Doc } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
-import { slugify } from "@/lib/utils";
+import { getSiteUrl } from "@/lib/site-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://thetruthpill.org";
+  const baseUrl = getSiteUrl();
+
+  interface ArticleWithMeta {
+    slug: string;
+    updatedAt: number;
+    publishedAt?: number;
+  }
 
   // Fetch articles
-  const articles = (await fetchQuery(api.articles.list, {
+  const articles = (await fetchQuery(api.articles.listRecent, {
     limit: 1000,
-  })) as Doc<"articles">[];
-  const articleUrls = articles.map((article: Doc<"articles">) => ({
+  })) as ArticleWithMeta[];
+
+  const articleUrls = articles.map((article) => ({
     url: `${baseUrl}/${article.slug}`,
     lastModified: new Date(
       article.updatedAt || article.publishedAt || Date.now(),
@@ -33,15 +39,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  // Fetch Topics
-  const topics = (await fetchQuery(api.articles.getAllTopics)) || [];
-  const topicEntries: MetadataRoute.Sitemap = topics.map((topic: string) => ({
-    url: `${baseUrl}/topics/${slugify(topic)}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
-  }));
-
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     {
@@ -51,13 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/search`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/topics`,
+      url: `${baseUrl}/pillars`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.5,
@@ -69,6 +60,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...staticPages,
     ...categoryUrls,
     ...articleUrls,
-    ...topicEntries,
   ];
 }

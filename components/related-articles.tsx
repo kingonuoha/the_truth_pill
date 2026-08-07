@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useEffect, useState } from "react";
+import { useConvex } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import Link from "next/link";
@@ -13,13 +14,44 @@ interface RelatedArticlesProps {
     lean?: boolean;
 }
 
+type RelatedArticle = {
+    _id: Id<"articles">;
+    title: string;
+    slug: string;
+    excerpt?: string;
+    coverImage?: string;
+    publishedAt?: number;
+    authorName?: string;
+    authorImage?: string;
+    categoryName?: string;
+    viewCount?: number;
+};
+
 export function RelatedArticles({ categoryId, excludeId, lean = false }: RelatedArticlesProps) {
-    // We need to get the category slug first to use getByCategory
-    const category = useQuery(api.categories.getById, { id: categoryId });
-    const relatedArticles = useQuery(
-        api.articles.getByCategory,
-        category?.slug ? { categorySlug: category.slug, limit: 10 } : "skip"
-    );
+    const convex = useConvex();
+    const [relatedArticles, setRelatedArticles] = useState<RelatedArticle[] | undefined>(undefined);
+
+    // One-shot, non-reactive fetch (no subscription). Resolves the category
+    // first, then the articles for that category.
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            const category = await convex.query(api.categories.getById, { id: categoryId });
+            if (cancelled) return;
+            if (!category) {
+                setRelatedArticles([]);
+                return;
+            }
+            const articles = (await convex.query(api.articles.getByCategory, {
+                categorySlug: category.slug,
+                limit: 10,
+            })) as RelatedArticle[];
+            if (!cancelled) setRelatedArticles(articles);
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [convex, categoryId]);
 
     if (relatedArticles === undefined) {
         return (
@@ -59,7 +91,7 @@ export function RelatedArticles({ categoryId, excludeId, lean = false }: Related
                                 {article.title}
                             </h4>
                             <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
-                                {new Date(article.publishedAt || article._creationTime).toLocaleDateString(undefined, {
+                                {new Date(article.publishedAt || 0).toLocaleDateString(undefined, {
                                     month: 'long',
                                     day: 'numeric',
                                     year: 'numeric'

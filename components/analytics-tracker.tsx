@@ -10,6 +10,11 @@ export function AnalyticsTracker() {
     const searchParams = useSearchParams();
 
     useEffect(() => {
+        // Skip tracking for admin and dashboard pages
+        if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard")) {
+            return;
+        }
+
         const visitorId = getVisitorId();
         const url = window.location.href;
         const referrer = document.referrer;

@@ -1,38 +1,111 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Calendar, ChevronDown, Eye, Search } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useEffect, useRef, useState } from "react";
+import { useConvex } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { Id, Doc } from "../convex/_generated/dataModel";
+import { Id } from "../convex/_generated/dataModel";
 import { BlogSkeleton } from "./skeletons";
 import { getCloudinaryUrl, getAvatarUrl } from "@/lib/utils";
 import { EmptyState } from "./empty-state";
 
 interface BlogGridProps {
     categoryId?: Id<"categories">;
-    topic?: string;
     pillar?: string;
     type?: string;
 }
 
-export interface JoinedArticle extends Doc<"articles"> {
-    categoryName: string;
-    authorName: string;
+export type JoinedArticle = {
+    _id: Id<"articles">;
+    title: string;
+    slug: string;
+    excerpt?: string;
+    coverImage?: string;
+    publishedAt?: number;
+    createdAt?: number;
+    viewCount?: number;
+    categoryId?: Id<"categories">;
+    categoryName?: string;
+    authorName?: string;
     authorImage?: string;
+    authorId?: string;
+    type?: string;
+    readingTime?: number;
+};
+
+interface BlogGridInjectedProps {
+    initialArticles?: JoinedArticle[];
+    initialCursor?: string | null;
+    initialHasMore?: boolean;
 }
 
-export function BlogGrid({ categoryId, topic, pillar, type, initialArticles }: BlogGridProps & { initialArticles?: JoinedArticle[] }) {
-    const [limit, setLimit] = useState(initialArticles?.length || 6);
-    const articles = useQuery(api.articles.list, { limit, categoryId, topic, pillar, type }) || initialArticles;
+const PAGE_SIZE = 6;
 
-    if (articles === undefined) {
+export function BlogGrid({ categoryId, pillar, type, initialArticles, initialCursor, initialHasMore }: BlogGridProps & BlogGridInjectedProps) {
+    const convex = useConvex();
+    const [articles, setArticles] = useState<JoinedArticle[]>(initialArticles || []);
+    const [cursor, setCursor] = useState<string | null>(initialCursor ?? null);
+    const [hasMore, setHasMore] = useState<boolean>(initialHasMore ?? true);
+    const [isInitialLoading, setIsInitialLoading] = useState(!initialArticles);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const fetchedInitialRef = useRef(Boolean(initialArticles));
+
+    // No live subscription: fetch the first page ONCE on mount when the page
+    // did not SSR initial data (e.g. filtered category/pillar grids).
+    useEffect(() => {
+        if (fetchedInitialRef.current) return;
+        fetchedInitialRef.current = true;
+        let cancelled = false;
+        (async () => {
+            try {
+                const result = await convex.query(api.articles.list, {
+                    categoryId,
+                    pillar,
+                    type,
+                    paginationOpts: { numItems: PAGE_SIZE, cursor: null },
+                });
+                if (cancelled) return;
+                setArticles(result.page as JoinedArticle[]);
+                setCursor(result.continueCursor);
+                setHasMore(!result.isDone);
+            } finally {
+                if (!cancelled) setIsInitialLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [convex, categoryId, pillar, type]);
+
+    const handleLoadMore = async () => {
+        if (isLoadingMore) return;
+        setIsLoadingMore(true);
+        try {
+            const result = await convex.query(api.articles.list, {
+                categoryId,
+                pillar,
+                type,
+                paginationOpts: { numItems: PAGE_SIZE, cursor },
+            });
+            const page = result.page as JoinedArticle[];
+            setArticles((prev) => {
+                const seen = new Set(prev.map((a) => a._id));
+                return [...prev, ...page.filter((a) => !seen.has(a._id))];
+            });
+            setCursor(result.continueCursor);
+            setHasMore(!result.isDone);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
+    if (isInitialLoading) {
         return <BlogSkeleton />;
     }
 
-    if (articles.length === 0) {
+    if (!articles || articles.length === 0) {
         return (
             <EmptyState 
                 title="No Insights Found" 
@@ -50,12 +123,6 @@ export function BlogGrid({ categoryId, topic, pillar, type, initialArticles }: B
             />
         );
     }
-
-    const hasMore = articles.length >= limit;
-
-    const handleLoadMore = () => {
-        setLimit(prev => prev + 6);
-    };
 
     return (
         <div className="w-full">
@@ -92,13 +159,13 @@ export function BlogGrid({ categoryId, topic, pillar, type, initialArticles }: B
                             <Link href={`/author/${article.authorId}`} className="flex items-center gap-2 group/author">
                                 <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 relative">
                                     <Image
-                                        src={getAvatarUrl(article.authorName, article.authorImage)}
-                                        alt={article.authorName}
+                                        src={getAvatarUrl(article.authorName || "Author", article.authorImage)}
+                                        alt={article.authorName || "Author"}
                                         fill
                                         className="object-cover"
                                     />
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-gray-100 group-hover/author:text-blue-600 transition-colors">{article.authorName}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-gray-100 group-hover/author:text-blue-600 transition-colors">{article.authorName || "Author"}</span>
                             </Link>
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-1.5 text-gray-400">
@@ -108,7 +175,7 @@ export function BlogGrid({ categoryId, topic, pillar, type, initialArticles }: B
                                 <div className="flex items-center gap-1.5 text-gray-400">
                                     <Calendar size={12} />
                                     <span className="text-[10px] font-bold uppercase tracking-widest">
-                                        {new Date(article.publishedAt || article.createdAt).toLocaleDateString('en-US', {
+                                        {new Date(article.publishedAt || article.createdAt || 0).toLocaleDateString('en-US', {
                                             month: 'short',day: 'numeric'
                                         })}
                                     </span>
@@ -123,9 +190,10 @@ export function BlogGrid({ categoryId, topic, pillar, type, initialArticles }: B
                 {hasMore ? (
                     <button
                         onClick={handleLoadMore}
-                        className="flex items-center gap-2 px-10 py-4 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all duration-300 group shadow-xl shadow-blue-500/20 active:scale-95"
+                        disabled={isLoadingMore}
+                        className="flex items-center gap-2 px-10 py-4 rounded-full bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all duration-300 group shadow-xl shadow-blue-500/20 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Load More Articles
+                        {isLoadingMore ? "Loading..." : "Load More Articles"}
                         <ChevronDown size={14} className="group-hover:translate-y-1 transition-transform" />
                     </button>
                 ) : (

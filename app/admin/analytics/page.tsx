@@ -89,16 +89,6 @@ export default function AnalyticsPage() {
     const realTimeActivity = useQuery(api.analytics.getRealTimeActivity);
     const referrerStats = useQuery(api.analytics.getReferrerStats, { days });
 
-    const { results: rawVisits, status: paginationStatus, loadMore } = usePaginatedQuery(
-        api.analytics.getRawVisits,
-        { 
-            search: signalSearch,
-            type: signalType,
-            days: signalDateRange
-        },
-        { initialNumItems: 20 }
-    );
-
     const isLoading = !trafficStats || !geoStats || !deviceStats || !topContent || !realTimeActivity || !referrerStats;
 
     if (isLoading) {
@@ -113,6 +103,14 @@ export default function AnalyticsPage() {
     }
 
     const totalUniqueVisitors = (geoStats as { country: string; count: number }[]).reduce((acc: number, curr: { count: number }) => acc + curr.count, 0);
+
+    // Real trend for Total Traffic from getTrafficStats
+    const trafficTrend = `${trafficStats.isTrendUp ? "+" : ""}${trafficStats.trend}%`;
+
+    // Engagement rate computed from real top-content data (reactions / unique readers)
+    const totalReactions = (topContent as { reactions?: number }[]).reduce((acc: number, a) => acc + (a.reactions || 0), 0);
+    const engagementReach = (topContent as { uniqueViews?: number }[]).reduce((acc: number, a) => acc + (a.uniqueViews || 0), 0);
+    const engagementRate = engagementReach > 0 ? ((totalReactions / engagementReach) * 100).toFixed(1) : "0";
 
     return (
         <div className="space-y-12 pb-20 font-sans">
@@ -172,21 +170,21 @@ export default function AnalyticsPage() {
                     label="Total Traffic"
                     value={trafficStats.totalVisits.toLocaleString()}
                     icon={Users}
-                    trend="+12.5%"
+                    trend={trafficTrend}
                     color="blue"
                 />
                 <StatCard
                     label="Unique Reach"
                     value={totalUniqueVisitors.toLocaleString()}
                     icon={Globe}
-                    trend="+8.2%"
+                    trend="—"
                     color="purple"
                 />
                 <StatCard
                     label="Engagement rate"
-                    value="64.8%"
+                    value={`${engagementRate}%`}
                     icon={TrendingUp}
-                    trend="+2.4%"
+                    trend="—"
                     color="blue"
                 />
                 <StatCard
@@ -481,109 +479,140 @@ export default function AnalyticsPage() {
 
                             {/* Modal Content - Table */}
                             <div className="flex-1 overflow-auto p-10 custom-scrollbar">
-                                <table className="w-full text-left border-separate border-spacing-y-4">
-                                    <thead>
-                                        <tr className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
-                                            <th className="px-6 py-4">Time Entry</th>
-                                            <th className="px-6 py-4">Destination</th>
-                                            <th className="px-6 py-4">Geographic Origin</th>
-                                            <th className="px-6 py-4">Node Profile</th>
-                                            <th className="px-6 py-4 text-right">Access Point</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {rawVisits.map((visit) => (
-                                            <tr key={visit._id} className="group bg-gray-50/30 dark:bg-gray-800/10 hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-all duration-300 rounded-[2rem]">
-                                                <td className="px-6 py-6 font-mono text-[10px] font-black text-gray-400 first:rounded-l-[2rem]">
-                                                    {new Date(visit.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                                    <span className="block text-[8px] font-white mt-1 opacity-50 tracking-tighter">
-                                                        {new Date(visit.timestamp).toLocaleDateString()}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <p className="text-xs font-serif font-black text-gray-900 dark:text-white underline decoration-blue-500/30 underline-offset-4 decoration-2">
-                                                        {visit.url.replace(process.env.NEXT_PUBLIC_SITE_URL || '', '') || '/home'}
-                                                    </p>
-                                                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-1 opacity-60">Entry Node Index</p>
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-black text-[10px] text-gray-400">
-                                                            {(visit.geoLocation?.country || "??").substring(0, 2).toUpperCase()}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight">{visit.geoLocation?.country || "Undisclosed"}</p>
-                                                            <p className="text-[8px] font-bold text-gray-400 leading-none">{visit.geoLocation?.city || "Satellite Link"}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <span className="text-[9px] font-black border border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 px-3 py-1 rounded-full text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                                                            {visit.browser}
-                                                        </span>
-                                                        <span className="text-[9px] font-black border border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 px-3 py-1 rounded-full text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                                                            {visit.os}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-6 text-right last:rounded-r-[2rem]">
-                                                    <p className="text-[10px] font-mono font-black text-blue-600 dark:text-blue-500 tracking-tighter">
-                                                        {visit.ipAddress === "127.0.0.1" ? "::INTERNAL_DOCK" : visit.ipAddress}
-                                                    </p>
-                                                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-1 italic">{visit.device}</p>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-
-                                {/* Pagination Trigger */}
-                                {paginationStatus === "CanLoadMore" && (
-                                    <div className="mt-12 flex justify-center pb-12">
-                                        <button 
-                                            onClick={() => loadMore(20)}
-                                            className="flex items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105 active:scale-95 shadow-sm"
-                                        >
-                                            Retrieve Deeper Signals
-                                            <ChevronDown size={14} />
-                                        </button>
-                                    </div>
-                                )}
-                                
-                                {paginationStatus === "LoadingMore" && (
-                                    <div className="mt-12 flex justify-center pb-12">
-                                        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-blue-500 animate-pulse">
-                                            <Loader2 className="animate-spin" size={16} />
-                                            Synchronizing...
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Modal Footer */}
-                            <div className="p-8 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-gray-950/20 backdrop-blur-md flex items-center justify-between">
-                                <div className="flex items-center gap-8">
-                                    <div>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Synchronized</p>
-                                        <p className="text-sm font-black text-gray-900 dark:text-white mt-1">{rawVisits.length} Events</p>
-                                    </div>
-                                    <div className="w-px h-8 bg-gray-200 dark:bg-zinc-800" />
-                                    <div>
-                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Security Protocol</p>
-                                        <p className="text-sm font-black text-zinc-900 dark:text-zinc-100 mt-1 uppercase tracking-tighter">Level 4 Oversight</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-green-600 dark:text-green-500">Node Active</span>
-                                </div>
+                                <RawSignalStream 
+                                    key={`${signalSearch}-${signalType}-${signalDateRange}`}
+                                    search={signalSearch}
+                                    type={signalType}
+                                    days={signalDateRange}
+                                />
                             </div>
                         </motion.div>
                     </div>
                 )}
             </AnimatePresence>
         </div>
+    );
+}
+
+function RawSignalStream({ search, type, days }: { search: string; type: "all" | "visit" | "article" | "reaction"; days: number }) {
+    const { results: rawVisits, status: paginationStatus, loadMore, isLoading } = usePaginatedQuery(
+        api.analytics.getRawVisits,
+        { search, type, days },
+        { initialNumItems: 20 }
+    );
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin text-blue-500" size={32} />
+            </div>
+        );
+    }
+
+    if (rawVisits.length === 0 && !isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+                <Shield className="text-gray-200 dark:text-gray-800 mb-4" size={48} />
+                <h4 className="text-lg font-serif font-black text-gray-950 dark:text-white">No Signals Detected</h4>
+                <p className="text-sm text-gray-400 mt-1 uppercase tracking-widest font-black">Refine your spectrum filters</p>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <table className="w-full text-left border-separate border-spacing-y-4">
+                <thead>
+                    <tr className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+                        <th className="px-6 py-4">Time Entry</th>
+                        <th className="px-6 py-4">Destination</th>
+                        <th className="px-6 py-4">Geographic Origin</th>
+                        <th className="px-6 py-4">Node Profile</th>
+                        <th className="px-6 py-4 text-right">Access Point</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rawVisits.map((visit) => (
+                        <tr key={visit._id} className="group bg-gray-50/30 dark:bg-gray-800/10 hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-all duration-300 rounded-[2rem]">
+                            <td className="px-6 py-6 font-mono text-[10px] font-black text-gray-400 first:rounded-l-[2rem]">
+                                {new Date(visit.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                <span className="block text-[8px] font-white mt-1 opacity-50 tracking-tighter">
+                                    {new Date(visit.timestamp).toLocaleDateString()}
+                                </span>
+                            </td>
+                            <td className="px-6 py-6">
+                                <p className="text-xs font-serif font-black text-gray-900 dark:text-white underline decoration-blue-500/30 underline-offset-4 decoration-2">
+                                    {visit.url.replace(process.env.NEXT_PUBLIC_SITE_URL || '', '') || '/home'}
+                                </p>
+                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-1 opacity-60">Entry Node Index</p>
+                            </td>
+                            <td className="px-6 py-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-black text-[10px] text-gray-400">
+                                        {(visit.geoLocation?.country || "??").substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight">{visit.geoLocation?.country || "Undisclosed"}</p>
+                                        <p className="text-[8px] font-bold text-gray-400 leading-none">{visit.geoLocation?.city || "Satellite Link"}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-6 py-6">
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="text-[9px] font-black border border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 px-3 py-1 rounded-full text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                                        {visit.browser}
+                                    </span>
+                                    <span className="text-[9px] font-black border border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 px-3 py-1 rounded-full text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                                        {visit.os}
+                                    </span>
+                                </div>
+                            </td>
+                            <td className="px-6 py-6 text-right last:rounded-r-[2rem]">
+                                <p className="text-[10px] font-mono font-black text-blue-600 dark:text-blue-500 tracking-tighter">
+                                    {visit.ipAddress === "127.0.0.1" ? "::INTERNAL_DOCK" : visit.ipAddress}
+                                </p>
+                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-1 italic">{visit.device}</p>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+            {/* Pagination Trigger */}
+            {paginationStatus === "CanLoadMore" && (
+                <div className="mt-12 flex justify-center pb-12">
+                    <button 
+                        onClick={() => loadMore(20)}
+                        className="flex items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105 active:scale-95 shadow-sm"
+                    >
+                        Retrieve Deeper Signals
+                        <ChevronDown size={14} />
+                    </button>
+                </div>
+            )}
+            
+            {(paginationStatus as string) === "LoadingMore" && (
+                <div className="mt-12 flex justify-center pb-12">
+                    <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-blue-500 animate-pulse">
+                        <Loader2 className="animate-spin" size={16} />
+                        Synchronizing...
+                    </div>
+                </div>
+            )}
+            
+            <div className="p-8 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-gray-950/20 backdrop-blur-md flex items-center justify-between rounded-3xl mt-8">
+                <div className="flex items-center gap-8">
+                    <div>
+                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Spectrum Depth</p>
+                        <p className="text-sm font-black text-gray-900 dark:text-white mt-1">{rawVisits.length} Nodes</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-500">Live Sync</span>
+                </div>
+            </div>
+        </>
     );
 }
 

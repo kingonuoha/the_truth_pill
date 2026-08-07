@@ -241,13 +241,13 @@ export const generateArticleFromTopic = action({
     console.log("AI Article Raw Response:", response);
 
     try {
-      // More robust JSON extraction - find the first { and last }
-      const firstBrace = response.indexOf("{");
-      const lastBrace = response.lastIndexOf("}");
-      if (firstBrace === -1 || lastBrace === -1) {
+      // Filter out markdown code blocks if present
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
         throw new Error("No JSON object found in AI response");
       }
-      const jsonStr = response.substring(firstBrace, lastBrace + 1);
+
+      const jsonStr = jsonMatch[0];
       const data = JSON.parse(jsonStr);
 
       // Validate required fields
@@ -257,14 +257,17 @@ export const generateArticleFromTopic = action({
           throw new Error(`AI response missing required field: ${field}`);
       }
 
+      const validTypes = ["pillar", "cluster", "micro", "insight", "observant"];
+      const rawType = String(data.type || "").toLowerCase();
+
       await ctx.runMutation(internal.articles.saveAIDraft, {
         title: String(data.title),
         content: String(data.content),
         excerpt: String(data.excerpt),
         pillar: data.pillar ? String(data.pillar) : undefined,
         topics: Array.isArray(data.topics) ? data.topics.map(String) : [],
-        type: data.type && ["pillar", "cluster", "micro", "insight", "observant"].includes(data.type.toString().toLowerCase()) 
-          ? data.type.toString().toLowerCase() 
+        type: validTypes.includes(rawType)
+          ? data.type.toString().toLowerCase()
           : "cluster",
         topic: args.topic,
         metaTitle: data.metaTitle ? String(data.metaTitle) : undefined,
@@ -293,15 +296,15 @@ export const learnAuthorStyle = action({
     model: v.string(),
   },
   handler: async (ctx, args): Promise<string> => {
-    const articles = await ctx.runQuery(api.articles.list, { limit: 3 });
-    if (articles.length === 0) {
+    const articles = await ctx.runQuery(api.articles.getFeatured, { limit: 3 });
+    if (!articles || articles.length === 0) {
       throw new Error("No articles found to learn style from");
     }
 
     const contentSample = articles
       .map(
-        (a: Doc<"articles">) =>
-          `TITLE: ${a.title}\nCONTENT: ${a.content?.substring(0, 1000)}`,
+        (a) =>
+          `TITLE: ${a.title}\nCONTENT: ${a.excerpt?.substring(0, 1000) || ""}`,
       )
       .join("\n\n---\n\n");
 
@@ -341,12 +344,12 @@ export const shuffleTopics = action({
     });
 
     try {
-      const firstBrace = response.indexOf("{");
-      const lastBrace = response.lastIndexOf("}");
-      if (firstBrace === -1 || lastBrace === -1) {
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
         throw new Error("No JSON object found in AI response");
       }
-      const jsonStr = response.substring(firstBrace, lastBrace + 1);
+
+      const jsonStr = jsonMatch[0];
       const data = JSON.parse(jsonStr);
       return data.suggestions || [];
     } catch (err) {

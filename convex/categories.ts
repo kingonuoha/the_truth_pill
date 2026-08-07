@@ -22,21 +22,24 @@ export const getById = query({
 export const listAll = query({
   args: {},
   handler: async (ctx) => {
-    const categories = await ctx.db.query("categories").collect();
+    const categories = await ctx.db.query("categories").take(200);
     return await Promise.all(
-      categories.map(async (cat) => {
-        const articles = await ctx.db
-          .query("articles")
-          .withIndex("by_categoryId", (q) => q.eq("categoryId", cat._id))
-          .collect();
+      categories.map(async (category) => {
         const pillars = await ctx.db
           .query("pillars")
-          .withIndex("by_categoryId", (q) => q.eq("categoryId", cat._id))
-          .collect();
+          .withIndex("by_categoryId", (q) => q.eq("categoryId", category._id))
+          .take(50);
+
         return {
-          ...cat,
-          articleCount: articles.length,
+          _id: category._id,
+          _creationTime: category._creationTime,
+          name: category.name,
+          slug: category.slug,
+          description: category.description,
+          coverImage: category.coverImage,
+          articleCount: category.articleCount ?? 0,
           pillarCount: pillars.length,
+          createdAt: category.createdAt,
         };
       }),
     );

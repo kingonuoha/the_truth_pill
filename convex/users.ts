@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 export const register = mutation({
   args: {
@@ -26,6 +27,13 @@ export const register = mutation({
       role: "user",
       newsletterSubscribed: args.newsletterSubscribed ?? false,
       createdAt: Date.now(),
+    });
+
+    // Update globalStats
+    await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
+      update: {
+        usersCount: 1,
+      },
     });
 
     // Queue Welcome Email
@@ -80,6 +88,13 @@ export const store = mutation({
         role: "user",
         newsletterSubscribed: false,
         createdAt: Date.now(),
+      });
+
+      // Update globalStats
+      await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
+        update: {
+          usersCount: 1,
+        },
       });
 
       // Queue Welcome Email for New OAuth User
@@ -180,6 +195,13 @@ export const subscribeToNewsletter = mutation({
         emailConfirmed: false,
         confirmationToken: token,
         createdAt: Date.now(),
+      });
+
+      // Update globalStats
+      await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
+        update: {
+          usersCount: 1,
+        },
       });
     }
 
@@ -317,6 +339,13 @@ export const deleteAccount = mutation({
     for (const c of comments) await ctx.db.delete(c._id);
 
     await ctx.db.delete(user._id);
+
+    // Update globalStats
+    await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
+      update: {
+        usersCount: -1,
+      },
+    });
   },
 });
 
@@ -387,8 +416,8 @@ export const listAllUsers = query({
       .unique();
 
     if (user?.role !== "admin") return [];
-
-    return await ctx.db.query("users").order("desc").collect();
+    
+    return await ctx.db.query("users").order("desc").take(200);
   },
 });
 
@@ -407,5 +436,29 @@ export const updateUserRole = mutation({
     if (user?.role !== "admin") throw new Error("Forbidden");
 
     await ctx.db.patch(args.id, { role: args.role });
+  },
+});
+
+export const completeTour = mutation({
+  args: {
+    tourId: v.string(),
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    const currentTours = user.completedTours || [];
+    if (!currentTours.includes(args.tourId)) {
+      await ctx.db.patch(user._id, {
+        completedTours: [...currentTours, args.tourId],
+      });
+    }
+
+    return { success: true };
   },
 });

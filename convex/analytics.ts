@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
+import { internal } from "./_generated/api";
+
+// Non-public routes (admin, auth flows) should not inflate globalStats.
+const isPublicRoute = (url: string): boolean =>
+  !/(^|\/)(admin|dashboard|login|signup|auth)(\/|$)/.test(url);
 
 export const logPageVisit = mutation({
   args: {
@@ -28,6 +33,7 @@ export const logPageVisit = mutation({
       .withIndex("by_trackingCode", (q) => q.eq("trackingCode", args.visitorId))
       .unique();
 
+    let isNewVisitor = false;
     if (tracking) {
       await ctx.db.patch(tracking._id, {
         lastVisit: now,
@@ -35,6 +41,7 @@ export const logPageVisit = mutation({
         userId: args.userId || tracking.userId,
       });
     } else {
+      isNewVisitor = true;
       await ctx.db.insert("visitorTracking", {
         trackingCode: args.visitorId,
         userId: args.userId,
@@ -57,6 +64,13 @@ export const logPageVisit = mutation({
       referrer: args.referrer,
       timestamp: now,
     });
+
+    // 3. Update Global Stats (public routes only — admin/auth browsing shouldn't count)
+    if (isPublicRoute(args.url)) {
+      await ctx.scheduler.runAfter(0, internal.stats.incrementStats, {
+        update: { totalViews: 1, totalUniqueViews: isNewVisitor ? 1 : 0 },
+      });
+    }
   },
 });
 
@@ -107,6 +121,7 @@ export const logArticleView = mutation({
           viewedAt: now,
           userId: args.userId || existingView.userId, // Update UID if they just logged in
         });
+
       }
     }
   },
@@ -115,41 +130,68 @@ export const logArticleView = mutation({
 export const getTrafficStats = query({
   args: { days: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const days = args.days || 30;
+    const days = Math.min(args.days || 30, 90);
     const now = Date.now();
-    const startTime = now - days * 24 * 60 * 60 * 1000;
-    const prevStartTime = startTime - days * 24 * 60 * 60 * 1000;
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const startTime = now - days * DAY_MS;
+    const prevStartTime = startTime - days * DAY_MS;
 
-    const currentVisits = await ctx.db
-      .query("pageVisits")
-      .withIndex("by_timestamp", (q) => q.gt("timestamp", startTime))
-      .collect();
-
-    const prevVisits = await ctx.db
-      .query("pageVisits")
-      .withIndex("by_timestamp", (q) =>
-        q.gt("timestamp", prevStartTime).lt("timestamp", startTime),
-      )
-      .collect();
-
-    // Group by day for the chart
-    const stats: Record<string, { date: string; visits: number }> = {};
+    // Zero-fill the requested window so days without traffic still render.
+    const dateKeys: string[] = [];
+    const stats: Record<string, { date: string; visits: number; uniqueVisitors: number }> = {};
     for (let i = 0; i < days; i++) {
-      const date = new Date(now - (days - 1 - i) * 24 * 60 * 60 * 1000);
-      const dateKey = date.toISOString().split("T")[0];
-      stats[dateKey] = { date: dateKey, visits: 0 };
+      const key = new Date(now - (days - 1 - i) * DAY_MS)
+        .toISOString()
+        .split("T")[0];
+      dateKeys.push(key);
+      stats[key] = { date: key, visits: 0, uniqueVisitors: 0 };
     }
 
-    currentVisits.forEach((v) => {
-      const dateKey = new Date(v.timestamp).toISOString().split("T")[0];
-      if (stats[dateKey]) {
-        stats[dateKey].visits++;
-      }
-    });
+    // Prefer the pre-aggregated dailyStats rows (a handful per window instead
+    // of scanning up to 5000 raw pageVisits per request).
+    const dailyRows = await ctx.db
+      .query("dailyStats")
+      .withIndex("by_date", (q) =>
+        q.gte("date", dateKeys[0]).lte("date", dateKeys[dateKeys.length - 1]),
+      )
+      .take(500);
 
-    // Calculate Trend
-    const currentCount = currentVisits.length;
-    const prevCount = prevVisits.length;
+    let currentCount = 0;
+    let prevCount = 0;
+
+    if (dailyRows.length > 0) {
+      for (const row of dailyRows) {
+        if (stats[row.date]) {
+          stats[row.date].visits = row.visits;
+          stats[row.date].uniqueVisitors = row.uniqueVisitors;
+        }
+        currentCount += row.visits;
+      }
+
+      // Trend vs the previous window of equal length.
+      const prevStartKey = new Date(prevStartTime)
+        .toISOString()
+        .split("T")[0];
+      const prevRows = await ctx.db
+        .query("dailyStats")
+        .withIndex("by_date", (q) =>
+          q.gte("date", prevStartKey).lt("date", dateKeys[0]),
+        )
+        .take(500);
+      prevCount = prevRows.reduce((sum, row) => sum + row.visits, 0);
+    } else {
+      // Cold start: bounded raw fallback until the first daily rollup runs.
+      const visits = await ctx.db
+        .query("pageVisits")
+        .withIndex("by_timestamp", (q) => q.gt("timestamp", startTime))
+        .take(100);
+      for (const visit of visits) {
+        const key = new Date(visit.timestamp).toISOString().split("T")[0];
+        if (stats[key]) stats[key].visits++;
+      }
+      currentCount = visits.length;
+    }
+
     const trend =
       prevCount === 0 ? 100 : ((currentCount - prevCount) / prevCount) * 100;
 
@@ -171,7 +213,7 @@ export const getReferrerStats = query({
     const visits = await ctx.db
       .query("pageVisits")
       .withIndex("by_timestamp", (q) => q.gt("timestamp", startTime))
-      .collect();
+      .take(5000); // Safety cap for bandwidth
 
     const referrers: Record<string, number> = {};
 
@@ -199,7 +241,7 @@ export const getReferrerStats = query({
 
 export const getGeographicStats = query({
   handler: async (ctx) => {
-    const visits = await ctx.db.query("pageVisits").collect();
+    const visits = await ctx.db.query("pageVisits").take(5000);
     const counts: Record<string, { country: string; count: number }> = {};
 
     visits.forEach((v) => {
@@ -216,7 +258,7 @@ export const getGeographicStats = query({
 
 export const getDeviceStats = query({
   handler: async (ctx) => {
-    const visits = await ctx.db.query("pageVisits").collect();
+    const visits = await ctx.db.query("pageVisits").take(5000);
     const devices: Record<string, number> = {
       mobile: 0,
       tablet: 0,
@@ -250,34 +292,29 @@ export const getTopContent = query({
     const articles = await ctx.db
       .query("articles")
       .withIndex("by_status", (q) => q.eq("status", "published"))
-      .collect();
+      .take(200);
 
-    const stats = await Promise.all(
-      articles.map(async (a) => {
-        const reactions = await ctx.db
-          .query("reactions")
-          .withIndex("by_article_user", (q) => q.eq("articleId", a._id))
-          .collect();
+    const stats = articles.map((a) => {
+      const reactionsCount = a.reactionsCount || 0;
 
-        const avgReadTime =
-          a.actualReadingTime && a.uniqueViewCount > 0
-            ? Math.round(a.actualReadingTime / a.uniqueViewCount)
-            : 0;
+      const avgReadTime =
+        a.actualReadingTime && a.uniqueViewCount > 0
+          ? Math.round(a.actualReadingTime / a.uniqueViewCount)
+          : 0;
 
-        return {
-          id: a._id,
-          title: a.title,
-          views: a.viewCount,
-          uniqueViews: a.uniqueViewCount,
-          reactions: reactions.length,
-          avgReadTime, // in seconds
-          engagementRate:
-            a.uniqueViewCount > 0
-              ? (reactions.length / a.uniqueViewCount) * 100
-              : 0,
-        };
-      }),
-    );
+      return {
+        id: a._id,
+        title: a.title,
+        views: a.viewCount,
+        uniqueViews: a.uniqueViewCount,
+        reactions: reactionsCount,
+        avgReadTime, // in seconds
+        engagementRate:
+          a.uniqueViewCount > 0
+            ? (reactionsCount / a.uniqueViewCount) * 100
+            : 0,
+      };
+    });
 
     return stats.sort((a, b) => b.uniqueViews - a.uniqueViews).slice(0, 10);
   },
@@ -349,7 +386,19 @@ export const getRawVisits = query({
 
         if (type === "reaction") {
             const q = ctx.db.query("reactions").withIndex("by_createdAt", (q) => q.gt("createdAt", startTime)).order("desc");
-            const result = await q.paginate(args.paginationOpts);
+            
+            let result;
+            try {
+                result = await q.paginate(args.paginationOpts);
+            } catch (error) {
+                // If cursor is invalid (e.g. from a different query type), reset to first page
+                if (args.paginationOpts.cursor) {
+                    result = await q.paginate({ ...args.paginationOpts, cursor: null });
+                } else {
+                    throw error;
+                }
+            }
+
             const page = await Promise.all(result.page.map(async (r) => {
                 const article = await ctx.db.get(r.articleId);
                 const user = await ctx.db.get(r.userId);
@@ -380,7 +429,18 @@ export const getRawVisits = query({
         // Default to pageVisits for visits, articles, and all
         const q = ctx.db.query("pageVisits").withIndex("by_timestamp", (q) => q.gt("timestamp", startTime)).order("desc");
 
-        const result = await q.paginate(args.paginationOpts);
+        let result;
+        try {
+            result = await q.paginate(args.paginationOpts);
+        } catch (error) {
+            // Fallback for invalid cursors
+            if (args.paginationOpts.cursor) {
+                result = await q.paginate({ ...args.paginationOpts, cursor: null });
+            } else {
+                throw error;
+            }
+        }
+
         let page = result.page;
 
         if (type === "article") {

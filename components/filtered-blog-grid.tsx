@@ -1,9 +1,8 @@
 "use client";
 
-import { useQuery } from "convex/react";
 import { BlogGrid } from "./blog-grid";
 import { Id } from "../convex/_generated/dataModel";
-import { api } from "../convex/_generated/api";
+import { usePillars } from "./categories-provider";
 import Link from "next/link";
 
 interface FilteredBlogGridProps {
@@ -12,7 +11,7 @@ interface FilteredBlogGridProps {
 }
 
 export function FilteredBlogGrid({ categoryId, pillar }: FilteredBlogGridProps) {
-    const pillars = useQuery(api.pillars.listByCategory, { categoryId });
+    const pillars = (usePillars() || []).filter(p => p.categoryId === categoryId);
 
     return (
         <div className="w-full flex flex-col gap-8">

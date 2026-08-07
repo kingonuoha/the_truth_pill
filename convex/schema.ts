@@ -2,6 +2,19 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  globalStats: defineTable({
+    articleCount: v.number(),
+    publishedArticleCount: v.number(),
+    draftArticleCount: v.number(),
+    scheduledArticleCount: v.number(),
+    aiDraftCount: v.number(),
+    usersCount: v.number(),
+    commentsCount: v.number(),
+    pendingCommentsCount: v.number(),
+    totalViews: v.number(),
+    totalUniqueViews: v.number(),
+  }),
+
   users: defineTable({
     name: v.string(),
     email: v.string(),
@@ -15,6 +28,7 @@ export default defineSchema({
     confirmationToken: v.optional(v.string()),
     resetToken: v.optional(v.string()),
     resetTokenExpires: v.optional(v.float64()),
+    completedTours: v.optional(v.array(v.string())),
     createdAt: v.float64(),
   })
     .index("by_email", ["email"])
@@ -60,6 +74,7 @@ export default defineSchema({
     publishedAt: v.optional(v.float64()),
     viewCount: v.number(),
     uniqueViewCount: v.number(),
+    reactionsCount: v.optional(v.number()), // denormalized counter for getTopContent
     readingTime: v.number(), // estimated minutes
     actualReadingTime: v.optional(v.number()), // total seconds spent by all users
     metaTitle: v.optional(v.string()),
@@ -74,7 +89,12 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_publishedAt", ["publishedAt"])
     .index("by_categoryId", ["categoryId"])
-    .index("by_authorId", ["authorId"]),
+    .index("by_authorId", ["authorId"])
+    .index("by_status_category", ["status", "categoryId"])
+    .searchIndex("search_title", {
+      searchField: "title",
+      filterFields: ["status", "categoryId", "isArchived"],
+    }),
 
   categories: defineTable({
     name: v.string(),
@@ -155,6 +175,13 @@ export default defineSchema({
   })
     .index("by_trackingCode", ["trackingCode"])
     .index("by_userId", ["userId"]),
+
+  dailyStats: defineTable({
+    date: v.string(), // YYYY-MM-DD (UTC)
+    visits: v.number(), // total page visits for the day
+    uniqueVisitors: v.number(), // distinct visitorTracking codes for the day
+    lastRollup: v.optional(v.float64()), // watermark: timestamp of the last pageVisit folded in
+  }).index("by_date", ["date"]),
 
   aiSchedule: defineTable({
     daysOfWeek: v.array(v.number()), // [0-6]

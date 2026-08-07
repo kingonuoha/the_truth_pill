@@ -12,9 +12,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Doc } from "@/convex/_generated/dataModel";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
+import { JoinedArticle } from "./blog-grid";
+import { useCategories, usePillars } from "./categories-provider";
 
 interface NavbarProps {
     solid?: boolean;
@@ -98,8 +99,8 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
     };
 
     const searchResults = useQuery(api.articles.search, { query: query.length > 2 ? query : "" });
-    const categoriesAll = useQuery(api.categories.listAll);
-    const pillarsAll = useQuery(api.pillars.listAll);
+    const categoriesAll = useCategories();
+    const pillarsAll = usePillars();
     const topTags = useQuery(api.articles.getTopPostTags, { limit: 5 });
 
     // Filter and sort categories: Top 3 by articleCount
@@ -479,7 +480,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                             <input
                                 autoFocus
                                 type="text"
-                                placeholder="Search keywords..."
+                                placeholder="Search by title, topic, or keyword..."
                                 className="w-full text-4xl md:text-7xl font-serif font-bold border-b-2 border-zinc-100 dark:border-zinc-800 bg-transparent focus:border-blue-600 outline-none pb-8 transition-all duration-500 placeholder:text-zinc-200 dark:placeholder:text-zinc-800 text-zinc-900 dark:text-white"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
@@ -491,7 +492,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                     <p className="text-zinc-400 font-medium">No results found for &quot;{query}&quot;</p>
                                 )}
                                 <div className="grid grid-cols-1 gap-4">
-                                    {searchResults?.map((article: Doc<"articles">) => (
+                                    {searchResults?.map((article: JoinedArticle) => (
                                         <Link
                                             key={article._id}
                                             href={`/${article.slug}`}
