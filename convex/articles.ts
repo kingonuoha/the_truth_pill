@@ -295,7 +295,35 @@ export const search = query({
   handler: async (ctx, args) => {
     if (!args.query) return [];
 
-    const q = args.query.toLowerCase();
+    // Normalize text: lowercase, drop punctuation, collapse whitespace
+    const normalize = (s?: string) =>
+      (s || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const nQuery = normalize(args.query);
+    if (!nQuery) return [];
+
+    const slugifiedQuery = nQuery.replace(/\s+/g, "-");
+
+    // Common words that add no search signal (a pasted title is mostly these)
+    const STOPWORDS = new Set([
+      "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with",
+      "at", "by", "is", "are", "was", "were", "be", "been", "being", "this",
+      "that", "it", "its", "you", "your", "how", "what", "when", "where",
+      "who", "whom", "will", "would", "can", "could", "should", "do", "does",
+      "did", "done", "have", "has", "had", "not", "no", "nor", "but", "if",
+      "so", "than", "then", "there", "they", "their", "them", "too", "very",
+      "just", "about", "into", "from", "up", "out", "over", "under", "again",
+      "off", "only", "own", "same", "such", "more", "most", "some", "any",
+      "all", "also", "why", "after", "before", "between", "through",
+    ]);
+
+    const tokens = nQuery
+      .split(" ")
+      .filter((t) => t.length > 1 && !STOPWORDS.has(t));
 
     // 1. Fetch data needed for filtering and augmentation with safety limits
     const [articles, categories, allPillars] = await Promise.all([
@@ -313,34 +341,55 @@ export const search = query({
     const categoryMap = new Map(categories.map((c) => [c._id, c]));
     const pillarMap = new Map(allPillars.map((p) => [p.slug, p]));
 
-    const matched = articles.filter((a) => {
-      const inTitle = a.title.toLowerCase().includes(q);
-      const inExcerpt = a.excerpt?.toLowerCase().includes(q) || false;
-      const inFocusKeyword = a.focusKeyword?.toLowerCase().includes(q) || false;
-      const inTopics = a.topics?.some((t) => t.toLowerCase().includes(q)) || false;
-      const inTags = a.tags?.some((t) => t.toLowerCase().includes(q)) || false;
+    // 2. Rank every article. Pasted titles hit high on exact/includes/slug,
+    //    short keywords hit on token overlap.
+    const scored: { article: (typeof articles)[number]; score: number }[] = [];
 
-      // Check Category
+    for (const a of articles) {
+      const nTitle = normalize(a.title);
+      const nMeta = normalize(a.metaTitle);
+      const nFocus = normalize(a.focusKeyword);
+      const nExcerpt = normalize(a.excerpt);
+      const nTags = (a.tags || []).map(normalize);
+      const nTopics = (a.topics || []).map(normalize);
       const category = a.categoryId ? categoryMap.get(a.categoryId) : null;
-      const inCategory = category?.name.toLowerCase().includes(q) || false;
-
-      // Check Pillar
       const pillar = a.pillar ? pillarMap.get(a.pillar) : null;
-      const inPillar = pillar?.name.toLowerCase().includes(q) || false;
+      const nCategory = normalize(category?.name);
+      const nPillar = normalize(pillar?.name);
 
-      return (
-        inTitle ||
-        inExcerpt ||
-        inFocusKeyword ||
-        inTopics ||
-        inTags ||
-        inCategory ||
-        inPillar
-      );
-    });
+      let score = 0;
+
+      // Whole-phrase matches (pasted title, quoted phrase)
+      if (nTitle === nQuery) score += 100; // exact title
+      else if (nTitle.includes(nQuery)) score += 60; // full phrase inside title
+      if (a.slug.includes(slugifiedQuery)) score += 50; // pasted title vs slug
+      if (nMeta.includes(nQuery)) score += 30;
+      if (nFocus.includes(nQuery)) score += 25;
+
+      // Token overlap
+      let titleHits = 0;
+      for (const t of tokens) {
+        if (nTitle.includes(t)) {
+          score += 10;
+          titleHits++;
+        }
+        if (nMeta.includes(t) || nFocus.includes(t)) score += 7;
+        if (nTags.some((tag) => tag.includes(t))) score += 6;
+        if (nTopics.some((topic) => topic.includes(t))) score += 5;
+        if (nExcerpt.includes(t)) score += 4;
+        if (nCategory.includes(t)) score += 4;
+        if (nPillar.includes(t)) score += 4;
+      }
+      if (tokens.length > 0 && titleHits === tokens.length) score += 15; // all words in title
+
+      if (score > 0) scored.push({ article: a, score });
+    }
+
+    // 3. Best matches first, tie-break by popularity
+    scored.sort((x, y) => y.score - x.score || (y.article.viewCount || 0) - (x.article.viewCount || 0));
 
     // Augment results with category/pillar names and author info
-    return await Promise.all(matched.slice(0, 10).map(async (a) => {
+    return await Promise.all(scored.slice(0, 8).map(async ({ article: a }) => {
       const category = a.categoryId ? categoryMap.get(a.categoryId) : null;
       const pillar = a.pillar ? pillarMap.get(a.pillar) : null;
       const author = await ctx.db.get(a.authorId);

@@ -480,7 +480,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                             <input
                                 autoFocus
                                 type="text"
-                                placeholder="Search keywords..."
+                                placeholder="Search by title, topic, or keyword..."
                                 className="w-full text-4xl md:text-7xl font-serif font-bold border-b-2 border-zinc-100 dark:border-zinc-800 bg-transparent focus:border-blue-600 outline-none pb-8 transition-all duration-500 placeholder:text-zinc-200 dark:placeholder:text-zinc-800 text-zinc-900 dark:text-white"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
