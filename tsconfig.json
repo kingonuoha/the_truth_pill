@@ -21,7 +21,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@/types/api": ["../docs/types/api.ts"]
+      "@/types/api": ["./types/api.ts"]
     }
   },
   "include": [
