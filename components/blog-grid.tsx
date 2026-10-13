@@ -4,72 +4,65 @@ import Link from "next/link";
 import Image from "next/image";
 import { Calendar, ChevronDown, Eye, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useConvex } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { Id } from "../convex/_generated/dataModel";
 import { BlogSkeleton } from "./skeletons";
 import { getCloudinaryUrl, getAvatarUrl } from "@/lib/utils";
 import { EmptyState } from "./empty-state";
+import { bffFetch } from "@/lib/bff-client";
+import type { ArticleListItem, PaginatedArticles } from "@/lib/content-types";
+
+export type JoinedArticle = ArticleListItem;
 
 interface BlogGridProps {
-    categoryId?: Id<"categories">;
+    categoryId?: string;
     pillar?: string;
     type?: string;
 }
 
-export type JoinedArticle = {
-    _id: Id<"articles">;
-    title: string;
-    slug: string;
-    excerpt?: string;
-    coverImage?: string;
-    publishedAt?: number;
-    createdAt?: number;
-    viewCount?: number;
-    categoryId?: Id<"categories">;
-    categoryName?: string;
-    authorName?: string;
-    authorImage?: string;
-    authorId?: string;
-    type?: string;
-    readingTime?: number;
-};
-
 interface BlogGridInjectedProps {
-    initialArticles?: JoinedArticle[];
-    initialCursor?: string | null;
+    initialArticles?: ArticleListItem[];
+    initialPage?: number;
     initialHasMore?: boolean;
 }
 
 const PAGE_SIZE = 6;
 
-export function BlogGrid({ categoryId, pillar, type, initialArticles, initialCursor, initialHasMore }: BlogGridProps & BlogGridInjectedProps) {
-    const convex = useConvex();
-    const [articles, setArticles] = useState<JoinedArticle[]>(initialArticles || []);
-    const [cursor, setCursor] = useState<string | null>(initialCursor ?? null);
+async function fetchPage(
+    page: number,
+    filters: { categoryId?: string; pillar?: string; type?: string },
+): Promise<PaginatedArticles> {
+    const qs = new URLSearchParams({
+        page: String(page),
+        pageSize: String(PAGE_SIZE),
+    });
+    if (filters.categoryId) qs.set("categoryId", filters.categoryId);
+    if (filters.pillar) qs.set("pillar", filters.pillar);
+    if (filters.type) qs.set("type", filters.type);
+    return bffFetch<PaginatedArticles>(`/api/articles?${qs.toString()}`);
+}
+
+export function BlogGrid({ categoryId, pillar, type, initialArticles, initialPage, initialHasMore }: BlogGridProps & BlogGridInjectedProps) {
+    const [articles, setArticles] = useState<ArticleListItem[]>(initialArticles || []);
+    const [page, setPage] = useState<number>(initialPage ?? 1);
     const [hasMore, setHasMore] = useState<boolean>(initialHasMore ?? true);
     const [isInitialLoading, setIsInitialLoading] = useState(!initialArticles);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const fetchedInitialRef = useRef(Boolean(initialArticles));
 
-    // No live subscription: fetch the first page ONCE on mount when the page
-    // did not SSR initial data (e.g. filtered category/pillar grids).
+    // Fetch the first page ONCE on mount when the page did not SSR initial data
+    // (e.g. filtered category/pillar grids).
     useEffect(() => {
         if (fetchedInitialRef.current) return;
         fetchedInitialRef.current = true;
         let cancelled = false;
         (async () => {
             try {
-                const result = await convex.query(api.articles.list, {
-                    categoryId,
-                    pillar,
-                    type,
-                    paginationOpts: { numItems: PAGE_SIZE, cursor: null },
-                });
+                const result = await fetchPage(1, { categoryId, pillar, type });
                 if (cancelled) return;
-                setArticles(result.page as JoinedArticle[]);
-                setCursor(result.continueCursor);
-                setHasMore(!result.isDone);
+                setArticles(result.items);
+                setPage(result.page);
+                setHasMore(result.page < result.totalPages);
+            } catch (error) {
+                console.error("Failed to load articles:", error);
             } finally {
                 if (!cancelled) setIsInitialLoading(false);
             }
@@ -77,25 +70,21 @@ export function BlogGrid({ categoryId, pillar, type, initialArticles, initialCur
         return () => {
             cancelled = true;
         };
-    }, [convex, categoryId, pillar, type]);
+    }, [categoryId, pillar, type]);
 
     const handleLoadMore = async () => {
         if (isLoadingMore) return;
         setIsLoadingMore(true);
         try {
-            const result = await convex.query(api.articles.list, {
-                categoryId,
-                pillar,
-                type,
-                paginationOpts: { numItems: PAGE_SIZE, cursor },
-            });
-            const page = result.page as JoinedArticle[];
+            const result = await fetchPage(page + 1, { categoryId, pillar, type });
             setArticles((prev) => {
-                const seen = new Set(prev.map((a) => a._id));
-                return [...prev, ...page.filter((a) => !seen.has(a._id))];
+                const seen = new Set(prev.map((a) => a.id));
+                return [...prev, ...result.items.filter((a) => !seen.has(a.id))];
             });
-            setCursor(result.continueCursor);
-            setHasMore(!result.isDone);
+            setPage(result.page);
+            setHasMore(result.page < result.totalPages);
+        } catch (error) {
+            console.error("Failed to load more articles:", error);
         } finally {
             setIsLoadingMore(false);
         }
@@ -127,8 +116,8 @@ export function BlogGrid({ categoryId, pillar, type, initialArticles, initialCur
     return (
         <div className="w-full">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
-                {articles.map((article: JoinedArticle) => (
-                    <article key={article._id} className="group flex flex-col items-start">
+                {articles.map((article) => (
+                    <article key={article.id} className="group flex flex-col items-start">
                         <div className="relative w-full aspect-[4/3] rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-700 mb-6 border border-gray-100 dark:border-gray-800">
                             <Image
                                 src={getCloudinaryUrl(article.coverImage || "", "w_800,c_fill,q_auto,f_auto")}
@@ -159,7 +148,7 @@ export function BlogGrid({ categoryId, pillar, type, initialArticles, initialCur
                             <Link href={`/author/${article.authorId}`} className="flex items-center gap-2 group/author">
                                 <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 relative">
                                     <Image
-                                        src={getAvatarUrl(article.authorName || "Author", article.authorImage)}
+                                        src={getAvatarUrl(article.authorName || "Author", article.authorImage ?? undefined)}
                                         alt={article.authorName || "Author"}
                                         fill
                                         className="object-cover"

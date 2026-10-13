@@ -1,22 +1,16 @@
 "use client";
 
-import { Doc } from "@/convex/_generated/dataModel";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Calendar, BookOpen, Clock, User, Facebook, Twitter, Instagram, Mail } from "lucide-react";
+import { Calendar, BookOpen, User, Facebook, Twitter, Instagram } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-
-interface JoinedArticle extends Doc<"articles"> {
-    categoryName: string;
-    authorName?: string;
-    authorImage?: string;
-}
+import type { ArticleListItem, PublicAuthorCard } from "@/lib/content-types";
 
 interface AuthorContentProps {
-    author: Doc<"users">;
-    initialArticles: JoinedArticle[];
+    author: PublicAuthorCard;
+    initialArticles: ArticleListItem[];
 }
 
 export function AuthorContent({ author, initialArticles }: AuthorContentProps) {
@@ -56,7 +50,7 @@ export function AuthorContent({ author, initialArticles }: AuthorContentProps) {
                             <div className="text-center mb-8">
                                 <h1 className="text-2xl font-serif font-bold text-zinc-900 mb-1">{author.name}</h1>
                                 <p className="text-primary font-bold text-xs uppercase tracking-widest px-3 py-1 bg-primary/5 rounded-full inline-block">
-                                    {author.role === 'admin' ? 'Verified Author' : 'Contributor'}
+                                    Verified Author
                                 </p>
                             </div>
 
@@ -66,18 +60,6 @@ export function AuthorContent({ author, initialArticles }: AuthorContentProps) {
                                         <BookOpen size={16} />
                                     </div>
                                     <span className="font-medium">{initialArticles.length} Articles Published</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-sm text-zinc-500">
-                                    <div className="w-8 h-8 rounded-lg bg-zinc-50 flex items-center justify-center text-zinc-400">
-                                        <Calendar size={16} />
-                                    </div>
-                                    <span className="font-medium">Joined {new Date(author.createdAt).toLocaleDateString()}</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-sm text-zinc-500">
-                                    <div className="w-8 h-8 rounded-lg bg-zinc-50 flex items-center justify-center text-zinc-400">
-                                        <Mail size={16} />
-                                    </div>
-                                    <span className="font-medium truncate">{author.email}</span>
                                 </div>
                             </div>
 
@@ -116,9 +98,9 @@ export function AuthorContent({ author, initialArticles }: AuthorContentProps) {
                             </div>
                         ) : (
                             <div className="grid gap-8">
-                                {initialArticles.map((article: JoinedArticle, idx: number) => (
+                                {initialArticles.map((article, idx: number) => (
                                     <motion.article
-                                        key={article._id}
+                                        key={article.id}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: idx * 0.1 }}
@@ -150,10 +132,6 @@ export function AuthorContent({ author, initialArticles }: AuthorContentProps) {
                                                 <div className="flex items-center gap-2 text-xs font-bold text-zinc-400">
                                                     <Calendar size={14} className="text-primary/60" />
                                                     {new Date(article.publishedAt || article.createdAt).toLocaleDateString()}
-                                                </div>
-                                                <div className="flex items-center gap-2 text-xs font-bold text-zinc-400">
-                                                    <Clock size={14} className="text-secondary/60" />
-                                                    {article.readingTime} min read
                                                 </div>
                                             </div>
                                         </div>

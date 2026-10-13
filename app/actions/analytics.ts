@@ -1,70 +1,89 @@
 "use server";
 
 import { headers } from "next/headers";
-import { fetchMutation } from "convex/nextjs";
-import { api } from "../../convex/_generated/api";
-import { UAParser } from "ua-parser-js";
+import { auth } from "@/auth";
+import { api as nestApi } from "@/lib/api";
+import { parseStrictBody } from "@/lib/bff";
+import { logArticleViewBody, logHeartbeatBody } from "@/lib/bff-schemas";
+import {
+  enforceRateLimit,
+  parseClientIp,
+  RateLimiter,
+} from "@/lib/server-action-guards";
 
-const EXCLUDED_PATH_PREFIXES = ["/admin", "/dashboard"];
+/**
+ * Article-view + heartbeat writes — the article-page analytics half of Phase 10
+ * domain 5, plus the Phase 10 page-visit beacon (now emitted by
+ * `components/analytics-tracker.tsx` through the BFF).
+ *
+ * The Nest routes are `@Public()` + `@OptionalAuth()` (DEV-058), so the session
+ * `sub` is forwarded when present and the call is anonymous otherwise. Identity
+ * is the verified session — never a body field. The API validates the UUIDs and
+ * the 0–3600 s bound.
+ *
+ * P10-SEC-002 (Hard Rule 7 / DoD #19): a server action is a public HTTP
+ * endpoint. These two forward a caller-chosen `{articleId, visitorId, seconds}`
+ * with no local validation and no local throttle, so a client could inflate
+ * `uniqueViewCount` with distinct `visitorId`s and drive unthrottled DB writes.
+ * They now parse a strict schema (unknown field → 400) and consume a per-client-IP
+ * budget before `auth()` or the outbound call. Nest's `(articleId, visitorId)`
+ * dedup and 24 h view cooldown remain the second line of defence — untouched.
+ */
+const ANALYTICS_WINDOW_MS = 60_000;
 
-export async function trackVisit(data: {
-  visitorId: string;
-  url: string;
-  referrer?: string;
-}) {
-  // Skip tracking for admin and dashboard pages
-  try {
-    const urlPath = new URL(data.url).pathname;
-    if (EXCLUDED_PATH_PREFIXES.some((prefix) => urlPath.startsWith(prefix))) {
-      return;
-    }
-  } catch {
-    // If URL is malformed, skip tracking to be safe
-    return;
-  }
+/**
+ * 60/min per client IP — the same budget as the guarded BFF `ingest:analytics`
+ * route, which is the closest surface these actions mirror. Each action gets its
+ * own bucket, so a view burst cannot exhaust the heartbeat budget (or vice
+ * versa). Per-instance on Vercel, like every limiter in this project; a shared
+ * store is a Phase 11 item.
+ */
+const VIEW_LIMIT = new RateLimiter(60, ANALYTICS_WINDOW_MS);
+const HEARTBEAT_LIMIT = new RateLimiter(60, ANALYTICS_WINDOW_MS);
 
+/**
+ * Rate-limit key: the validated client IP (Hard Rule 1 — never a body value).
+ *
+ * `rateLimitRoute` in `lib/bff.ts` is not usable here because it takes a
+ * `Request`, which a server action does not have. This is the minimal
+ * equivalent over `headers()`, reusing the same `RateLimiter` / `parseClientIp`
+ * primitives — the `app/actions/pexels.ts` pattern. An absent or malformed
+ * `x-forwarded-for` yields the shared `"unknown"` bucket, the stricter default.
+ */
+async function callerKey(): Promise<string> {
   const headerList = await headers();
-  const ip = headerList.get("x-forwarded-for") || "127.0.0.1";
-  const userAgent = headerList.get("user-agent") || "unknown";
+  return parseClientIp(headerList.get("x-forwarded-for")) ?? "unknown";
+}
 
-  // Parse User Agent
-  const parser = new UAParser(userAgent);
-  const result = parser.getResult();
-  const deviceType = result.device.type || "desktop";
-  const browserName = result.browser.name || "Unknown";
-  const osName = result.os.name || "Unknown";
-
-  // Fetch GeoIP data
-  let geoLocation = undefined;
+export async function trackArticleView(data: {
+  articleId: string;
+  visitorId: string;
+}): Promise<void> {
+  enforceRateLimit(VIEW_LIMIT, await callerKey());
+  const body = parseStrictBody(logArticleViewBody, data);
+  const session = await auth();
   try {
-    // ipapi.co provides free geo data for development
-    // In production, you might want to use a more robust service or a local DB
-    if (ip !== "127.0.0.1" && ip !== "::1") {
-      const geoResponse = await fetch(`https://ipapi.co/${ip}/json/`);
-      if (geoResponse.ok) {
-        const geoData = await geoResponse.json();
-        geoLocation = {
-          country: geoData.country_name,
-          city: geoData.city,
-        };
-      }
-    }
-  } catch (error) {
-    console.error("Failed to fetch geo location:", error);
-  }
-
-  try {
-    await fetchMutation(api.analytics.logPageVisit, {
-      visitorId: data.visitorId,
-      url: data.url,
-      ipAddress: ip,
-      geoLocation,
-      device: deviceType,
-      browser: browserName,
-      os: osName,
-      referrer: data.referrer,
+    await nestApi.post("/analytics/log-article-view", body, {
+      sub: session?.user?.id ?? null,
     });
   } catch (error) {
-    console.error("Failed to track visit:", error);
+    console.error("Failed to log article view:", error);
+  }
+}
+
+export async function trackHeartbeat(data: {
+  articleId: string;
+  visitorId: string;
+  seconds: number;
+}): Promise<void> {
+  enforceRateLimit(HEARTBEAT_LIMIT, await callerKey());
+  const body = parseStrictBody(logHeartbeatBody, data);
+  const session = await auth();
+  try {
+    await nestApi.post("/analytics/log-heartbeat", body, {
+      sub: session?.user?.id ?? null,
+    });
+  } catch (error) {
+    console.error("Failed to log heartbeat:", error);
   }
 }

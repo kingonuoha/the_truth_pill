@@ -1,13 +1,29 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect, useState } from "react";
 import Script from "next/script";
+import { bffFetch } from "@/lib/bff-client";
+import type { AdsSettings } from "@/lib/content-types";
 
 export function AdSenseScript() {
-    const adsSettings = useQuery(api.ads.getAdsSettings);
+    const [adsSettings, setAdsSettings] = useState<AdsSettings | null>(null);
 
-    if (!adsSettings?.adsEnabled || !adsSettings?.adsenseScriptCode) {
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await bffFetch<AdsSettings>("/api/ads-settings");
+                if (!cancelled) setAdsSettings(data);
+            } catch {
+                // Leave null — no script is injected.
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    if (!adsSettings?.adsEnabled || !adsSettings.adsenseScriptCode) {
         return null;
     }
 

@@ -1,6 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { nest } from "@/lib/api";
 import Link from "next/link";
 import { Metadata } from "next";
 import { AuthorContent } from "./author-content";
@@ -13,7 +11,7 @@ interface AuthorPageProps {
 
 export async function generateMetadata({ params }: AuthorPageProps): Promise<Metadata> {
     const { id } = await params;
-    const author = await fetchQuery(api.users.getUserById, { id: id as Id<"users"> });
+    const author = await nest.publicAuthor(id);
 
     if (!author) {
         return {
@@ -34,10 +32,9 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
 
 export default async function AuthorProfilePage({ params }: AuthorPageProps) {
     const { id } = await params;
-    const authorId = id as Id<"users">;
 
-    const author = await fetchQuery(api.users.getUserById, { id: authorId });
-    const articles = await fetchQuery(api.articles.getByAuthor, { authorId });
+    const author = await nest.publicAuthor(id);
+    const articles = await nest.byAuthor(id);
 
     if (!author) {
         return (

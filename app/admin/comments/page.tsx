@@ -1,35 +1,45 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect, useState } from "react";
 import { MessageSquare, Trash2, CheckCircle, Loader2, ExternalLink, ShieldAlert } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { Id } from "@/convex/_generated/dataModel";
-
-type CommentData = {
-    _id: Id<"comments">;
-    articleId: Id<"articles">;
-    userId: Id<"users">;
-    status: "approved" | "pending" | "spam" | "removed";
-    content: string;
-    createdAt: number;
-    authorName: string;
-    authorImage?: string;
-    articleTitle: string;
-    articleSlug?: string;
-};
+import { bffFetch } from "@/lib/bff-client";
+import type { AdminComment } from "@/lib/content-types";
 
 export default function CommentsPage() {
-    const comments = useQuery(api.engagement.listAllComments) as CommentData[] | undefined;
-    const updateStatus = useMutation(api.engagement.updateCommentStatus);
-    const deleteComment = useMutation(api.engagement.deleteComment);
+    const [comments, setComments] = useState<AdminComment[] | null>(null);
 
-    const handleStatusUpdate = async (id: Id<"comments">, status: "approved" | "pending" | "spam") => {
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await bffFetch<AdminComment[]>("/api/admin/comments");
+                if (!cancelled) setComments(data);
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) setComments([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const reload = async () => {
         try {
-            await updateStatus({ id, status });
+            setComments(await bffFetch<AdminComment[]>("/api/admin/comments"));
+        } catch {
+            // Keep the current list on a transient reload failure.
+        }
+    };
+
+    const handleStatusUpdate = async (id: string, status: "approved" | "pending" | "spam") => {
+        try {
+            await bffFetch("/api/admin/comments", { method: "PATCH", body: { id, status } });
+            await reload();
             toast.success(`Comment ${status}`);
         } catch (err) {
             console.error(err);
@@ -37,13 +47,14 @@ export default function CommentsPage() {
         }
     };
 
-    const handleDelete = async (id: Id<"comments">) => {
+    const handleDelete = async (id: string) => {
         toast("Permanently delete this comment?", {
             action: {
                 label: "Delete",
                 onClick: async () => {
                     try {
-                        await deleteComment({ id });
+                        await bffFetch(`/api/admin/comments?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+                        await reload();
                         toast.success("Comment deleted");
                     } catch (err) {
                         console.error(err);
@@ -65,12 +76,12 @@ export default function CommentsPage() {
         );
     }
 
-    const groupedComments = comments.reduce((acc: Record<string, { title: string, slug?: string, comments: CommentData[] }>, comment: CommentData) => {
+    const groupedComments = comments.reduce((acc: Record<string, { title: string, slug?: string, comments: AdminComment[] }>, comment: AdminComment) => {
         const key = comment.articleId as unknown as string;
         if (!acc[key]) {
             acc[key] = {
                 title: comment.articleTitle,
-                slug: comment.articleSlug,
+                slug: comment.articleSlug ?? undefined,
                 comments: []
             };
         }
@@ -97,7 +108,7 @@ export default function CommentsPage() {
             <div className="space-y-20">
                 {articleIds.map((articleId) => {
                     const group = groupedComments[articleId];
-                    const pendingCount = group.comments.filter((c: CommentData) => c.status === "pending").length;
+                    const pendingCount = group.comments.filter((c: AdminComment) => c.status === "pending").length;
 
                     return (
                         <div key={articleId} className="relative group/article">
@@ -133,8 +144,8 @@ export default function CommentsPage() {
                             </div>
 
                             <div className="grid grid-cols-1 gap-6 md:ml-16">
-                                {group.comments.map((comment: CommentData) => (
-                                    <div key={comment._id} className={cn(
+                                {group.comments.map((comment: AdminComment) => (
+                                    <div key={comment.id} className={cn(
                                         "bg-white dark:bg-cardp-8 md:p-10 rounded-2xl border transition-all duration-500 group relative overflow-hidden",
                                         comment.status === "pending"
                                             ? "border-blue-200 dark:border-blue-800 shadow-xl shadow-blue-500/5 ring-4 ring-blue-50/50 dark:ring-blue-900/20"
@@ -155,7 +166,7 @@ export default function CommentsPage() {
                                                             <span className="text-base font-serif font-black text-gray-950 dark:text-white tracking-tight">{comment.authorName}</span>
                                                             <div className="flex items-center gap-2 mt-0.5">
                                                                 <span className="text-[10px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest">
-                                                                    {formatDistanceToNow(comment.createdAt, { addSuffix: true })}
+                                                                    {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -181,7 +192,7 @@ export default function CommentsPage() {
                                             <div className="flex md:flex-col gap-4 justify-end items-end pt-4 md:pt-0">
                                                 {comment.status !== "approved" && (
                                                     <button
-                                                        onClick={() => handleStatusUpdate(comment._id, "approved")}
+                                                        onClick={() => handleStatusUpdate(comment.id, "approved")}
                                                         className="w-14 h-14 flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all duration-500 border border-blue-100 dark:border-blue-800 shadow-sm hover:shadow-xl hover:shadow-blue-200 dark:hover:shadow-blue-900/50 active:scale-90"
                                                         title="Approve Content"
                                                     >
@@ -189,7 +200,7 @@ export default function CommentsPage() {
                                                     </button>
                                                 )}
                                                 <button
-                                                    onClick={() => handleDelete(comment._id)}
+                                                    onClick={() => handleDelete(comment.id)}
                                                     className="w-14 h-14 flex items-center justify-center bg-gray-50 dark:bg-background-800 text-gray-300 dark:text-zinc-600 hover:bg-red-500 hover:text-white rounded-xl transition-all duration-500 border border-gray-100 dark:border-zinc-700 shadow-sm hover:shadow-xl hover:shadow-red-200 dark:hover:shadow-red-900/50 active:scale-90"
                                                     title="Expunge Record"
                                                 >

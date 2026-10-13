@@ -10,12 +10,12 @@ import { User, Search, LogIn, LogOut, ChevronDown, Menu, X, ArrowRight } from "l
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
-import { JoinedArticle } from "./blog-grid";
+import { bffFetch, type Api } from "@/lib/bff-client";
 import { useCategories, usePillars } from "./categories-provider";
+
+type SearchResult = Api.components["schemas"]["SearchResultDto"];
 
 interface NavbarProps {
     solid?: boolean;
@@ -98,10 +98,51 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
         router.push("/");
     };
 
-    const searchResults = useQuery(api.articles.search, { query: query.length > 2 ? query : "" });
     const categoriesAll = useCategories();
     const pillarsAll = usePillars();
-    const topTags = useQuery(api.articles.getTopPostTags, { limit: 5 });
+    const [searchState, setSearchState] = useState<{ query: string; results: SearchResult[] } | null>(null);
+    const [topTags, setTopTags] = useState<string[] | null>(null);
+
+    useEffect(() => {
+        if (query.length <= 2) return;
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const results = await bffFetch<SearchResult[]>(
+                    `/api/articles/search?query=${encodeURIComponent(query)}`,
+                    { signal: controller.signal },
+                );
+                if (!controller.signal.aborted) setSearchState({ query, results });
+            } catch (error) {
+                if (!controller.signal.aborted) {
+                    console.error(error);
+                    setSearchState({ query, results: [] });
+                }
+            }
+        })();
+        return () => controller.abort();
+    }, [query]);
+
+    // Results are shown only for the term they belong to; a stale set from a
+    // previous query is derived away rather than cleared with a setState inside
+    // the effect (react-hooks/set-state-in-effect).
+    const searchResults = searchState?.query === query ? searchState.results : null;
+
+    useEffect(() => {
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const tags = await bffFetch<string[]>(
+                    "/api/articles/top-post-tags?limit=5",
+                    { signal: controller.signal },
+                );
+                if (!controller.signal.aborted) setTopTags(tags);
+            } catch (error) {
+                if (!controller.signal.aborted) console.error(error);
+            }
+        })();
+        return () => controller.abort();
+    }, []);
 
     // Filter and sort categories: Top 3 by articleCount
     const topCategories = [...(categoriesAll || [])]
@@ -121,7 +162,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
             .filter(cat => (cat.articleCount || 0) > 0)
             .map(cat => {
                 const categoryPillars = (pillarsAll || [])
-                    .filter(p => p.categoryId === cat._id);
+                    .filter(p => p.categoryId === cat.id);
                 
                 return {
                     label: cat.name,
@@ -492,9 +533,9 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                     <p className="text-zinc-400 font-medium">No results found for &quot;{query}&quot;</p>
                                 )}
                                 <div className="grid grid-cols-1 gap-4">
-                                    {searchResults?.map((article: JoinedArticle) => (
+                                    {searchResults?.map((article: SearchResult) => (
                                         <Link
-                                            key={article._id}
+                                            key={article.id}
                                             href={`/${article.slug}`}
                                             onClick={() => setIsSearchOpen(false)}
                                             className="group flex items-center gap-6 p-4 rounded-3xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all border border-transparent hover:border-zinc-100 dark:hover:border-zinc-800"
@@ -531,7 +572,7 @@ function NavbarContent({ isScrolled }: { isScrolled: boolean }) {
                                     <div className="grid grid-cols-1 gap-3">
                                         {topCategories.map(cat => (
                                             <Link
-                                                key={cat._id}
+                                                key={cat.id}
                                                 href={`/category/${cat.slug}`}
                                                 onClick={() => setIsSearchOpen(false)}
                                                 className="flex items-center justify-between p-5 rounded-3xl bg-zinc-50 dark:bg-gray-900 border border-transparent dark:border-gray-800 hover:border-blue-500 transition-all group shadow-sm"

@@ -1,36 +1,48 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { User, Calendar, MoreVertical, Loader2, Shield, UserCircle } from "lucide-react";
 import Image from "next/image";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Id } from "@/convex/_generated/dataModel";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { bffFetch } from "@/lib/bff-client";
+import type { AdminUser, PaginatedAdminUsers } from "@/lib/content-types";
 
 export default function UsersPage() {
-    const { data: session } = useSession();
     const [mounted, setMounted] = useState(false);
-    const users = useQuery(api.users.listAllUsers, {
-        adminEmail: session?.user?.email ?? ""
-    });
-    const updateRole = useMutation(api.users.updateUserRole);
+    const [users, setUsers] = useState<AdminUser[] | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 0);
         return () => clearTimeout(timer);
     }, []);
 
-    const handleRoleChange = async (userId: Id<"users">, newRole: "admin" | "user") => {
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await bffFetch<PaginatedAdminUsers>("/api/admin/users?page=1&pageSize=100");
+                if (!cancelled) setUsers(data.items);
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) setUsers([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const handleRoleChange = async (userId: string, newRole: "admin" | "user") => {
         try {
-            await updateRole({
-                adminEmail: session?.user?.email ?? "",
-                id: userId,
-                role: newRole
+            await bffFetch(`/api/admin/users/${encodeURIComponent(userId)}/role`, {
+                method: "PATCH",
+                body: { role: newRole },
             });
+            setUsers((prev) =>
+                prev?.map((u) => (u.id === userId ? { ...u, role: newRole } : u)) ?? prev,
+            );
             toast.success(`User updated to ${newRole}`);
         } catch (err) {
             console.error(err);
@@ -76,7 +88,7 @@ export default function UsersPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
                         {users.map((user) => (
-                            <tr key={user._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-all duration-300 group">
+                            <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-all duration-300 group">
                                 <td className="px-8 py-5">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden relative border border-gray-100 dark:border-gray-800 shrink-0 group-hover:scale-105 transition-transform duration-500">
@@ -99,7 +111,7 @@ export default function UsersPage() {
                                         <div className="relative group/role">
                                             <select
                                                 value={user.role}
-                                                onChange={(e) => handleRoleChange(user._id, e.target.value as "admin" | "user")}
+                                                onChange={(e) => handleRoleChange(user.id, e.target.value as "admin" | "user")}
                                                 className={cn(
                                                     "text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border cursor-pointer outline-none transition-all active:scale-95 shadow-sm appearance-none min-w-[120px] text-center",
                                                     user.role === "admin"
@@ -120,7 +132,7 @@ export default function UsersPage() {
                                 <td className="px-8 py-5">
                                     <div className="flex items-center gap-2.5 text-gray-500 dark:text-gray-400 text-[13px] font-medium">
                                         <Calendar size={16} className="text-gray-300 dark:text-gray-600" />
-                                        {user.createdAt ? format(user.createdAt, "MMM d, yyyy") : "Unknown Initiation"}
+                                        {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "Unknown Initiation"}
                                     </div>
                                 </td>
                                 <td className="px-8 py-5">

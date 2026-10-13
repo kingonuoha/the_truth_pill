@@ -1,17 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { 
-    Plus, 
-    Search, 
-    Edit2, 
-    Trash2, 
-    X, 
-    Image as ImageIcon, 
-    Loader2, 
-    ChevronRight, 
+import {
+    Plus,
+    Search,
+    Edit2,
+    Trash2,
+    X,
+    Image as ImageIcon,
+    Loader2,
+    ChevronRight,
     Check,
     Layers,
     LayoutDashboard,
@@ -20,29 +18,48 @@ import {
     Settings,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Doc, Id } from "@/convex/_generated/dataModel";
 import { fetchCategoryImages } from "@/app/actions/pexels";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useTour } from "@/hooks/use-tour";
-
-type CategoryWithCount = Doc<"categories"> & {
-    articleCount: number;
-    pillarCount: number;
-};
+import { bffFetch } from "@/lib/bff-client";
+import type { CategoryListItem, PillarListItem } from "@/lib/content-types";
 
 export default function CategoriesPage() {
-    const categories = useQuery(api.categories.listAll);
-    const pillars = useQuery(api.pillars.listAll);
-    
-    const removeCategory = useMutation(api.categories.remove);
-    const createCategory = useMutation(api.categories.create);
-    const updateCategory = useMutation(api.categories.update);
+    const [categories, setCategories] = useState<CategoryListItem[] | null>(null);
+    const [pillars, setPillars] = useState<PillarListItem[] | null>(null);
 
-    const createPillar = useMutation(api.pillars.create);
-    const updatePillar = useMutation(api.pillars.update);
-    const removePillar = useMutation(api.pillars.remove);
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const [categoriesData, pillarsData] = await Promise.all([
+                    bffFetch<CategoryListItem[]>("/api/categories"),
+                    bffFetch<PillarListItem[]>("/api/pillars"),
+                ]);
+                if (cancelled) return;
+                setCategories(categoriesData);
+                setPillars(pillarsData);
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) {
+                    setCategories([]);
+                    setPillars([]);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const reloadCategories = async () => {
+        setCategories(await bffFetch<CategoryListItem[]>("/api/categories"));
+    };
+    const reloadPillars = async () => {
+        setPillars(await bffFetch<PillarListItem[]>("/api/pillars"));
+    };
 
     const [activeTab, setActiveTab] = useState<"categories" | "pillars">("categories");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,7 +69,7 @@ export default function CategoriesPage() {
     const [searchFilter, setSearchFilter] = useState<"name" | "category">("name");
 
     // Form states
-    const [editingCategory, setEditingCategory] = useState<CategoryWithCount | null>(null);
+    const [editingCategory, setEditingCategory] = useState<CategoryListItem | null>(null);
     const [formData, setFormData] = useState({
         name: "",
         slug: "",
@@ -61,14 +78,14 @@ export default function CategoriesPage() {
         pexelsImages: [] as string[]
     });
 
-    const [editingPillar, setEditingPillar] = useState<Doc<"pillars"> | null>(null);
+    const [editingPillar, setEditingPillar] = useState<PillarListItem | null>(null);
     const [pillarFormData, setPillarFormData] = useState({
         name: "",
         slug: "",
         description: "",
         coverImage: "",
         pexelsImages: [] as string[],
-        categoryId: "" as Id<"categories">
+        categoryId: ""
     });
 
     // Pexels State
@@ -110,12 +127,12 @@ export default function CategoriesPage() {
             description: "", 
             coverImage: "",
             pexelsImages: [],
-            categoryId: "" as Id<"categories"> 
+            categoryId: "" 
         });
         setEditingPillar(null);
     };
 
-    const handleEdit = (cat: CategoryWithCount) => {
+    const handleEdit = (cat: CategoryListItem) => {
         setEditingCategory(cat);
         setFormData({
             name: cat.name,
@@ -127,7 +144,7 @@ export default function CategoriesPage() {
         setIsModalOpen(true);
     };
 
-    const handlePillarEdit = (pillar: Doc<"pillars">) => {
+    const handlePillarEdit = (pillar: PillarListItem) => {
         setEditingPillar(pillar);
         setPillarFormData({
             name: pillar.name,
@@ -145,12 +162,16 @@ export default function CategoriesPage() {
         setIsSubmitting(true);
         try {
             if (editingCategory) {
-                await updateCategory({ id: editingCategory._id, ...formData });
+                await bffFetch("/api/admin/categories", {
+                    method: "PATCH",
+                    body: { id: editingCategory.id, ...formData },
+                });
                 toast.success("Category updated successfully");
             } else {
-                await createCategory(formData);
+                await bffFetch("/api/admin/categories", { method: "POST", body: formData });
                 toast.success("New category established");
             }
+            await reloadCategories();
             setIsModalOpen(false);
             resetForm();
         } catch {
@@ -169,12 +190,16 @@ export default function CategoriesPage() {
         setIsSubmitting(true);
         try {
             if (editingPillar) {
-                await updatePillar({ id: editingPillar._id, ...pillarFormData });
+                await bffFetch("/api/admin/pillars", {
+                    method: "PATCH",
+                    body: { id: editingPillar.id, ...pillarFormData },
+                });
                 toast.success("Pillar structure updated");
             } else {
-                await createPillar(pillarFormData);
+                await bffFetch("/api/admin/pillars", { method: "POST", body: pillarFormData });
                 toast.success("New pillar constructed");
             }
+            await reloadPillars();
             setIsPillarModalOpen(false);
             resetPillarForm();
         } catch (err) {
@@ -185,14 +210,15 @@ export default function CategoriesPage() {
         }
     };
 
-    const handleDelete = async (id: Id<"categories">) => {
+    const handleDelete = async (id: string) => {
         toast("Permanently dismantle this category?", {
             description: "Articles will remain but will lose their classification.",
             action: {
                 label: "Confirm",
                 onClick: async () => {
                     try {
-                        await removeCategory({ id });
+                        await bffFetch("/api/admin/categories/remove", { method: "PATCH", body: { id } });
+                        await reloadCategories();
                         toast.success("Category dismantled");
                     } catch {
                         toast.error("Action denied: Articles or pillars may be tied to this category.");
@@ -202,14 +228,15 @@ export default function CategoriesPage() {
         });
     };
 
-    const handlePillarDelete = async (id: Id<"pillars">) => {
+    const handlePillarDelete = async (id: string) => {
         toast("Dismantle this pillar?", {
             description: "This will remove the specific classification from linked articles.",
             action: {
                 label: "Confirm",
                 onClick: async () => {
                     try {
-                        await removePillar({ id });
+                        await bffFetch("/api/admin/pillars/remove", { method: "PATCH", body: { id } });
+                        await reloadPillars();
                         toast.success("Pillar removed");
                     } catch (err) {
                         toast.error(err instanceof Error ? err.message : "Action failed");
@@ -266,7 +293,7 @@ export default function CategoriesPage() {
             return cat.name.toLowerCase().includes(query) || cat.slug.toLowerCase().includes(query);
         }
 
-        const matchingPillar = pillars?.some(p => p.categoryId === cat._id && p.name.toLowerCase().includes(query));
+        const matchingPillar = pillars?.some(p => p.categoryId === cat.id && p.name.toLowerCase().includes(query));
         return (
             cat.name.toLowerCase().includes(query) ||
             cat.slug.toLowerCase().includes(query) ||
@@ -279,7 +306,7 @@ export default function CategoriesPage() {
         const query = searchQuery.toLowerCase().trim();
         if (!query) return true;
         
-        const category = categories?.find(c => c._id === p.categoryId);
+        const category = categories?.find(c => c.id === p.categoryId);
         const categoryName = category?.name.toLowerCase() || "";
 
         if (searchFilter === "category") {
@@ -438,9 +465,9 @@ export default function CategoriesPage() {
                         exit={{ opacity: 0, x: 20 }}
                         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                     >
-                        {filteredCategories.map((cat: CategoryWithCount) => (
+                        {filteredCategories.map((cat: CategoryListItem) => (
                             <div
-                                key={cat._id}
+                                key={cat.id}
                                 className="group relative aspect-[4/3] rounded-[2.5rem] overflow-hidden border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-zinc-900 shadow-sm transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10"
                             >
                                 {/* Background Image */}
@@ -473,7 +500,7 @@ export default function CategoriesPage() {
                                             <button onClick={() => handleEdit(cat)} className="p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-blue-600 transition-colors">
                                                 <Edit2 size={14} />
                                             </button>
-                                            <button onClick={() => handleDelete(cat._id)} className="p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-red-500 transition-colors">
+                                            <button onClick={() => handleDelete(cat.id)} className="p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-red-500 transition-colors">
                                                 <Trash2 size={14} />
                                             </button>
                                         </div>
@@ -513,7 +540,7 @@ export default function CategoriesPage() {
                     >
                         {filteredPillars.map((p) => (
                             <div
-                                key={p._id}
+                                key={p.id}
                                 className="group bg-white dark:bg-white/5 rounded-3xl p-6 border border-gray-100 dark:border-white/5 hover:border-purple-600/30 transition-all hover:shadow-xl hover:shadow-purple-500/5"
                             >
                                 <div className="flex justify-between items-start mb-6">
@@ -522,14 +549,14 @@ export default function CategoriesPage() {
                                     </div>
                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                         <button onClick={() => handlePillarEdit(p)} className="p-2 text-gray-400 hover:text-purple-600 transition-colors"><Edit2 size={16} /></button>
-                                        <button onClick={() => handlePillarDelete(p._id)} className="p-2 text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                                        <button onClick={() => handlePillarDelete(p.id)} className="p-2 text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
                                     </div>
                                 </div>
                                 <h4 className="text-xl font-black dark:text-white mb-1">{p.name}</h4>
                                 <div className="flex items-center gap-2 mb-4">
                                     <span className="text-[9px] font-black uppercase text-gray-400">Section:</span>
                                     <span className="text-[9px] font-black text-purple-600 uppercase tracking-widest">
-                                        {categories?.find(c => c._id === p.categoryId)?.name || "External"}
+                                        {categories?.find(c => c.id === p.categoryId)?.name || "External"}
                                     </span>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 italic leading-relaxed line-clamp-3">
@@ -729,12 +756,12 @@ export default function CategoriesPage() {
                                         <select
                                             required
                                             value={pillarFormData.categoryId}
-                                            onChange={e => setPillarFormData(prev => ({ ...prev, categoryId: e.target.value as Id<"categories"> }))}
+                                            onChange={e => setPillarFormData(prev => ({ ...prev, categoryId: e.target.value }))}
                                             className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl px-5 py-4 font-bold text-sm dark:text-white appearance-none transition-all"
                                         >
                                             <option value="">Select Category</option>
                                             {categories?.map(cat => (
-                                                <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
                                             ))}
                                         </select>
                                     </div>

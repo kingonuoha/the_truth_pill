@@ -3,17 +3,30 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, CheckCircle2 } from "lucide-react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
+import { bffFetch } from "@/lib/bff-client";
+import type { SelfUser } from "@/lib/content-types";
 
 export function NewsletterBar() {
     const [isVisible, setIsVisible] = useState(false);
     const [email, setEmail] = useState("");
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [user, setUser] = useState<SelfUser | null>(null);
 
-    // Check if user is already subscribed
-    const user = useQuery(api.users.getMe);
-    const subscribe = useMutation(api.users.subscribeToNewsletter);
+    // Check if the signed-in user is already subscribed. Anonymous → 401 → null.
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const me = await bffFetch<SelfUser>("/api/me");
+                if (!cancelled) setUser(me);
+            } catch {
+                if (!cancelled) setUser(null);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         const dismissed = localStorage.getItem("tp_newsletter_dismissed");
@@ -34,7 +47,10 @@ export function NewsletterBar() {
 
         setStatus('loading');
         try {
-            await subscribe({ email });
+            await bffFetch("/api/newsletter/subscribe", {
+                method: "POST",
+                body: { email },
+            });
             setStatus('success');
             setTimeout(() => setIsVisible(false), 3000);
         } catch {

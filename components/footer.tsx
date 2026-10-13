@@ -3,10 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Github, Twitter, Linkedin, Mail, Heart, Loader2, Facebook, Instagram, Youtube, Phone, Send } from "lucide-react";
-import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { bffFetch, type Api } from "@/lib/bff-client";
+
+type SiteSettings = Api.components["schemas"]["SiteSettingsResponseDto"];
 
 const TikTokIcon = ({ size }: { size: number }) => (
     <svg
@@ -26,8 +27,22 @@ const TikTokIcon = ({ size }: { size: number }) => (
 export function Footer() {
     const [email, setEmail] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const subscribe = useMutation(api.users.subscribeToNewsletter);
-    const settings = useQuery(api.site_settings.getSiteSettings);
+    const [settings, setSettings] = useState<SiteSettings | null>(null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const data = await bffFetch<SiteSettings>("/api/site-settings", {
+                    signal: controller.signal,
+                });
+                setSettings(data);
+            } catch (error) {
+                if (!controller.signal.aborted) console.error(error);
+            }
+        })();
+        return () => controller.abort();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,7 +50,10 @@ export function Footer() {
 
         setIsSubmitting(true);
         try {
-            const result = (await subscribe({ email })) as { status: string };
+            const result = await bffFetch<{ status: string }>("/api/newsletter/subscribe", {
+                method: "POST",
+                body: { email },
+            });
             setEmail("");
 
             if (result.status === "invited") {
@@ -94,7 +112,7 @@ export function Footer() {
                                         {socialLinks.map((link, idx) => (
                                             <a
                                                 key={idx}
-                                                href={link.url}
+                                                href={link.url ?? undefined}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all duration-300 group/link"

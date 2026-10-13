@@ -1,19 +1,18 @@
 
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
+import { nest } from "@/lib/api";
+import type { ArticleListItem } from "@/lib/content-types";
 import { Navbar } from "@/components/navbar";
 import Link from "next/link";
-import { Clock, ArrowRight, Brain, Lightbulb, Compass, Layers } from "lucide-react";
+import { ArrowRight, Brain, Lightbulb, Compass, Layers } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { Metadata } from "next";
-import { JoinedArticle } from "@/components/blog-grid";
 import { getCanonical } from "@/lib/site-url";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
-    const pillar = await fetchQuery(api.pillars.getBySlug, { slug });
+    const pillar = await nest.pillarBySlug(slug);
     return {
         title: pillar?.name || "Pillar",
         description: pillar?.description || "Exploring the deep psychological dimensions of this research pillar.",
@@ -32,7 +31,7 @@ export default async function PillarPage({
 }) {
     const { slug } = await params;
     const { type } = await searchParams;
-    const pillar = await fetchQuery(api.pillars.getBySlug, { slug });
+    const pillar = await nest.pillarBySlug(slug);
     
     if (!pillar) {
         return (
@@ -47,12 +46,13 @@ export default async function PillarPage({
     }
 
     const typeFilter = type || undefined;
-    const listResult = await fetchQuery(api.articles.list, { 
+    const listResult = await nest.listArticles({
         pillar: pillar.slug,
         type: typeFilter,
-        paginationOpts: { numItems: 50, cursor: null }
+        page: 1,
+        pageSize: 50,
     });
-    const articles = listResult?.page || [];
+    const articles = listResult.items;
 
     const postTypes = [
         { label: "All Insights", value: "", icon: <Compass size={14} /> },
@@ -103,8 +103,8 @@ export default async function PillarPage({
 
                 {articles.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {articles.map((article: JoinedArticle) => (
-                            <ArticleCard key={article._id} article={article} />
+                        {articles.map((article) => (
+                            <ArticleCard key={article.id} article={article} />
                         ))}
                     </div>
                 ) : (
@@ -129,7 +129,7 @@ export default async function PillarPage({
     );
 }
 
-function ArticleCard({ article }: { article: JoinedArticle }) {
+function ArticleCard({ article }: { article: ArticleListItem }) {
     return (
         <Link 
             href={`/${article.slug}`}
@@ -142,11 +142,6 @@ function ArticleCard({ article }: { article: JoinedArticle }) {
                     fill 
                     className="object-cover group-hover:scale-110 transition-transform duration-[2000ms]"
                 />
-                <div className="absolute top-6 left-6 flex flex-wrap gap-2">
-                    <span className="px-4 py-1.5 bg-white/95 dark:bg-gray-900/90 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-blue-600">
-                        {article.type || "Insight"}
-                    </span>
-                </div>
             </div>
             
             <div className="p-10 flex flex-col flex-1">
@@ -172,10 +167,7 @@ function ArticleCard({ article }: { article: JoinedArticle }) {
                     {article.excerpt}
                 </p>
 
-                <div className="mt-auto pt-8 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        <span className="flex items-center gap-1.5"><Clock size={12} className="text-blue-600" /> {article.readingTime}m read</span>
-                    </div>
+                <div className="mt-auto pt-8 border-t border-gray-50 dark:border-gray-800 flex items-center justify-end">
                     <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-all transform group-hover:translate-x-2">
                         <ArrowRight size={18} />
                     </div>

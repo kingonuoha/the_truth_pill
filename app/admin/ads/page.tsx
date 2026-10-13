@@ -1,16 +1,14 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Megaphone, Save, Loader2, Code2, Layout, Settings2, Eye, ShieldCheck, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { bffFetch } from "@/lib/bff-client";
+import type { AdsSettings } from "@/lib/content-types";
 
 export default function AdsManagementPage() {
-    const settings = useQuery(api.ads.getAdsSettings);
-    const updateSettings = useMutation(api.ads.updateAdsSettings);
-
+    const [settings, setSettings] = useState<AdsSettings | null | undefined>(undefined);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         adsEnabled: false,
@@ -21,6 +19,22 @@ export default function AdsManagementPage() {
         showAdBottomOfArticle: false,
         showAdSidebar: false,
     });
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await bffFetch<AdsSettings>("/api/ads-settings");
+                if (!cancelled) setSettings(data);
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) setSettings(null);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         if (settings) {
@@ -40,7 +54,7 @@ export default function AdsManagementPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await updateSettings(formData);
+            await bffFetch("/api/admin/ads-settings", { method: "PATCH", body: formData });
             toast.success("Ad settings saved");
         } catch (error) {
             toast.error("Failed to save settings: " + (error instanceof Error ? error.message : "Unknown error"));

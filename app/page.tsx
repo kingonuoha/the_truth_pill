@@ -7,9 +7,7 @@ import { SplitFeature } from "@/components/split-feature";
 import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
-import { JoinedArticle } from "@/components/blog-grid";
+import { nest } from "@/lib/api";
 import { getSiteUrl, getCanonical } from "@/lib/site-url";
 
 export const revalidate = 60; // ISR: Revalidate every 60 seconds
@@ -37,8 +35,8 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const featuredArticles = await fetchQuery(api.articles.getFeatured, { limit: 5 });
-  const latestArticles = await fetchQuery(api.articles.list, { paginationOpts: { numItems: 6, cursor: null } });
+  const featuredArticles = await nest.featured(5);
+  const latestArticles = await nest.listArticles({ page: 1, pageSize: 6 });
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -66,7 +64,7 @@ export default async function Home() {
 
       {/* Hero Section */}
       <section id="hero">
-        <HeroCarousel initialArticles={featuredArticles as JoinedArticle[]} />
+        <HeroCarousel initialArticles={featuredArticles} />
       </section>
 
       {/* Methodology Section */}
@@ -91,7 +89,7 @@ export default async function Home() {
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
-          <BlogGrid initialArticles={latestArticles.page as JoinedArticle[]} initialCursor={latestArticles.continueCursor} initialHasMore={!latestArticles.isDone} />
+          <BlogGrid initialArticles={latestArticles.items} initialPage={latestArticles.page} initialHasMore={latestArticles.page < latestArticles.totalPages} />
         </div>
       </section>
 

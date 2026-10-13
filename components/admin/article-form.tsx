@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -15,29 +13,52 @@ const Editor = dynamic(() => import("./editor"), {
     loading: () => <div className="h-[600px] bg-zinc-50 dark:bg-cardanimate-pulse rounded-2xl flex items-center justify-center text-zinc-400 dark:text-zinc-600 font-black uppercase tracking-widest text-xs border border-zinc-100 dark:border-zinc-800">Initializing Premium Editor...</div>
 });
 import Image from "next/image";
-import { useSession } from "next-auth/react";
 import { cn, getCloudinaryUrl } from "@/lib/utils";
-import { Id, Doc } from "@/convex/_generated/dataModel";
 import { uploadImage } from "@/app/actions/upload-image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTour } from "@/hooks/use-tour";
+import { bffFetch } from "@/lib/bff-client";
+import type {
+    ArticleRecord,
+    CategoryListItem,
+    CategoryResponse,
+    PillarListItem,
+    PublicAuthorCard,
+} from "@/lib/content-types";
 
 interface ArticleFormProps {
     isEditing?: boolean;
-    initialData?: Doc<"articles"> & { authorName?: string; categoryName?: string };
+    initialData?: ArticleRecord;
 }
 
 export default function ArticleForm({ isEditing = false, initialData }: ArticleFormProps) {
-    const { data: session } = useSession();
     const router = useRouter();
-    const categories = useQuery(api.categories.listAll);
-    const pillars = useQuery(api.pillars.listAll);
-    const allTags = useQuery(api.articles.getAllTags);
-    const createArticle = useMutation(api.articles.create);
-    const updateArticle = useMutation(api.articles.update);
-    const createCategory = useMutation(api.categories.create);
-    const createPillar = useMutation(api.pillars.create);
-    const authors = useQuery(api.articles.listAuthors);
+    const [categories, setCategories] = useState<CategoryListItem[] | undefined>(undefined);
+    const [pillars, setPillars] = useState<PillarListItem[] | undefined>(undefined);
+    const [allTags, setAllTags] = useState<string[] | undefined>(undefined);
+    const [authors, setAuthors] = useState<PublicAuthorCard[] | undefined>(undefined);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const [cats, plrs, tags, auths] = await Promise.all([
+                    bffFetch<CategoryListItem[]>("/api/categories", { signal: controller.signal }),
+                    bffFetch<PillarListItem[]>("/api/pillars", { signal: controller.signal }),
+                    bffFetch<string[]>("/api/articles/all-tags", { signal: controller.signal }),
+                    bffFetch<PublicAuthorCard[]>("/api/articles/authors", { signal: controller.signal }),
+                ]);
+                if (controller.signal.aborted) return;
+                setCategories(cats);
+                setPillars(plrs);
+                setAllTags(tags);
+                setAuthors(auths);
+            } catch (error) {
+                if (!controller.signal.aborted) console.error(error);
+            }
+        })();
+        return () => controller.abort();
+    }, []);
 
     // For date picker
     const [scheduledDate, setScheduledDate] = useState("");
@@ -51,14 +72,14 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
         excerpt: initialData?.excerpt || "",
         content: initialData?.content || "",
         coverImage: initialData?.coverImage || "",
-        categoryId: (initialData?.categoryId || undefined) as Id<"categories"> | undefined,
+        categoryId: initialData?.categoryId || undefined,
         status: initialData?.status || "draft" as "draft" | "published" | "scheduled",
         source: initialData?.source || "human" as "human" | "ai",
         isFeatured: initialData?.isFeatured || false,
         metaTitle: initialData?.metaTitle || "",
         metaDescription: initialData?.metaDescription || "",
         focusKeyword: initialData?.focusKeyword || "",
-        authorId: initialData?.authorId as Id<"users"> | undefined,
+        authorId: initialData?.authorId || undefined,
         coverImageAlt: initialData?.coverImageAlt || "",
         pillar: initialData?.pillar || "",
         topics: initialData?.topics || [] as string[],
@@ -93,14 +114,14 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                 excerpt: initialData.excerpt || "",
                 content: initialData.content || "",
                 coverImage: initialData.coverImage || "",
-                categoryId: (initialData.categoryId || undefined) as Id<"categories"> | undefined,
+                categoryId: initialData.categoryId || undefined,
                 status: initialData.status || "draft",
                 source: initialData.source || "human",
                 isFeatured: initialData.isFeatured || false,
                 metaTitle: initialData.metaTitle || "",
                 metaDescription: initialData.metaDescription || "",
                 focusKeyword: initialData.focusKeyword || "",
-                authorId: initialData.authorId as Id<"users"> | undefined,
+                authorId: initialData.authorId || undefined,
                 coverImageAlt: initialData.coverImageAlt || "",
                 pillar: initialData.pillar || "",
                 topics: initialData.topics || [],
@@ -278,64 +299,49 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
         }
 
         // Check schedule date
-        let scheduledTimestamp = undefined;
+        let scheduledTimestamp: string | undefined = undefined;
         if (formData.status === 'scheduled') {
             if (!scheduledDate) {
                 toast.error("Please select a date and time for scheduling");
                 return;
             }
-            scheduledTimestamp = new Date(scheduledDate).getTime();
+            scheduledTimestamp = new Date(scheduledDate).toISOString();
         }
 
         setIsSubmitting(true);
         try {
+            const payload = {
+                title: formData.title,
+                slug: formData.slug,
+                excerpt: formData.excerpt,
+                content: formData.content,
+                coverImage: formData.coverImage || "",
+                coverImageAlt: formData.coverImageAlt,
+                categoryId: formData.categoryId,
+                pillar: formData.pillar,
+                topics: formData.topics,
+                tags: formData.tags,
+                type: formData.type,
+                status: formData.status,
+                source: formData.source,
+                scheduledFor: scheduledTimestamp,
+                isFeatured: formData.isFeatured,
+                metaTitle: formData.metaTitle,
+                metaDescription: formData.metaDescription,
+                focusKeyword: formData.focusKeyword,
+            };
+            // `authorId` / `adminEmail` are deliberately absent: attribution is the
+            // verified token `sub` and a client-supplied byline is a 400 (DEV-030).
             if (isEditing) {
-                await updateArticle({
-                    id: initialData!._id,
-                    title: formData.title,
-                    slug: formData.slug,
-                    excerpt: formData.excerpt,
-                    content: formData.content,
-                    coverImage: formData.coverImage || "",
-                    categoryId: formData.categoryId as Id<"categories">,
-                    status: formData.status,
-                    source: formData.source,
-                    isFeatured: formData.isFeatured,
-                    metaTitle: formData.metaTitle,
-                    metaDescription: formData.metaDescription,
-                    focusKeyword: formData.focusKeyword,
-                    coverImageAlt: formData.coverImageAlt,
-                    authorId: formData.authorId,
-                    pillar: formData.pillar,
-                    topics: formData.topics,
-                    tags: formData.tags,
-                    type: formData.type,
-                    scheduledFor: scheduledTimestamp,
-                    adminEmail: (session?.user?.email as string) || undefined,
+                await bffFetch<ArticleRecord>("/api/admin/articles", {
+                    method: "PATCH",
+                    body: { id: initialData!.id, ...payload },
                 });
                 toast.success("Article updated successfully");
             } else {
-                await createArticle({
-                    title: formData.title,
-                    slug: formData.slug,
-                    excerpt: formData.excerpt,
-                    content: formData.content,
-                    coverImage: formData.coverImage || "",
-                    categoryId: formData.categoryId,
-                    status: formData.status,
-                    source: formData.source,
-                    isFeatured: formData.isFeatured,
-                    metaTitle: formData.metaTitle,
-                    metaDescription: formData.metaDescription,
-                    focusKeyword: formData.focusKeyword,
-                    coverImageAlt: formData.coverImageAlt,
-                    authorId: formData.authorId,
-                    pillar: formData.pillar,
-                    topics: formData.topics,
-                    tags: formData.tags,
-                    type: formData.type,
-                    scheduledFor: scheduledTimestamp,
-                    adminEmail: (session?.user?.email as string) || undefined,
+                await bffFetch<ArticleRecord>("/api/admin/articles", {
+                    method: "POST",
+                    body: payload,
                 });
                 toast.success("Article created successfully");
             }
@@ -343,7 +349,6 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
             router.refresh();
         } catch (error: unknown) {
             console.error(error);
-            // Handle Convex validation errors
             const errorMessage = error instanceof Error ? error.message : (isEditing ? "Failed to update article" : "Failed to create article");
             toast.error(errorMessage);
         } finally {
@@ -513,18 +518,21 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">Post Author</h4>
                                 </div>
                                 <div className="relative">
+                                    {/* Byline is the verified editor account (DEV-030); the
+                                        frozen client-supplied authorId is not a request field. */}
                                     <select
                                         value={formData.authorId || ""}
-                                        onChange={(e) => setFormData({ ...formData, authorId: (e.target.value || undefined) as Id<"users"> | undefined })}
-                                        className="w-full pl-6 pr-12 py-4 bg-zinc-50/50 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[11px] font-black uppercase tracking-[0.1em] text-zinc-900 dark:text-white focus:outline-none focus:border-purple-500/30 transition-all appearance-none cursor-pointer"
+                                        disabled
+                                        className="w-full pl-6 pr-12 py-4 bg-zinc-50/50 dark:bg-zinc-950/30 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[11px] font-black uppercase tracking-[0.1em] text-zinc-900 dark:text-white focus:outline-none focus:border-purple-500/30 transition-all appearance-none cursor-not-allowed opacity-70"
                                     >
                                         <option value="">Posting as: Current User</option>
                                         {authors?.map(author => (
-                                            <option key={author._id} value={author._id}>{author.name}</option>
+                                            <option key={author.id} value={author.id}>{author.name}</option>
                                         ))}
                                     </select>
                                     <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400" size={18} />
                                 </div>
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400">Authorship is assigned from your account</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -537,7 +545,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                 <div className="p-4 bg-zinc-50/50 dark:bg-zinc-950/30 rounded-2xl border border-zinc-100 dark:border-zinc-800/50">
                                     <span className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Article ID</span>
                                     <span className="text-[11px] font-mono text-blue-500 uppercase font-black">
-                                        {isEditing ? initialData?._id.toString().slice(-8) : 'NEW_POST'}
+                                        {isEditing ? initialData?.id.slice(-8) : 'NEW_POST'}
                                     </span>
                                 </div>
                             </div>
@@ -675,11 +683,11 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                             <select
                                                 required
                                                 value={formData.categoryId || ""}
-                                                onChange={e => setFormData(prev => ({ ...prev, categoryId: (e.target.value || undefined) as Id<"categories"> | undefined }))}
+                                                onChange={e => setFormData(prev => ({ ...prev, categoryId: e.target.value || undefined }))}
                                                 className="w-full bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-3 font-bold text-sm outline-none appearance-none cursor-pointer dark:text-zinc-100"
                                             >
                                                 <option value="">Select Category</option>
-                                                {categories?.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
+                                                {categories?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
@@ -709,7 +717,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                                 >
                                                     <option value="">{pillars === undefined ? "Loading pillars..." : "Select Pillar (Optional)"}</option>
                                                     {pillars?.filter(p => !formData.categoryId || p.categoryId === formData.categoryId).map(p => (
-                                                        <option key={p._id} value={p.slug}>{p.name}</option>
+                                                        <option key={p.id} value={p.slug}>{p.name}</option>
                                                     ))}
                                                 </select>
                                             </div>
@@ -974,13 +982,16 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                     if (!name) return;
                                     
                                     try {
-                                        const id = await createCategory({ 
-                                            name, 
-                                            slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-                                            description,
-                                            pexelsImages: selectedCatImages
+                                        const created = await bffFetch<CategoryResponse>("/api/admin/categories", {
+                                            method: "POST",
+                                            body: {
+                                                name,
+                                                slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                                                description,
+                                                pexelsImages: selectedCatImages,
+                                            },
                                         });
-                                        setFormData(prev => ({ ...prev, categoryId: id as Id<"categories"> }));
+                                        setFormData(prev => ({ ...prev, categoryId: created.id }));
                                         setIsCategoryModalOpen(false);
                                         toast.success("Category created and selected");
                                     } catch (error) {
@@ -1110,11 +1121,14 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                         const slug = name.toLowerCase()
                                             .replace(/[^a-z0-9]+/g, '-')
                                             .replace(/(^-|-$)/g, '');
-                                        await createPillar({ 
-                                            name, 
-                                            slug,
-                                            categoryId: formData.categoryId as Id<"categories">,
-                                            description 
+                                        await bffFetch("/api/admin/pillars", {
+                                            method: "POST",
+                                            body: {
+                                                name,
+                                                slug,
+                                                categoryId: formData.categoryId,
+                                                description,
+                                            },
                                         });
                                         setIsPillarModalOpen(false);
                                         toast.success("Pillar created successfully");
@@ -1132,7 +1146,7 @@ export default function ArticleForm({ isEditing = false, initialData }: ArticleF
                                     </div>
                                     <div className="p-4 bg-amber-50 dark:bg-amber-500/5 rounded-2xl border border-amber-100 dark:border-amber-500/10">
                                         <p className="text-[10px] text-amber-600 dark:text-amber-500 font-bold uppercase leading-relaxed">
-                                            This pillar will be linked to the currently selected category: <span className="text-zinc-900 dark:text-zinc-100">{categories?.find(c => c._id === formData.categoryId)?.name || "None"}</span>
+                                            This pillar will be linked to the currently selected category: <span className="text-zinc-900 dark:text-zinc-100">{categories?.find(c => c.id === formData.categoryId)?.name || "None"}</span>
                                         </p>
                                     </div>
                                     <button type="submit" className="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:opacity-90 transition-all shadow-lg shadow-primary/20">Construct Pillar</button>

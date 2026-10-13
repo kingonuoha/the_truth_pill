@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node node_modules/tsx/dist/cli.mjs --test tests/s-026-client-ip.test.ts tests/s-025-pexels.test.ts tests/dev-004-upload-guard.test.ts tests/phase-04-identity-fallback.test.ts tests/bff-helpers.test.ts tests/bff-ip.test.ts tests/bff-content-and-me.test.ts tests/dev-059-list-card-projection.test.ts tests/dev-061-password-forwarding.test.ts tests/dev-062-category-image-write.test.ts tests/dev-063-run-full-check.test.ts tests/bff-upstream-contract.test.ts tests/p10-sec-001-002.test.ts"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-react": "^11.0.1",
@@ -40,9 +41,11 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
+    "server-only": "^0.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
-    "ua-parser-js": "^2.0.10"
+    "ua-parser-js": "^2.0.10",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -53,6 +56,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

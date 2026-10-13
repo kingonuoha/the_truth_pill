@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, usePaginatedQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect, useState } from "react";
 import {
     Archive, Edit2, Eye, FileText,
     Plus, RotateCcw, Search, Trash2, X, Sparkles, Clock, Users,
@@ -12,14 +10,19 @@ import { ArticleStatusBadge, ArticleSourceBadge } from "@/components/admin/artic
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Id } from "@/convex/_generated/dataModel";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn, getCloudinaryUrl } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+import { bffFetch } from "@/lib/bff-client";
+import type {
+    ArticleDetail,
+    CategoryListItem,
+    DashboardStats,
+    PaginatedArticleDetail,
+} from "@/lib/content-types";
 
 export default function AdminArticlesPage() {
-    const { data: session } = useSession();
-    const stats = useQuery(api.admin.getDashboardStats, {});
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [categories, setCategories] = useState<CategoryListItem[] | undefined>(undefined);
 
     // Filter States
     const [search, setSearch] = useState("");
@@ -30,61 +33,86 @@ export default function AdminArticlesPage() {
     const [viewType, setViewType] = useState<"card" | "list">("card");
     const [hasInitialLoaded, setHasInitialLoaded] = useState(false);
 
-    // Data Fetching
-    const { results: articles, status: paginatedStatus, loadMore } = usePaginatedQuery(
-        api.articles.listAdmin,
-        {
-            search: search || undefined,
-            status: statusFilter === "all" ? undefined : statusFilter,
-            source: sourceFilter === "all" ? undefined : sourceFilter,
-            categoryId: categoryFilter === "all" ? undefined : categoryFilter as Id<"categories">,
-            isArchived: showArchived
-        },
-        { initialNumItems: 10 }
-    );
+    // Data Fetching (page/pageSize, ten per page; a page>1 fetch appends).
+    const [articles, setArticles] = useState<ArticleDetail[]>([]);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(false);
 
-    const categories = useQuery(api.categories.listAll);
+    useEffect(() => {
+        const controller = new AbortController();
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("pageSize", "10");
+        if (search.trim()) params.set("search", search.trim());
+        if (statusFilter !== "all") params.set("status", statusFilter);
+        if (sourceFilter !== "all") params.set("source", sourceFilter);
+        if (categoryFilter !== "all") params.set("categoryId", categoryFilter);
+        params.set("isArchived", showArchived ? "true" : "false");
+        (async () => {
+            try {
+                const data = await bffFetch<PaginatedArticleDetail>(
+                    `/api/admin/articles?${params.toString()}`,
+                    { signal: controller.signal },
+                );
+                if (controller.signal.aborted) return;
+                setArticles(prev => (page === 1 ? data.items : [...prev, ...data.items]));
+                setTotalPages(data.totalPages);
+                setHasInitialLoaded(true);
+                setIsLoading(false);
+                setIsFetching(false);
+            } catch (error) {
+                if (!controller.signal.aborted) {
+                    console.error(error);
+                    setIsLoading(false);
+                    setIsFetching(false);
+                }
+            }
+        })();
+        return () => controller.abort();
+    }, [page, search, statusFilter, sourceFilter, categoryFilter, showArchived]);
 
-    // Selection state
-    const [selectedIds, setSelectedIds] = useState<Set<Id<"articles">>>(new Set());
-    const [switchingAuthorFor, setSwitchingAuthorFor] = useState<Id<"articles"> | null>(null);
+    useEffect(() => {
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const s = await bffFetch<DashboardStats>("/api/admin/dashboard-stats", { signal: controller.signal });
+                if (!controller.signal.aborted) setStats(s);
+            } catch (error) {
+                if (!controller.signal.aborted) console.error(error);
+            }
+        })();
+        return () => controller.abort();
+    }, []);
 
-    // Mutations
-    const updateArticle = useMutation(api.articles.update);
-    const authors = useQuery(api.articles.listAuthors);
-    const archiveArticle = useMutation(api.articles.remove);
-    const restoreArticle = useMutation(api.articles.restore);
-    const deleteForever = useMutation(api.articles.deleteForever);
-    const bulkArchive = useMutation(api.articles.bulkArchive);
-    const bulkRestore = useMutation(api.articles.bulkRestore);
-    const bulkDeleteForever = useMutation(api.articles.bulkDeleteForever);
+    useEffect(() => {
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const list = await bffFetch<CategoryListItem[]>("/api/categories", { signal: controller.signal });
+                if (!controller.signal.aborted) setCategories(list);
+            } catch (error) {
+                if (!controller.signal.aborted) console.error(error);
+            }
+        })();
+        return () => controller.abort();
+    }, []);
 
-    const handleSwitchAuthor = async (authorId: Id<"users">) => {
-        if (!switchingAuthorFor) return;
-        try {
-            await updateArticle({
-                id: switchingAuthorFor,
-                authorId: authorId,
-                adminEmail: session?.user?.email ?? undefined,
-            });
-            toast.success("Author updated successfully");
-            setSwitchingAuthorFor(null);
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to update author");
-        }
-    };
+    // Selection state. `updateArticle` / `listAuthors` are gone: a byline is the
+    // verified token `sub` and is not a writable field (DEV-030).
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const toggleSelectAll = () => {
         if (!articles) return;
         if (selectedIds.size === articles.length) {
             setSelectedIds(new Set());
         } else {
-            setSelectedIds(new Set(articles.map(a => a._id)));
+            setSelectedIds(new Set(articles.map(a => a.id)));
         }
     };
 
-    const toggleSelectOne = (id: Id<"articles">) => {
+    const toggleSelectOne = (id: string) => {
         const next = new Set(selectedIds);
         if (next.has(id)) next.delete(id);
         else next.add(id);
@@ -97,7 +125,10 @@ export default function AdminArticlesPage() {
                 label: "Confirm",
                 onClick: async () => {
                     try {
-                        await bulkArchive({ ids: Array.from(selectedIds) });
+                        await bffFetch("/api/admin/articles/bulk-archive", {
+                            method: "POST",
+                            body: { ids: Array.from(selectedIds) },
+                        });
                         setSelectedIds(new Set());
                         toast.success("Bulk archive complete");
                     } catch (err) {
@@ -115,7 +146,10 @@ export default function AdminArticlesPage() {
                 label: "Confirm",
                 onClick: async () => {
                     try {
-                        await bulkRestore({ ids: Array.from(selectedIds) });
+                        await bffFetch("/api/admin/articles/bulk-restore", {
+                            method: "POST",
+                            body: { ids: Array.from(selectedIds) },
+                        });
                         setSelectedIds(new Set());
                         toast.success("Bulk restore complete");
                     } catch (err) {
@@ -133,7 +167,10 @@ export default function AdminArticlesPage() {
                 label: "Delete All",
                 onClick: async () => {
                     try {
-                        await bulkDeleteForever({ ids: Array.from(selectedIds) });
+                        await bffFetch("/api/admin/articles/bulk-delete-forever", {
+                            method: "POST",
+                            body: { ids: Array.from(selectedIds) },
+                        });
                         setSelectedIds(new Set());
                         toast.success("Bulk deletion complete");
                     } catch (err) {
@@ -145,13 +182,16 @@ export default function AdminArticlesPage() {
         });
     };
 
-    const handleArchive = (id: Id<"articles">) => {
+    const handleArchive = (id: string) => {
         toast("Archive this article?", {
             action: {
                 label: "Archive",
                 onClick: async () => {
                     try {
-                        await archiveArticle({ id });
+                        await bffFetch("/api/admin/articles/remove", {
+                            method: "PATCH",
+                            body: { id },
+                        });
                         toast.success("Article archived");
                     } catch (err) {
                         console.error("Archive Error:", err);
@@ -162,13 +202,16 @@ export default function AdminArticlesPage() {
         });
     };
 
-    const handleRestore = async (id: Id<"articles">) => {
+    const handleRestore = async (id: string) => {
         toast("Restore this article?", {
             action: {
                 label: "Restore",
                 onClick: async () => {
                     try {
-                        await restoreArticle({ id });
+                        await bffFetch("/api/admin/articles/restore", {
+                            method: "POST",
+                            body: { id },
+                        });
                         toast.success("Article restored");
                     } catch (err) {
                         console.error("Restore Error:", err);
@@ -179,13 +222,15 @@ export default function AdminArticlesPage() {
         });
     };
 
-    const handleDeleteForever = (id: Id<"articles">) => {
+    const handleDeleteForever = (id: string) => {
         toast("Permanently delete this article?", {
             action: {
                 label: "Delete",
                 onClick: async () => {
                     try {
-                        await deleteForever({ id });
+                        await bffFetch(`/api/admin/articles/delete-forever?id=${encodeURIComponent(id)}`, {
+                            method: "DELETE",
+                        });
                         toast.success("Article deleted permanently");
                     } catch (err) {
                         console.error("Delete Error:", err);
@@ -197,13 +242,7 @@ export default function AdminArticlesPage() {
     };
 
 
-    // Track initial load
-    if (!hasInitialLoaded && articles !== undefined && stats !== undefined) {
-        setHasInitialLoaded(true);
-    }
-
-    const isLoading = paginatedStatus === "LoadingFirstPage";
-    const isRefetching = hasInitialLoaded && (paginatedStatus === "LoadingMore" || stats === undefined);
+    const isRefetching = hasInitialLoaded && (isFetching || stats === null);
 
     if (isLoading) {
         return (
@@ -282,7 +321,7 @@ export default function AdminArticlesPage() {
                         <input
                             type="text"
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) => { setIsFetching(true); setPage(1); setSearch(e.target.value); }}
                             placeholder="Search posts..."
                             className="w-full pl-11 pr-12 py-3 bg-gray-50 dark:bg-zinc-950/30 border border-gray-100 dark:border-white/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/30 transition-all font-medium text-sm text-gray-950 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600"
                         />
@@ -324,7 +363,7 @@ export default function AdminArticlesPage() {
                     </div>
 
                     <button
-                        onClick={() => setShowArchived(!showArchived)}
+                        onClick={() => { setIsFetching(true); setPage(1); setShowArchived(!showArchived); }}
                         className={cn(
                             "flex items-center gap-2 px-4 py-2.5 border rounded-xl text-xs font-black uppercase tracking-[0.1em] transition-all active:scale-95",
                             showArchived
@@ -340,7 +379,7 @@ export default function AdminArticlesPage() {
 
                     <select
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
+                        onChange={(e) => { setIsFetching(true); setPage(1); setStatusFilter(e.target.value); }}
                         className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-xs font-black uppercase tracking-[0.1em] text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10 transition-all appearance-none cursor-pointer pr-10 relative bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjOTQ5NGEyIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik02IDlsNiA2IDYtNiIvPjwvc3ZnPg==')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
                     >
                         <option value="all">Status</option>
@@ -351,7 +390,7 @@ export default function AdminArticlesPage() {
 
                     <select
                         value={sourceFilter}
-                        onChange={(e) => setSourceFilter(e.target.value)}
+                        onChange={(e) => { setIsFetching(true); setPage(1); setSourceFilter(e.target.value); }}
                         className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-xs font-black uppercase tracking-[0.1em] text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10 transition-all appearance-none cursor-pointer pr-10 relative bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjOTQ5NGEyIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik02IDlsNiA2IDYtNiIvPjwvc3ZnPg==')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
                     >
                         <option value="all">Source</option>
@@ -361,12 +400,12 @@ export default function AdminArticlesPage() {
 
                     <select
                         value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
+                        onChange={(e) => { setIsFetching(true); setPage(1); setCategoryFilter(e.target.value); }}
                         className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-xs font-black uppercase tracking-[0.1em] text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10 transition-all appearance-none cursor-pointer pr-10 relative bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjOTQ5NGEyIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik02IDlsNiA2IDYtNiIvPjwvc3ZnPg==')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat min-w-[140px]"
                     >
                         <option value="all">Category</option>
                         {categories?.map((cat) => (
-                            <option key={cat._id} value={cat._id}>{cat.name}</option>
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
                     </select>
                 </div>
@@ -383,21 +422,21 @@ export default function AdminArticlesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {articles?.map((article) => (
                         <motion.div
-                            key={article._id}
+                            key={article.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             whileHover={{ y: -5 }}
                             className={cn(
                                 "group relative bg-white/70 dark:bg-zinc-950/50 backdrop-blur-xl rounded-3xl border border-gray-100 dark:border-white/5 overflow-hidden shadow-sm hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] transition-all duration-700 h-full flex flex-col",
-                                selectedIds.has(article._id) && "ring-2 ring-blue-500/50 bg-blue-50/10 dark:bg-blue-500/5"
+                                selectedIds.has(article.id) && "ring-2 ring-blue-500/50 bg-blue-50/10 dark:bg-blue-500/5"
                             )}
                         >
                             {/* Selection Overlay */}
                             <div className="absolute top-6 left-6 z-20">
                                 <input
                                     type="checkbox"
-                                    checked={selectedIds.has(article._id)}
-                                    onChange={() => toggleSelectOne(article._id)}
+                                    checked={selectedIds.has(article.id)}
+                                    onChange={() => toggleSelectOne(article.id)}
                                     className="w-5 h-5 rounded-lg border-2 border-white/20 bg-black/20 text-blue-600 focus:ring-0 cursor-pointer backdrop-blur-md transition-all scale-100 group-hover:scale-110 active:scale-90"
                                 />
                             </div>
@@ -432,7 +471,7 @@ export default function AdminArticlesPage() {
                             {/* Content */}
                             <div className="p-8 flex flex-col flex-grow">
                                 <Link
-                                    href={`/admin/articles/${article._id}/edit`}
+                                    href={`/admin/articles/${article.id}/edit`}
                                     className="block mb-4"
                                 >
                                     <h3 className="text-xl font-serif font-black text-gray-950 dark:text-white leading-tight transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400 line-clamp-2">
@@ -485,23 +524,15 @@ export default function AdminArticlesPage() {
                                                 >
                                                     <Eye size={18} />
                                                 </Link>
-                                                <button
-                                                    onClick={() => setSwitchingAuthorFor(article._id)}
-                                                    className="p-2.5 bg-purple-500/5 hover:bg-purple-500/10 rounded-xl text-zinc-400 hover:text-purple-600 transition-all hover:scale-110 flex items-center gap-1 group/btn"
-                                                    title="Switch Author"
-                                                >
-                                                    <Users size={18} />
-                                                    <span className="text-[9px] font-black uppercase tracking-tighter hidden group-hover/btn:block">Switch Author</span>
-                                                </button>
                                                 <Link
-                                                    href={`/admin/articles/${article._id}/edit`}
+                                                    href={`/admin/articles/${article.id}/edit`}
                                                     className="p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-zinc-400 hover:text-blue-600 transition-all hover:scale-110"
                                                     title="Edit"
                                                 >
                                                     <Edit2 size={18} />
                                                 </Link>
                                                 <button
-                                                    onClick={() => handleArchive(article._id)}
+                                                    onClick={() => handleArchive(article.id)}
                                                     className="p-2.5 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-xl text-zinc-400 hover:text-amber-600 transition-all hover:scale-110"
                                                     title="Archive"
                                                 >
@@ -511,14 +542,14 @@ export default function AdminArticlesPage() {
                                         ) : (
                                             <>
                                                 <button
-                                                    onClick={() => handleRestore(article._id)}
+                                                    onClick={() => handleRestore(article.id)}
                                                     className="p-2.5 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-xl text-zinc-400 hover:text-green-600 transition-all hover:scale-110"
                                                     title="Restore"
                                                 >
                                                     <RotateCcw size={18} />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteForever(article._id)}
+                                                    onClick={() => handleDeleteForever(article.id)}
                                                     className="p-2.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl text-zinc-400 hover:text-red-600 transition-all hover:scale-110"
                                                     title="Delete Forever"
                                                 >
@@ -568,18 +599,18 @@ export default function AdminArticlesPage() {
                             <tbody>
                                 {articles?.map((article) => (
                                     <tr
-                                        key={article._id}
+                                        key={article.id}
                                         className={cn(
                                             "border-b border-gray-50 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors group/row",
-                                            selectedIds.has(article._id) && "bg-blue-50/20 dark:bg-blue-500/5 shadow-[inset_4px_0_0_#2563eb]"
+                                            selectedIds.has(article.id) && "bg-blue-50/20 dark:bg-blue-500/5 shadow-[inset_4px_0_0_#2563eb]"
                                         )}
                                     >
                                         <td className="p-6">
                                             <div className="flex items-center justify-center">
                                                 <input
                                                     type="checkbox"
-                                                    checked={selectedIds.has(article._id)}
-                                                    onChange={() => toggleSelectOne(article._id)}
+                                                    checked={selectedIds.has(article.id)}
+                                                    onChange={() => toggleSelectOne(article.id)}
                                                     className="w-5 h-5 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-transparent text-blue-600 focus:ring-0 cursor-pointer transition-all"
                                                 />
                                             </div>
@@ -597,7 +628,7 @@ export default function AdminArticlesPage() {
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <Link
-                                                        href={`/admin/articles/${article._id}/edit`}
+                                                        href={`/admin/articles/${article.id}/edit`}
                                                         className="block text-sm font-black text-gray-950 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate mb-1"
                                                     >
                                                         {article.title}
@@ -640,14 +671,14 @@ export default function AdminArticlesPage() {
                                                             <Eye size={18} />
                                                         </Link>
                                                         <Link
-                                                            href={`/admin/articles/${article._id}/edit`}
+                                                            href={`/admin/articles/${article.id}/edit`}
                                                             className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-zinc-400 hover:text-blue-600 transition-all"
                                                             title="Edit"
                                                         >
                                                             <Edit2 size={18} />
                                                         </Link>
                                                         <button
-                                                            onClick={() => handleArchive(article._id)}
+                                                            onClick={() => handleArchive(article.id)}
                                                             className="p-2 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-xl text-zinc-400 hover:text-amber-600 transition-all"
                                                             title="Archive"
                                                         >
@@ -657,14 +688,14 @@ export default function AdminArticlesPage() {
                                                 ) : (
                                                     <>
                                                         <button
-                                                            onClick={() => handleRestore(article._id)}
+                                                            onClick={() => handleRestore(article.id)}
                                                             className="p-2 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-xl text-zinc-400 hover:text-green-600 transition-all"
                                                             title="Restore"
                                                         >
                                                             <RotateCcw size={18} />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDeleteForever(article._id)}
+                                                            onClick={() => handleDeleteForever(article.id)}
                                                             className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl text-zinc-400 hover:text-red-600 transition-all"
                                                             title="Delete Forever"
                                                         >
@@ -683,11 +714,12 @@ export default function AdminArticlesPage() {
             )}
             
             {/* Load More Pagination */}
-            {paginatedStatus === "CanLoadMore" && (
+            {page < totalPages && (
                 <div className="flex items-center justify-center mt-8">
                     <button 
-                        onClick={() => loadMore(10)}
-                        className="px-6 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm"
+                        onClick={() => { setIsFetching(true); setPage(p => p + 1); }}
+                        disabled={isFetching}
+                        className="px-6 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm disabled:opacity-50"
                     >
                         Load More Results
                     </button>
@@ -747,88 +779,6 @@ export default function AdminArticlesPage() {
                 )}
             </AnimatePresence>
 
-            {/* Author Switching Modal */}
-            <AnimatePresence>
-                {switchingAuthorFor && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setSwitchingAuthorFor(null)}
-                            className="absolute inset-0 bg-zinc-950/60 backdrop-blur-md"
-                        />
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0, y: 30 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.95, opacity: 0, y: 30 }}
-                            className="relative w-full max-w-md bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-2xl p-10 overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 blur-[80px] rounded-full -mr-24 -mt-24 pointer-events-none" />
-
-                            <div className="flex items-center justify-between mb-10 relative z-10">
-                                <div className="space-y-1">
-                                    <h2 className="text-2xl font-serif font-black tracking-tight text-zinc-950 dark:text-white italic">Switch Author</h2>
-                                    <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.25em] italic">Select new author</p>
-                                </div>
-                                <button
-                                    onClick={() => setSwitchingAuthorFor(null)}
-                                    className="p-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-950 dark:hover:text-white rounded-2xl transition-all active:scale-90"
-                                >
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="space-y-4 relative z-10 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar focus:outline-none">
-                                {authors?.map((author) => {
-                                    const currentArticle = articles?.find(a => a._id === switchingAuthorFor);
-                                    const isCurrent = currentArticle?.authorId === author._id;
-
-                                    return (
-                                        <button
-                                            key={author._id}
-                                            onClick={() => handleSwitchAuthor(author._id)}
-                                            className={cn(
-                                                "w-full flex items-center justify-between p-5 rounded-[1.5rem] transition-all border group relative overflow-hidden",
-                                                isCurrent
-                                                    ? "bg-purple-500/10 border-purple-500/30 ring-1 ring-purple-500/20"
-                                                    : "bg-zinc-50 dark:bg-zinc-950/40 border-zinc-100 dark:border-white/5 hover:border-blue-500/30 hover:bg-white dark:hover:bg-zinc-900"
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-4 text-left">
-                                                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110 shadow-sm relative">
-                                                    {author.profileImage ? (
-                                                        <Image src={author.profileImage} alt={author.name} width={48} height={48} className="object-cover" />
-                                                    ) : (
-                                                        <Users size={24} className="text-zinc-400" />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <span className="block text-sm font-black text-zinc-950 dark:text-white tracking-tight">{author.name}</span>
-                                                    <span className="block text-[10px] text-zinc-400 uppercase font-black tracking-widest italic">{author.email}</span>
-                                                </div>
-                                            </div>
-                                            {isCurrent && (
-                                                <div className="p-1 px-3 bg-purple-500/20 rounded-full border border-purple-500/30">
-                                                    <span className="text-[9px] font-black uppercase text-purple-600 dark:text-purple-400 tracking-tighter">Current</span>
-                                                </div>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <button
-                                onClick={() => setSwitchingAuthorFor(null)}
-                                className="w-full mt-10 py-4 text-zinc-400 dark:text-zinc-500 font-black uppercase text-[10px] tracking-[0.3em] hover:text-blue-600 dark:hover:text-blue-400 transition-all italic border-t border-zinc-100 dark:border-white/5"
-                            >
-                                Select an author to update the post
-                            </button>
-                        </motion.div>
-                    </div>
-                )
-                }
-            </AnimatePresence>
         </div>
     );
 }

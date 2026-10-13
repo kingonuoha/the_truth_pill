@@ -1,17 +1,34 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ArticleForm from "@/components/admin/article-form";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { Id } from "@/convex/_generated/dataModel";
+import { bffFetch } from "@/lib/bff-client";
+import type { ArticleRecord } from "@/lib/content-types";
 
 export default function EditArticlePage() {
     const params = useParams();
-    const articleId = params.articleId as Id<"articles">;
-    const article = useQuery(api.articles.getById, { id: articleId });
+    const articleId = typeof params.articleId === "string" ? params.articleId : "";
+    const [article, setArticle] = useState<ArticleRecord | null>(null);
+
+    useEffect(() => {
+        if (!articleId) return;
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const data = await bffFetch<ArticleRecord>(
+                    `/api/admin/articles/by-id?id=${encodeURIComponent(articleId)}`,
+                    { signal: controller.signal },
+                );
+                if (!controller.signal.aborted) setArticle(data);
+            } catch (error) {
+                if (!controller.signal.aborted) console.error(error);
+            }
+        })();
+        return () => controller.abort();
+    }, [articleId]);
 
     if (!article) {
         return (

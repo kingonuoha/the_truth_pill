@@ -1,24 +1,14 @@
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Send, Heart, Reply, Loader2, X } from "lucide-react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { getTimeAgo, getAvatarUrl, cn } from "@/lib/utils";
-
-interface Comment {
-    _id: Id<"comments">;
-    _creationTime: number;
-    content: string;
-    authorName: string;
-    authorImage?: string;
-    parentId?: Id<"comments">;
-}
+import { bffFetch } from "@/lib/bff-client";
+import type { Comment } from "@/lib/content-types";
 
 interface CommentsSectionProps {
-    articleId: Id<"articles">;
+    articleId: string;
 }
 
 export function CommentsSection({ articleId }: CommentsSectionProps) {
@@ -26,18 +16,32 @@ export function CommentsSection({ articleId }: CommentsSectionProps) {
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [replyTo, setReplyTo] = useState<Comment | null>(null);
+    const [comments, setComments] = useState<Comment[] | undefined>(undefined);
 
-    const comments = useQuery(api.engagement.listComments, { articleId });
-    const addComment = useMutation(api.engagement.addComment);
+    const loadComments = useCallback(async () => {
+        try {
+            const result = await bffFetch<Comment[]>(
+                `/api/engagement/comment?articleId=${encodeURIComponent(articleId)}`,
+            );
+            setComments(result);
+        } catch (error) {
+            console.error("Failed to load comments:", error);
+            setComments([]);
+        }
+    }, [articleId]);
+
+    useEffect(() => {
+        void loadComments();
+    }, [loadComments]);
 
     const commentTree = useMemo(() => {
         if (!comments) return [];
-        const map = new Map<Id<"comments">, Comment & { replies: CommentItemType[] }>();
-        comments.forEach(c => map.set(c._id, { ...c, replies: [] }));
+        const map = new Map<string, Comment & { replies: CommentItemType[] }>();
+        comments.forEach(c => map.set(c.id, { ...c, replies: [] }));
 
         const tree: CommentItemType[] = [];
         comments.forEach(c => {
-            const comment = map.get(c._id)!;
+            const comment = map.get(c.id)!;
             if (c.parentId && map.has(c.parentId)) {
                 map.get(c.parentId)!.replies.unshift(comment); // Push to replies of parent
             } else {
@@ -60,13 +64,11 @@ export function CommentsSection({ articleId }: CommentsSectionProps) {
 
         setIsSubmitting(true);
         try {
-            if (!session?.user?.email) return;
-            await addComment({
-                articleId,
-                content,
-                userEmail: session.user.email,
-                parentId: replyTo?._id
+            await bffFetch<{ id: string }>("/api/engagement/comment", {
+                method: "POST",
+                body: { articleId, content, parentId: replyTo?.id },
             });
+            await loadComments();
             setContent("");
             setReplyTo(null);
             toast.success(replyTo ? "Reply shared" : "Reflection shared", {
@@ -171,7 +173,7 @@ export function CommentsSection({ articleId }: CommentsSectionProps) {
                 <div className="flex flex-col gap-12">
                     {commentTree.map((c) => (
                         <CommentItem
-                            key={c._id}
+                            key={c.id}
                             comment={c}
                             onReply={() => {
                                 setReplyTo(c);
@@ -193,7 +195,7 @@ function CommentItem({ comment, onReply }: { comment: CommentItemType, onReply: 
             <div className="flex gap-6">
                 <div className="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 border border-zinc-100 relative shadow-sm group-hover:scale-110 transition-transform duration-500">
                     <Image
-                        src={getAvatarUrl(comment.authorName, comment.authorImage)}
+                        src={getAvatarUrl(comment.authorName, comment.authorImage ?? undefined)}
                         alt={comment.authorName}
                         width={48}
                         height={48}
@@ -204,7 +206,7 @@ function CommentItem({ comment, onReply }: { comment: CommentItemType, onReply: 
                     <div className="flex items-center gap-3 mb-2">
                         <span className="text-xs font-black uppercase tracking-[0.1em] text-zinc-900">{comment.authorName}</span>
                         <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest bg-zinc-50 px-2 py-0.5 rounded-full">
-                            {getTimeAgo(comment._creationTime)}
+                            {getTimeAgo(new Date(comment.createdAt).getTime())}
                         </span>
                     </div>
                     <div className="relative">
@@ -228,11 +230,11 @@ function CommentItem({ comment, onReply }: { comment: CommentItemType, onReply: 
                     {comment.replies.length > 0 && (
                         <div className="mt-8 flex flex-col gap-8 border-l-2 border-zinc-50 ml-6 pl-10">
                             {comment.replies.map((reply) => (
-                                <div key={reply._id} className="group/reply relative">
+                                <div key={reply.id} className="group/reply relative">
                                     <div className="flex gap-4">
                                         <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0 border border-zinc-100 relative shadow-sm group-hover/reply:scale-110 transition-transform duration-500">
                                             <Image
-                                                src={getAvatarUrl(reply.authorName, reply.authorImage)}
+                                                src={getAvatarUrl(reply.authorName, reply.authorImage ?? undefined)}
                                                 alt={reply.authorName}
                                                 width={32}
                                                 height={32}
@@ -243,7 +245,7 @@ function CommentItem({ comment, onReply }: { comment: CommentItemType, onReply: 
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-800">{reply.authorName}</span>
                                                 <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest bg-zinc-50 px-2 py-0.5 rounded-full">
-                                                    {getTimeAgo(reply._creationTime)}
+                                                    {getTimeAgo(new Date(reply.createdAt).getTime())}
                                                 </span>
                                             </div>
                                             <p className="text-zinc-600 leading-relaxed font-serif text-[16px]">

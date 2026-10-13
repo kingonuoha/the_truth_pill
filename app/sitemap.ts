@@ -1,40 +1,32 @@
 import { MetadataRoute } from "next";
-import { fetchQuery } from "convex/nextjs";
-import { Doc } from "@/convex/_generated/dataModel";
-import { api } from "@/convex/_generated/api";
+import { nest } from "@/lib/api";
 import { getSiteUrl } from "@/lib/site-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
 
-  interface ArticleWithMeta {
-    slug: string;
-    updatedAt: number;
-    publishedAt?: number;
+  // Fetch every published, non-archived article. The list route caps `pageSize`
+  // at 100, so page through until `totalPages` is exhausted — dropping URLs from
+  // the sitemap is a silent SEO loss.
+  const firstPage = await nest.listArticles({ page: 1, pageSize: 100 });
+  const allArticles = [...firstPage.items];
+  for (let page = 2; page <= firstPage.totalPages; page++) {
+    const nextPage = await nest.listArticles({ page, pageSize: 100 });
+    allArticles.push(...nextPage.items);
   }
 
-  // Fetch articles
-  const articles = (await fetchQuery(api.articles.listRecent, {
-    limit: 1000,
-  })) as ArticleWithMeta[];
-
-  const articleUrls = articles.map((article) => ({
+  const articleUrls = allArticles.map((article) => ({
     url: `${baseUrl}/${article.slug}`,
-    lastModified: new Date(
-      article.updatedAt || article.publishedAt || Date.now(),
-    ),
+    lastModified: new Date(article.publishedAt || article.createdAt),
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }));
 
   // Fetch categories
-  const categories = (await fetchQuery(
-    api.categories.listAll,
-    {},
-  )) as (Doc<"categories"> & { articleCount?: number })[];
-  const categoryUrls = categories.map((category: Doc<"categories">) => ({
+  const categories = await nest.categories();
+  const categoryUrls = categories.map((category) => ({
     url: `${baseUrl}/category/${category.slug}`,
-    lastModified: new Date(category.createdAt || Date.now()),
+    lastModified: new Date(category.createdAt),
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));

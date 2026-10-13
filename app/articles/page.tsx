@@ -2,9 +2,7 @@ import { Navbar } from "@/components/navbar";
 import { BlogGrid } from "@/components/blog-grid";
 import { Newsletter } from "@/components/newsletter";
 import { Metadata } from "next";
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
-import { JoinedArticle } from "@/components/blog-grid";
+import { nest } from "@/lib/api";
 import { CategoryShowcase } from "@/components/category-showcase";
 import { getCanonical } from "@/lib/site-url";
 
@@ -19,9 +17,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ArticlesPage() {
-  const initialArticles = await fetchQuery(api.articles.list, { 
-    paginationOpts: { numItems: 12, cursor: null } 
-  });
+  const initialArticles = await nest.listArticles({ page: 1, pageSize: 12 });
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-950">
@@ -42,7 +38,7 @@ export default async function ArticlesPage() {
             </p>
           </div>
           
-          <BlogGrid initialArticles={initialArticles.page as JoinedArticle[]} initialCursor={initialArticles.continueCursor} initialHasMore={!initialArticles.isDone} />
+          <BlogGrid initialArticles={initialArticles.items} initialPage={initialArticles.page} initialHasMore={initialArticles.page < initialArticles.totalPages} />
         </div>
       </section>
 

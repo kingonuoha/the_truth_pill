@@ -1,5 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
+import { nest } from "@/lib/api";
 import { ArticleContent } from "./article-content";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -14,7 +13,7 @@ interface ArticlePageProps {
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
     const { slug } = await params;
-    const article = await fetchQuery(api.articles.getBySlug, { slug });
+    const article = await nest.articleBySlug(slug);
 
     if (!article) {
         return {
@@ -76,7 +75,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
     const { slug } = await params;
-    const article = await fetchQuery(api.articles.getBySlug, { slug });
+    const article = await nest.articleBySlug(slug);
 
     if (!article) {
         notFound();

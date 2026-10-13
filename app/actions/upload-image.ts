@@ -1,9 +1,17 @@
 "use server";
 
 import { v2 as cloudinary } from "cloudinary";
-import { fetchQuery } from "convex/nextjs";
+import { headers } from "next/headers";
 import { auth } from "@/auth";
-import { api } from "@/convex/_generated/api";
+import { api as nestApi } from "@/lib/api";
+import {
+  ActionError,
+  assertAdminRole,
+  assertUploadAllowed,
+  enforceRateLimit,
+  parseClientIp,
+  RateLimiter,
+} from "@/lib/server-action-guards";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -12,79 +20,25 @@ cloudinary.config({
   secure: true,
 });
 
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const SIGNATURE_BYTES = 12;
-
-// Allowlist, not a denylist: an unrecognised type is rejected rather than
-// permitted, so a new or malformed type cannot slip past. image/svg+xml is
-// deliberately absent — SVG can carry script and is delivered from this site's
-// own Cloudinary host.
-//
-// A Map, not an object literal. `{"image/png": "png"}["constructor"]` and
-// `["__proto__"]` resolve up the prototype chain to truthy values, which would
-// hand a non-image Content-Type a format string and defeat the allowlist.
-const ALLOWED_FORMATS = new Map<string, string>([
-  ["image/jpeg", "jpg"],
-  ["image/png", "png"],
-  ["image/webp", "webp"],
-  ["image/gif", "gif"],
-  ["image/avif", "avif"],
-]);
-
-function startsWithAscii(bytes: Uint8Array, offset: number, value: string) {
-  for (let i = 0; i < value.length; i++) {
-    if (bytes[offset + i] !== value.charCodeAt(i)) return false;
-  }
-  return true;
-}
-
-// entry.type is client-declared, so it is only trusted once the bytes agree.
-// An out-of-range read yields undefined, which fails the comparison, so a
-// truncated header is rejected rather than throwing.
-function hasImageSignature(type: string, bytes: Uint8Array) {
-  switch (type) {
-    case "image/jpeg":
-      return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-    case "image/png":
-      return startsWithAscii(bytes, 0, "\x89PNG\r\n\x1a\n");
-    case "image/gif":
-      return (
-        startsWithAscii(bytes, 0, "GIF87a") || startsWithAscii(bytes, 0, "GIF89a")
-      );
-    case "image/webp":
-      return (
-        startsWithAscii(bytes, 0, "RIFF") && startsWithAscii(bytes, 8, "WEBP")
-      );
-    case "image/avif":
-      return (
-        startsWithAscii(bytes, 4, "ftyp") &&
-        (startsWithAscii(bytes, 8, "avif") || startsWithAscii(bytes, 8, "avis"))
-      );
-    default:
-      return false;
-  }
-}
+// DEV-004: the upload endpoint is public and expensive (a Convex read plus a
+// Cloudinary round-trip), so it is throttled by client IP before the session is
+// even read. Best-effort per-instance — see RateLimiter's note.
+const uploadLimiter = new RateLimiter(10, 60_000);
 
 async function requireAdmin() {
   const session = await auth();
-  const email = session?.user?.email;
-  if (!email) throw new Error("Unauthorized");
+  const sub = session?.user?.id ?? null;
 
-  // The role is re-read from the database instead of being taken from
-  // session.user.role. middleware.ts trusts token.role, and auth.ts's jwt
-  // callback swallows a failed Convex read, so the token's role can be stale
-  // after a demotion or missing entirely. users.currentUser is a plain
-  // by_email query and never touches ctx.auth, which is permanently null
-  // (S-004), so this read is sound. `email` comes from the verified session,
-  // never from the request body.
-  //
-  // A failed lookup denies. The message is logged because a Convex query
-  // error carries the function name and the email, neither of which is a
-  // credential, and losing it would make this denial undiagnosable.
+  // The role is re-read from the API for the **verified token `sub`**
+  // (`GET /users/me`), never from `session.user.role` — the token claim can be
+  // stale after a demotion (DEV-032) — and never from a body email (DEV-029).
+  // A failed or anonymous lookup denies (role stays undefined).
   let role: string | undefined;
   try {
-    const dbUser = await fetchQuery(api.users.currentUser, { email });
-    role = dbUser?.role;
+    if (sub) {
+      const me = await nestApi.get<{ role: string }>("/users/me", { sub });
+      role = me.role;
+    }
   } catch (error) {
     console.error(
       "Upload authorization lookup failed:",
@@ -92,7 +46,7 @@ async function requireAdmin() {
     );
   }
 
-  if (role !== "admin") throw new Error("Unauthorized");
+  assertAdminRole(role);
 }
 
 // The returned URL is written straight into article records and rendered as an
@@ -104,16 +58,16 @@ function assertTrustedUrl(url: string) {
   try {
     parsed = new URL(url);
   } catch {
-    throw new Error("Upload failed");
+    throw new ActionError(422, "Upload failed");
   }
 
   if (parsed.protocol !== "https:" || parsed.hostname !== "res.cloudinary.com") {
-    throw new Error("Upload failed");
+    throw new ActionError(422, "Upload failed");
   }
 
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   if (!cloudName || !parsed.pathname.startsWith(`/${cloudName}/`)) {
-    throw new Error("Upload failed");
+    throw new ActionError(422, "Upload failed");
   }
 
   return url;
@@ -160,27 +114,16 @@ async function uploadToCloudinary(buffer: Buffer, format: string) {
 }
 
 export async function uploadImage(formData: FormData): Promise<string> {
+  const headerList = await headers();
+  const clientIp = parseClientIp(headerList.get("x-forwarded-for")) ?? "unknown";
+  enforceRateLimit(uploadLimiter, clientIp);
+
   await requireAdmin();
 
   const entry = formData.get("file");
-  if (!(entry instanceof File)) throw new Error("No file provided");
-  if (entry.size === 0) throw new Error("No file provided");
+  if (!(entry instanceof File)) throw new ActionError(422, "No file provided");
 
-  // Checked before arrayBuffer() so an oversized body is never materialised as
-  // a Buffer. next.config.ts sets serverActions.bodySizeLimit to "50mb", so
-  // this 5 MB bound is the binding one.
-  if (entry.size > MAX_FILE_SIZE_BYTES) throw new Error("File too large");
-
-  const format = ALLOWED_FORMATS.get(entry.type);
-  if (!format) throw new Error("Unsupported file type");
-
-  const head = new Uint8Array(
-    await entry.slice(0, SIGNATURE_BYTES).arrayBuffer(),
-  );
-  if (!hasImageSignature(entry.type, head)) {
-    throw new Error("Unsupported file type");
-  }
-
+  const format = await assertUploadAllowed(entry);
   const buffer = Buffer.from(await entry.arrayBuffer());
   return uploadToCloudinary(buffer, format);
 }

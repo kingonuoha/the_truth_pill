@@ -1,8 +1,5 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import {
     Heart,
     Bookmark as BookmarkIcon,
@@ -13,29 +10,40 @@ import {
     Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { bffFetch } from "@/lib/bff-client";
+import type { Engagement } from "@/lib/content-types";
 
 interface EngagementToolbarProps {
-    articleId: Id<"articles">;
+    articleId: string;
     slug: string;
     vertical?: boolean;
 }
 
 export function EngagementToolbar({ articleId, slug, vertical = false }: EngagementToolbarProps) {
-    const { data: session, status } = useSession();
-    const engagement = useQuery(api.engagement.getEngagement, {
-        articleId,
-        userEmail: session?.user?.email || undefined
-    });
-
-    const toggleReaction = useMutation(api.engagement.toggleReaction);
-    const toggleBookmark = useMutation(api.engagement.toggleBookmark);
+    const { status } = useSession();
+    const [engagement, setEngagement] = useState<Engagement | null>(null);
 
     const [isBookmarking, setIsBookmarking] = useState(false);
     const [showReactions, setShowReactions] = useState(false);
+
+    const loadEngagement = useCallback(async () => {
+        try {
+            const result = await bffFetch<Engagement>(
+                `/api/engagement?articleId=${encodeURIComponent(articleId)}`,
+            );
+            setEngagement(result);
+        } catch (error) {
+            console.error("Failed to load engagement:", error);
+        }
+    }, [articleId]);
+
+    useEffect(() => {
+        void loadEngagement();
+    }, [loadEngagement]);
 
     const triggerHaptic = (pattern: number | number[] = 10) => {
         if (typeof window !== "undefined" && window.navigator.vibrate) {
@@ -53,12 +61,11 @@ export function EngagementToolbar({ articleId, slug, vertical = false }: Engagem
         }
 
         try {
-            if (!session?.user?.email) return;
-            await toggleReaction({
-                articleId,
-                type,
-                userEmail: session.user.email
+            await bffFetch<{ active: boolean; type: string | null }>("/api/engagement/reaction", {
+                method: "PATCH",
+                body: { articleId, type },
             });
+            await loadEngagement();
 
             const action = engagement?.userReaction === type ? "Removed" : "Added";
             toast.success(`${action} ${type} reaction`, {
@@ -84,11 +91,11 @@ export function EngagementToolbar({ articleId, slug, vertical = false }: Engagem
         setIsBookmarking(true);
         triggerHaptic(20);
         try {
-            if (!session?.user?.email) return;
-            const result = await toggleBookmark({
-                articleId,
-                userEmail: session.user.email
+            const result = await bffFetch<boolean>("/api/engagement/bookmark", {
+                method: "PATCH",
+                body: { articleId },
             });
+            await loadEngagement();
             toast.success(result ? "Article saved" : "Bookmark removed", {
                 description: result ? "You can find this in your saved truths." : "Article removed from your bookmarks.",
             });

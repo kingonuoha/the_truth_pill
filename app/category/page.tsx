@@ -1,9 +1,8 @@
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
+import { nest } from "@/lib/api";
+import type { CategoryListItem } from "@/lib/content-types";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Navbar } from "@/components/navbar";
-import { Id } from "@/convex/_generated/dataModel";
 import { DynamicCategoryImage } from "@/components/dynamic-category-image";
 import { Metadata } from "next";
 import { EmptyState } from "@/components/empty-state";
@@ -20,18 +19,8 @@ export const metadata: Metadata = {
     },
 };
 
-interface Category {
-    _id: Id<"categories">;
-    name: string;
-    slug: string;
-    description?: string;
-    coverImage?: string;
-    articleCount: number;
-    pexelsImages?: string[];
-}
-
 export default async function CategoriesPage() {
-    const categories = await fetchQuery(api.categories.listAll);
+    const categories = await nest.categories();
 
     const jsonLd = {
         "@context": "https://schema.org",
@@ -61,7 +50,7 @@ export default async function CategoriesPage() {
                     {categories && categories.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                             {categories.map((category) => (
-                                <CategoryCard key={category._id} category={category} />
+                                <CategoryCard key={category.id} category={category} />
                             ))}
                         </div>
                     ) : (
@@ -86,7 +75,7 @@ export default async function CategoriesPage() {
     );
 }
 
-function CategoryCard({ category }: { category: Category }) {
+function CategoryCard({ category }: { category: CategoryListItem }) {
     return (
         <Link
             href={`/category/${category.slug}`}
@@ -94,8 +83,7 @@ function CategoryCard({ category }: { category: Category }) {
         >
             <DynamicCategoryImage
                 categoryName={category.name}
-                categoryId={category._id}
-                coverImage={category.coverImage}
+                coverImage={category.coverImage ?? undefined}
                 pexelsImages={category.pexelsImages}
                 alt={category.name}
                 className="transition-transform duration-[2000ms] group-hover:scale-125"
