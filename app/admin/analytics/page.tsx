@@ -1,8 +1,6 @@
 "use client";
 
-import { useQuery, usePaginatedQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     TrendingUp,
     Users,
@@ -19,8 +17,18 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, getTimeAgo } from "@/lib/utils";
-import { Doc } from "@/convex/_generated/dataModel";
 import dynamic from "next/dynamic";
+import { bffFetch } from "@/lib/bff-client";
+import type {
+    AnalyticsDeviceStats,
+    AnalyticsGeographicStat,
+    AnalyticsNameValue,
+    AnalyticsPageVisit,
+    AnalyticsRawVisitRow,
+    AnalyticsRawVisitsPage,
+    AnalyticsTopContent,
+    TrafficStats,
+} from "@/lib/content-types";
 
 const TrafficChart = dynamic(() => import("@/components/analytics/traffic-chart").then(mod => mod.TrafficChart), {
     ssr: false,
@@ -45,7 +53,7 @@ interface PopularArticle {
     engagementRate: number;
 }
 
-type RealTimeVisit = Doc<"pageVisits">;
+type RealTimeVisit = AnalyticsPageVisit;
 
 interface ChartTooltipProps {
     active?: boolean;
@@ -82,16 +90,41 @@ export default function AnalyticsPage() {
 
 
 
-    const trafficStats = useQuery(api.analytics.getTrafficStats, { days });
-    const geoStats = useQuery(api.analytics.getGeographicStats);
-    const deviceStats = useQuery(api.analytics.getDeviceStats);
-    const topContent = useQuery(api.analytics.getTopContent);
-    const realTimeActivity = useQuery(api.analytics.getRealTimeActivity);
-    const referrerStats = useQuery(api.analytics.getReferrerStats, { days });
+    const [data, setData] = useState<{
+        trafficStats: TrafficStats;
+        geoStats: AnalyticsGeographicStat[];
+        deviceStats: AnalyticsDeviceStats;
+        topContent: AnalyticsTopContent[];
+        realTimeActivity: AnalyticsPageVisit[];
+        referrerStats: AnalyticsNameValue[];
+    } | null>(null);
 
-    const isLoading = !trafficStats || !geoStats || !deviceStats || !topContent || !realTimeActivity || !referrerStats;
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const [trafficStats, geoStats, deviceStats, topContent, realTimeActivity, referrerStats] = await Promise.all([
+                    bffFetch<TrafficStats>(`/api/admin/analytics/traffic?days=${days}`),
+                    bffFetch<AnalyticsGeographicStat[]>("/api/admin/analytics/geographic"),
+                    bffFetch<AnalyticsDeviceStats>("/api/admin/analytics/device"),
+                    bffFetch<AnalyticsTopContent[]>("/api/admin/analytics/top-content"),
+                    bffFetch<AnalyticsPageVisit[]>("/api/admin/analytics/real-time"),
+                    bffFetch<AnalyticsNameValue[]>(`/api/admin/analytics/referrers?days=${days}`),
+                ]);
+                if (!cancelled) {
+                    setData({ trafficStats, geoStats, deviceStats, topContent, realTimeActivity, referrerStats });
+                }
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) setData(null);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [days]);
 
-    if (isLoading) {
+    if (!data) {
         return (
             <div className="flex items-center justify-center min-h-[60vh] transition-colors duration-500">
                 <div className="animate-pulse flex flex-col items-center gap-4 text-blue-600 dark:text-blue-500">
@@ -102,14 +135,16 @@ export default function AnalyticsPage() {
         );
     }
 
-    const totalUniqueVisitors = (geoStats as { country: string; count: number }[]).reduce((acc: number, curr: { count: number }) => acc + curr.count, 0);
+    const { trafficStats, geoStats, deviceStats, topContent, realTimeActivity, referrerStats } = data;
+
+    const totalUniqueVisitors = geoStats.reduce((acc, curr) => acc + curr.count, 0);
 
     // Real trend for Total Traffic from getTrafficStats
     const trafficTrend = `${trafficStats.isTrendUp ? "+" : ""}${trafficStats.trend}%`;
 
     // Engagement rate computed from real top-content data (reactions / unique readers)
-    const totalReactions = (topContent as { reactions?: number }[]).reduce((acc: number, a) => acc + (a.reactions || 0), 0);
-    const engagementReach = (topContent as { uniqueViews?: number }[]).reduce((acc: number, a) => acc + (a.uniqueViews || 0), 0);
+    const totalReactions = topContent.reduce((acc, a) => acc + (a.reactions || 0), 0);
+    const engagementReach = topContent.reduce((acc, a) => acc + (a.uniqueViews || 0), 0);
     const engagementRate = engagementReach > 0 ? ((totalReactions / engagementReach) * 100).toFixed(1) : "0";
 
     return (
@@ -299,7 +334,7 @@ export default function AnalyticsPage() {
                         </h3>
                         <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                             {realTimeActivity.slice(0, 20).map((visit: RealTimeVisit) => (
-                                <div key={visit._id} className="group relative">
+                                <div key={visit.id} className="group relative">
                                     <div className="flex gap-4">
                                         <div className="flex flex-col items-center gap-1 mt-1">
                                             <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)] group-hover:scale-125 transition-transform" />
@@ -315,7 +350,7 @@ export default function AnalyticsPage() {
                                                         <span className="inline-block text-[7px] bg-blue-500/20 text-blue-400 px-1 py-0 rounded border border-blue-500/30 uppercase tracking-tighter mt-1">Live Port</span>
                                                     )}
                                                 </div>
-                                                <span className="text-[8px] font-black text-zinc-600 uppercase tracking-tighter shrink-0 mt-0.5">{getTimeAgo(visit._creationTime)}</span>
+                                                <span className="text-[8px] font-black text-zinc-600 uppercase tracking-tighter shrink-0 mt-0.5">{getTimeAgo(new Date(visit.timestamp))}</span>
                                             </div>
                                             <p className="text-[10px] text-zinc-400 mt-1 line-clamp-1 italic font-serif opacity-70 group-hover:opacity-100 transition-opacity">
                                                 Viewing {visit.url.replace(process.env.NEXT_PUBLIC_SITE_URL || '', '') || '/home'}
@@ -385,10 +420,10 @@ export default function AnalyticsPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {realTimeActivity.slice(0, 4).map((visit: RealTimeVisit) => (
-                        <div key={visit._id} className="p-4 rounded-2xl bg-gray-50/50 dark:bg-gray-800/20 border border-gray-100 dark:border-white/5">
+                        <div key={visit.id} className="p-4 rounded-2xl bg-gray-50/50 dark:bg-gray-800/20 border border-gray-100 dark:border-white/5">
                             <div className="flex justify-between items-start mb-3">
                                 <span className="text-[8px] font-black text-blue-600 dark:text-blue-500 uppercase tracking-widest">{visit.geoLocation?.country || "Earth"}</span>
-                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">{getTimeAgo(visit._creationTime)}</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">{getTimeAgo(new Date(visit.timestamp))}</span>
                             </div>
                             <p className="text-[11px] font-serif font-black text-gray-900 dark:text-white line-clamp-1 mb-2">{visit.url.replace(process.env.NEXT_PUBLIC_SITE_URL || '', '') || '/'}</p>
                             <div className="flex gap-2">
@@ -495,13 +530,51 @@ export default function AnalyticsPage() {
 }
 
 function RawSignalStream({ search, type, days }: { search: string; type: "all" | "visit" | "article" | "reaction"; days: number }) {
-    const { results: rawVisits, status: paginationStatus, loadMore, isLoading } = usePaginatedQuery(
-        api.analytics.getRawVisits,
-        { search, type, days },
-        { initialNumItems: 20 }
-    );
+    const [rows, setRows] = useState<AnalyticsRawVisitRow[] | null>(null);
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-    if (isLoading) {
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const params = new URLSearchParams({ type, days: String(days), limit: "20" });
+                if (search) params.set("search", search);
+                const page = await bffFetch<AnalyticsRawVisitsPage>(`/api/admin/analytics/raw-visits?${params.toString()}`);
+                if (!cancelled) {
+                    setRows(page.data);
+                    setNextCursor(page.page.nextCursor);
+                    setHasMore(page.page.hasMore);
+                }
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) setRows([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [search, type, days]);
+
+    const loadMore = async () => {
+        if (!nextCursor) return;
+        setIsLoadingMore(true);
+        try {
+            const params = new URLSearchParams({ type, days: String(days), limit: "20", cursor: nextCursor });
+            if (search) params.set("search", search);
+            const page = await bffFetch<AnalyticsRawVisitsPage>(`/api/admin/analytics/raw-visits?${params.toString()}`);
+            setRows(prev => [...(prev ?? []), ...page.data]);
+            setNextCursor(page.page.nextCursor);
+            setHasMore(page.page.hasMore);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
+    if (!rows) {
         return (
             <div className="flex items-center justify-center py-20">
                 <Loader2 className="animate-spin text-blue-500" size={32} />
@@ -509,7 +582,7 @@ function RawSignalStream({ search, type, days }: { search: string; type: "all" |
         );
     }
 
-    if (rawVisits.length === 0 && !isLoading) {
+    if (rows.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-center">
                 <Shield className="text-gray-200 dark:text-gray-800 mb-4" size={48} />
@@ -532,8 +605,8 @@ function RawSignalStream({ search, type, days }: { search: string; type: "all" |
                     </tr>
                 </thead>
                 <tbody>
-                    {rawVisits.map((visit) => (
-                        <tr key={visit._id} className="group bg-gray-50/30 dark:bg-gray-800/10 hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-all duration-300 rounded-[2rem]">
+                    {rows.map((visit) => (
+                        <tr key={visit.id} className="group bg-gray-50/30 dark:bg-gray-800/10 hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-all duration-300 rounded-[2rem]">
                             <td className="px-6 py-6 font-mono text-[10px] font-black text-gray-400 first:rounded-l-[2rem]">
                                 {new Date(visit.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                 <span className="block text-[8px] font-white mt-1 opacity-50 tracking-tighter">
@@ -579,10 +652,10 @@ function RawSignalStream({ search, type, days }: { search: string; type: "all" |
             </table>
 
             {/* Pagination Trigger */}
-            {paginationStatus === "CanLoadMore" && (
+            {hasMore && (
                 <div className="mt-12 flex justify-center pb-12">
                     <button 
-                        onClick={() => loadMore(20)}
+                        onClick={loadMore}
                         className="flex items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105 active:scale-95 shadow-sm"
                     >
                         Retrieve Deeper Signals
@@ -591,7 +664,7 @@ function RawSignalStream({ search, type, days }: { search: string; type: "all" |
                 </div>
             )}
             
-            {(paginationStatus as string) === "LoadingMore" && (
+            {isLoadingMore && (
                 <div className="mt-12 flex justify-center pb-12">
                     <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-blue-500 animate-pulse">
                         <Loader2 className="animate-spin" size={16} />
@@ -604,7 +677,7 @@ function RawSignalStream({ search, type, days }: { search: string; type: "all" |
                 <div className="flex items-center gap-8">
                     <div>
                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Spectrum Depth</p>
-                        <p className="text-sm font-black text-gray-900 dark:text-white mt-1">{rawVisits.length} Nodes</p>
+                        <p className="text-sm font-black text-gray-900 dark:text-white mt-1">{rows.length} Nodes</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">

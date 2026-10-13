@@ -1,5 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
+import { nest } from "@/lib/api";
 import { Navbar } from "@/components/navbar";
 import Link from "next/link";
 import { Search, Layers, ChevronRight } from "lucide-react";
@@ -12,12 +11,12 @@ export const metadata: Metadata = {
 };
 
 export default async function PillarsPage() {
-    const pillars = await fetchQuery(api.pillars.listAll) || [];
-    const categories = await fetchQuery(api.categories.listAll) || [];
+    const pillars = (await nest.pillars()) || [];
+    const categories = (await nest.categories()) || [];
 
     // Map category names to pillars for display
     const pillarsWithCategory = pillars.map(pillar => {
-        const category = categories.find(c => c._id === pillar.categoryId);
+        const category = categories.find(c => c.id === pillar.categoryId);
         return {
             ...pillar,
             categoryName: category?.name || "Uncategorized"
@@ -47,7 +46,7 @@ export default async function PillarsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {pillarsWithCategory.map((pillar) => (
                             <Link 
-                                key={pillar._id}
+                                key={pillar.id}
                                 href={`/pillars/${pillar.slug}`}
                                 className="group relative p-10 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[48px] hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-600/10 transition-all duration-700 flex flex-col justify-between h-[320px] overflow-hidden"
                             >

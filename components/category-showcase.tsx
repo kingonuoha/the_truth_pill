@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { CategorySkeleton } from "./skeletons";
 import { DynamicCategoryImage } from "./dynamic-category-image";
-import { useCategories, CategorySummary } from "./categories-provider";
+import { useCategories } from "./categories-provider";
 
 export function CategoryShowcase() {
-    const categories = useCategories() as CategorySummary[] | undefined;
+    const categories = useCategories();
 
     if (categories === undefined) {
         return <CategorySkeleton />;
@@ -18,7 +18,7 @@ export function CategoryShowcase() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((cat: CategorySummary) => (
+            {categories.map((cat) => (
                 <Link
                     key={cat.slug}
                     href={`/category/${cat.slug}`}
@@ -26,8 +26,7 @@ export function CategoryShowcase() {
                 >
                     <DynamicCategoryImage
                         categoryName={cat.name}
-                        categoryId={cat._id}
-                        coverImage={cat.coverImage}
+                        coverImage={cat.coverImage ?? undefined}
                         pexelsImages={cat.pexelsImages}
                         alt={cat.name}
                         className="transition-transform duration-700 group-hover:scale-105"

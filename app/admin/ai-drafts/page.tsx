@@ -1,14 +1,31 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect, useState } from "react";
 import { Sparkles, Edit2, Calendar } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
+import { bffFetch } from "@/lib/bff-client";
+import type { ArticleDetail } from "@/lib/content-types";
 
 export default function AIDraftsPage() {
-    const drafts = useQuery(api.ai.listAIDrafts, {});
+    const [drafts, setDrafts] = useState<ArticleDetail[] | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await bffFetch<ArticleDetail[]>("/api/admin/ai-drafts");
+                if (!cancelled) setDrafts(data);
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) setDrafts([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     if (!drafts) {
         return (
@@ -38,7 +55,7 @@ export default function AIDraftsPage() {
             {drafts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {drafts.map((draft) => (
-                        <div key={draft._id} className="bg-white dark:bg-cardrounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden group hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-xl hover:shadow-purple-50 dark:hover:shadow-purple-900/10 transition-all duration-500 flex flex-col">
+                        <div key={draft.id} className="bg-white dark:bg-cardrounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden group hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-xl hover:shadow-purple-50 dark:hover:shadow-purple-900/10 transition-all duration-500 flex flex-col">
                             <div className="aspect-[16/10] relative overflow-hidden">
                                 <Image
                                     src={draft.coverImage || "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80"}
@@ -67,10 +84,10 @@ export default function AIDraftsPage() {
                                 <div className="flex items-center justify-between pt-5 border-t border-gray-50 dark:border-zinc-800 mt-2">
                                     <div className="flex items-center gap-2 text-gray-400 dark:text-zinc-500 text-[10px] font-black uppercase tracking-[0.1em]">
                                         <Calendar size={14} className="text-gray-300 dark:text-zinc-600" />
-                                        {format(draft.createdAt, "MMM d, yyyy")}
+                                        {format(new Date(draft.createdAt), "MMM d, yyyy")}
                                     </div>
                                     <Link
-                                        href={`/admin/articles/${draft._id}/edit`}
+                                        href={`/admin/articles/${draft.id}/edit`}
                                         className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 active:scale-90 shadow-sm shadow-purple-100 dark:shadow-none"
                                         title="Refine & Review"
                                     >

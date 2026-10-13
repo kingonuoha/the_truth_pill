@@ -1,8 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect, useState } from "react";
 import {
     Activity,
     ArrowUpRight,
@@ -32,12 +31,37 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { bffFetch } from "@/lib/bff-client";
+import type { ActivityItemDto, DashboardStats, TrafficStats } from "@/lib/content-types";
 
 export default function AdminDashboard() {
     const { data: session } = useSession();
-    const stats = useQuery(api.admin.getDashboardStats);
-    const activity = useQuery(api.admin.getRecentActivity, { limit: 8 });
-    const trafficStats = useQuery(api.analytics.getTrafficStats, { days: 7 });
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [activity, setActivity] = useState<ActivityItemDto[] | null>(null);
+    const [trafficStats, setTrafficStats] = useState<TrafficStats | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const [s, a, t] = await Promise.all([
+                    bffFetch<DashboardStats>("/api/admin/dashboard-stats"),
+                    bffFetch<ActivityItemDto[]>("/api/admin/recent-activity?limit=8"),
+                    bffFetch<TrafficStats>("/api/admin/analytics/traffic?days=7"),
+                ]);
+                if (!cancelled) {
+                    setStats(s);
+                    setActivity(a);
+                    setTrafficStats(t);
+                }
+            } catch (error) {
+                console.error("Failed to load dashboard:", error);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const isLoading = !stats || !activity || !trafficStats;
 
@@ -286,7 +310,7 @@ export default function AdminDashboard() {
 
                         <div className="space-y-1 flex-1 overflow-y-auto custom-scrollbar">
                             <AnimatePresence mode="popLayout">
-                                {activity.map((item: { id: string; type: string; content: string; timestamp: number }, idx: number) => (
+                                {activity.map((item: ActivityItemDto, idx: number) => (
                                     <ActivityItem key={item.id} item={item} index={idx} />
                                 ))}
                             </AnimatePresence>
@@ -361,7 +385,7 @@ function StatCard({
     );
 }
 
-function ActivityItem({ item, index }: { item: { type: string; content: string; timestamp: number }, index: number }) {
+function ActivityItem({ item, index }: { item: ActivityItemDto; index: number }) {
     const icons = {
         comment: <MessageCircle size={14} />,
         signup: <UserPlus size={14} />,
@@ -381,8 +405,8 @@ function ActivityItem({ item, index }: { item: { type: string; content: string; 
             transition={{ delay: index * 0.05 }}
             className="flex gap-5 p-5 rounded-[2rem] border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800/50 hover:bg-white/60 dark:hover:bg-zinc-900/40 backdrop-blur-xl transition-all group relative overflow-hidden"
         >
-            <div className={cn("w-12 h-12 border rounded-2xl flex items-center justify-center flex-shrink-0 transition-all shadow-sm group-hover:scale-110 group-hover:rotate-3", variants[item.type as keyof typeof variants] || "bg-zinc-100 text-zinc-400 border-zinc-200")}>
-                {icons[item.type as keyof typeof icons] || <Activity size={18} />}
+            <div className={cn("w-12 h-12 border rounded-2xl flex items-center justify-center flex-shrink-0 transition-all shadow-sm group-hover:scale-110 group-hover:rotate-3", variants[item.type] || "bg-zinc-100 text-zinc-400 border-zinc-200")}>
+                {icons[item.type] || <Activity size={18} />}
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
                 <p className="text-sm font-bold text-zinc-900 dark:text-zinc-200 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 font-serif tracking-tight">
@@ -391,7 +415,7 @@ function ActivityItem({ item, index }: { item: { type: string; content: string; 
                 <div className="flex items-center gap-2 mt-2">
                     <Clock size={10} className="text-zinc-400" />
                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest italic">
-                        {formatDistanceToNow(item.timestamp)} ago
+                        {formatDistanceToNow(new Date(item.timestamp))} ago
                     </span>
                 </div>
             </div>

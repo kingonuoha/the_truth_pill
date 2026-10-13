@@ -8,36 +8,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useConvex } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { Id } from "../convex/_generated/dataModel";
+import { bffFetch } from "@/lib/bff-client";
+import type { CategoryListItem, PillarListItem } from "@/lib/content-types";
 
-export type CategorySummary = {
-  _id: Id<"categories">;
-  _creationTime: number;
-  name: string;
-  slug: string;
-  description?: string;
-  coverImage?: string;
-  pexelsImages?: string[];
-  articleCount: number;
-  pillarCount: number;
-  createdAt?: number;
-};
-
-export type PillarSummary = {
-  _id: Id<"pillars">;
-  _creationTime: number;
-  name: string;
-  slug: string;
-  description?: string;
-  coverImage?: string;
-  pexelsImages?: string[];
-  categoryId: Id<"categories">;
-  createdAt?: number;
-  categoryName: string;
-  categorySlug: string;
-};
+export type CategorySummary = CategoryListItem;
+export type PillarSummary = PillarListItem;
 
 interface PublicDataContextValue {
   categories: CategorySummary[] | undefined;
@@ -50,13 +25,15 @@ const PublicDataContext = createContext<PublicDataContextValue>({
 });
 
 /**
- * Fetches `api.categories.listAll` + `api.pillars.listAll` ONCE per app load
- * via a one-shot, non-reactive `useConvex().query()` call and caches them.
- * Public components (navbar, category-showcase, filtered-blog-grid) consume the
- * cache instead of opening a live subscription on every mount.
+ * Fetches the public category + pillar lists ONCE per app load via the BFF
+ * (`GET /api/categories`, `GET /api/pillars`) and caches them. Public components
+ * (navbar, category-showcase, filtered-blog-grid) consume the cache instead of
+ * opening a live subscription on every mount.
+ *
+ * The shapes are the generated `CategoryListItemDto` / `PillarListItemDto`, so
+ * the record id is the Nest UUID (`id`), never a legacy Convex `_id`.
  */
 export function CategoriesProvider({ children }: { children: ReactNode }) {
-  const convex = useConvex();
   const [categories, setCategories] = useState<CategorySummary[] | undefined>(
     undefined,
   );
@@ -72,12 +49,12 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const [cats, pils] = await Promise.all([
-          convex.query(api.categories.listAll),
-          convex.query(api.pillars.listAll),
+          bffFetch<CategorySummary[]>("/api/categories"),
+          bffFetch<PillarSummary[]>("/api/pillars"),
         ]);
         if (!cancelled) {
-          setCategories(cats as CategorySummary[]);
-          setPillars(pils as PillarSummary[]);
+          setCategories(cats);
+          setPillars(pils);
         }
       } catch (error) {
         console.error("Failed to load public data:", error);
@@ -90,7 +67,7 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [convex]);
+  }, []);
 
   return (
     <PublicDataContext.Provider value={{ categories, pillars }}>

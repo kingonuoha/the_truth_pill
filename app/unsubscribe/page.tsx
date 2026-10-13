@@ -2,8 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { bffFetch } from "@/lib/bff-client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle, MailWarning } from "lucide-react";
@@ -12,18 +11,20 @@ import { motion } from "framer-motion";
 
 function UnsubscribeContent() {
     const searchParams = useSearchParams();
-    const email = searchParams.get("email");
-    const unsubscribe = useMutation(api.users.unsubscribe);
-    const [status, setStatus] = useState<"loading" | "success" | "error" | "no-email">("loading");
+    const token = searchParams.get("token");
+    const [status, setStatus] = useState<"loading" | "success" | "error" | "no-token">("loading");
 
     useEffect(() => {
         const performUnsubscribe = async () => {
-            if (!email) {
-                setStatus("no-email");
+            if (!token) {
+                setStatus("no-token");
                 return;
             }
             try {
-                const result = await unsubscribe({ email });
+                const result = await bffFetch<{ success: true }>("/api/newsletter/unsubscribe", {
+                    method: "POST",
+                    body: { token },
+                });
                 if (result.success) {
                     setStatus("success");
                 } else {
@@ -36,7 +37,7 @@ function UnsubscribeContent() {
         };
 
         performUnsubscribe();
-    }, [email, unsubscribe]);
+    }, [token]);
 
     return (
         <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4 relative overflow-hidden">
@@ -97,14 +98,14 @@ function UnsubscribeContent() {
                             </div>
                         )}
 
-                        {status === "no-email" && (
+                        {status === "no-token" && (
                             <div className="flex flex-col items-center">
                                 <div className="h-16 w-16 bg-amber-500/20 rounded-full flex items-center justify-center mb-4">
                                     <MailWarning className="h-10 w-10 text-amber-500" />
                                 </div>
                                 <h2 className="text-xl font-semibold text-white mb-2">Missing Information</h2>
                                 <p className="text-slate-400 mb-6">
-                                    We need a valid email address to unsubscribe you.
+                                    We need a valid unsubscribe link to remove you. Please use the link from your email.
                                 </p>
                                 <Button asChild variant="outline" className="w-full border-slate-700 text-slate-300 hover:bg-slate-800">
                                     <Link href="/">Go to Home</Link>

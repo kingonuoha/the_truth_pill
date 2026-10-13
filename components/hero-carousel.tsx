@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { JoinedArticle } from "./blog-grid";
+import type { FeaturedListItem } from "@/lib/content-types";
 import { getCloudinaryUrl } from "@/lib/utils";
 
-export function HeroCarousel({ initialArticles }: { initialArticles?: JoinedArticle[] }) {
+export function HeroCarousel({ initialArticles }: { initialArticles?: FeaturedListItem[] }) {
     const featuredArticles = initialArticles;
     const [current, setCurrent] = useState(0);
     const [direction, setDirection] = useState(0);

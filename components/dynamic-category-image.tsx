@@ -3,22 +3,23 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 
 interface DynamicCategoryProps {
     categoryName: string;
-    categoryId?: Id<"categories">;
     coverImage?: string;
     pexelsImages?: string[];
     alt: string;
     className?: string;
 }
 
+/**
+ * Public category artwork. The frozen component wrote a fetched Pexels image
+ * back to the category record via `categories.update` — an **admin** mutation
+ * invoked from an anonymous-rendered page (DEV-062). That write is removed; the
+ * component still renders a fetched image, it just no longer persists it.
+ */
 export function DynamicCategoryImage({ 
     categoryName, 
-    categoryId, 
     coverImage,
     pexelsImages, 
     alt, 
@@ -26,7 +27,6 @@ export function DynamicCategoryImage({
 }: DynamicCategoryProps) {
     const [imageUrl, setImageUrl] = useState<string>("");
     const [isLoading, setIsLoading] = useState(true);
-    const updateCategory = useMutation(api.categories.update);
 
     // Pick a random image from the list if available, but keep it stable for this mount
     // Priority: 1. coverImage (Selected by Admin) 2. item from pexelsImages 3. New fetch
@@ -50,21 +50,9 @@ export function DynamicCategoryImage({
             try {
                 const { fetchCategoryImages } = await import("@/app/actions/pexels");
                 const urls = await fetchCategoryImages(categoryName);
-                
+
                 if (urls && urls.length > 0) {
                     setImageUrl(urls[0]);
-                    
-                    // Save to DB if we have categoryId
-                    if (categoryId) {
-                        try {
-                            await updateCategory({
-                                id: categoryId,
-                                pexelsImages: urls
-                            });
-                        } catch (err) {
-                            console.error("Failed to save pexels images to DB", err);
-                        }
-                    }
                 }
             } catch (err) {
                 console.error("Failed to load pexels image", err);
@@ -73,7 +61,7 @@ export function DynamicCategoryImage({
             }
         }
         loadImage();
-    }, [categoryName, categoryId, stableRandomImage, updateCategory]);
+    }, [categoryName, stableRandomImage]);
 
     return (
         <div className={cn("relative w-full h-full overflow-hidden bg-gray-900 group/category flex items-center justify-center text-center px-4", className)}>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { bffFetch } from "@/lib/bff-client";
+import type { AdsSettings } from "@/lib/content-types";
 
 type AdPosition =
     | 'showAdTopOfArticle'
@@ -16,7 +17,22 @@ interface AdSlotProps {
 }
 
 export function AdSlot({ position, className }: AdSlotProps) {
-    const adsSettings = useQuery(api.ads.getAdsSettings);
+    const [adsSettings, setAdsSettings] = useState<AdsSettings | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await bffFetch<AdsSettings>("/api/ads-settings");
+                if (!cancelled) setAdsSettings(data);
+            } catch {
+                // Leave null — no slot is rendered, same as an absent/failed read.
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     if (!adsSettings?.adsEnabled || !adsSettings[position] || !adsSettings.adsenseAdUnitCode) {
         return null;

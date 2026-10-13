@@ -1,36 +1,99 @@
 "use client";
 
-import { useQuery, useMutation, useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Bot, Save, Loader2, Key, Cpu, Sparkles, Clock, Calendar, Plus, Trash2, RefreshCw, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Doc, Id } from "@/convex/_generated/dataModel";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { bffFetch } from "@/lib/bff-client";
+import type {
+    AiResearchTopic,
+    AiSchedule,
+    AiSettings,
+    CategoryListItem,
+    ConnectionResult,
+    ShuffleSuggestion,
+} from "@/lib/content-types";
+
+type UpdateScheduleInput = {
+    id?: string;
+    daysOfWeek: number[];
+    time: string;
+    timezone: string;
+    isActive: boolean;
+    topicsToResearch: string[];
+};
 
 export default function AISettingsPage() {
-    const settings = useQuery(api.ai.getSettings);
-    const schedule = useQuery(api.ai.getSchedule);
-    const researchTopics = useQuery(api.ai.getResearchTopics);
-    const categories = useQuery(api.categories.listAll);
+    const [settings, setSettings] = useState<AiSettings | null | undefined>(undefined);
+    const [schedule, setSchedule] = useState<AiSchedule[] | null>(null);
+    const [researchTopics, setResearchTopics] = useState<AiResearchTopic[] | null>(null);
+    const [categories, setCategories] = useState<CategoryListItem[] | null>(null);
 
-    const updateSettings = useMutation(api.ai.updateSettings);
-    const updateSchedule = useMutation(api.ai.updateScheduleV2);
-    const deleteSchedule = useMutation(api.ai.deleteSchedule);
-    const addResearchTopic = useMutation(api.ai.addResearchTopic);
-    const deleteResearchTopic = useMutation(api.ai.deleteResearchTopic);
-    const clearAllTopics = useMutation(api.ai.clearAllPendingTopics);
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const [settingsData, scheduleData, topicsData, categoriesData] = await Promise.all([
+                    bffFetch<AiSettings>("/api/admin/ai/settings"),
+                    bffFetch<AiSchedule[]>("/api/admin/ai/schedule"),
+                    bffFetch<AiResearchTopic[]>("/api/admin/ai/research-topics"),
+                    bffFetch<CategoryListItem[]>("/api/categories"),
+                ]);
+                if (cancelled) return;
+                setSettings(settingsData);
+                setSchedule(scheduleData);
+                setResearchTopics(topicsData);
+                setCategories(categoriesData);
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) setSettings(null);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
-    const processScheduleAction = useAction(api.ai.processScheduleCheck);
-    const fetchModelsAction = useAction(api.ai_actions.fetchModels);
-    const testConnectionAction = useAction(api.ai_actions.testConnection);
-    const learnStyleAction = useAction(api.ai_actions.learnAuthorStyle);
-    const shuffleTopicsAction = useAction(api.ai_actions.shuffleTopics);
-    const runResearchAction = useAction(api.ai.runSingleResearch);
+    const reloadSettings = async () => {
+        const data = await bffFetch<AiSettings>("/api/admin/ai/settings");
+        setSettings(data);
+    };
+    const reloadSchedule = async () => {
+        setSchedule(await bffFetch<AiSchedule[]>("/api/admin/ai/schedule"));
+    };
+    const reloadTopics = async () => {
+        setResearchTopics(await bffFetch<AiResearchTopic[]>("/api/admin/ai/research-topics"));
+    };
+
+    const updateSettings = (data: { provider: string; apiKey?: string; model: string; promptTemplate?: string; isActive: boolean }) =>
+        bffFetch("/api/admin/ai/settings", {
+            method: "PATCH",
+            body: { ...data, apiKey: data.apiKey || undefined },
+        });
+    const updateSchedule = (data: UpdateScheduleInput) =>
+        bffFetch("/api/admin/ai/schedule", { method: "PATCH", body: data });
+    const deleteSchedule = ({ id }: { id: string }) =>
+        bffFetch(`/api/admin/ai/schedule?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const addResearchTopic = ({ topic, categoryId }: { topic: string; categoryId?: string }) =>
+        bffFetch("/api/admin/ai/research-topics", { method: "POST", body: { topic, categoryId } });
+    const deleteResearchTopic = ({ id }: { id: string }) =>
+        bffFetch(`/api/admin/ai/research-topics?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const clearAllTopics = () =>
+        bffFetch("/api/admin/ai/research-topics/clear", { method: "PATCH" });
+
+    const fetchModelsAction = ({ provider, apiKey }: { provider: string; apiKey?: string }) =>
+        bffFetch<string[]>("/api/admin/ai/models", { method: "POST", body: { provider, apiKey } });
+    const testConnectionAction = ({ provider, apiKey, model }: { provider: string; apiKey?: string; model: string }) =>
+        bffFetch<ConnectionResult>("/api/admin/ai/test-connection", { method: "POST", body: { provider, apiKey, model } });
+    const learnStyleAction = ({ provider, model }: { provider: string; model: string }) =>
+        bffFetch<string>("/api/admin/ai/learn-author-style", { method: "POST", body: { provider, model } });
+    const shuffleTopicsAction = ({ provider, model }: { provider: string; model: string }) =>
+        bffFetch<ShuffleSuggestion[]>("/api/admin/ai/shuffle-topics", { method: "POST", body: { provider, model } });
+    const runResearchAction = ({ topic }: { topic: string }) =>
+        bffFetch("/api/admin/ai/run-single-research", { method: "POST", body: { topic } });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isRunningJobs, setIsRunningJobs] = useState(false);
     const [isFetchingModels, setIsFetchingModels] = useState(false);
     const [isTestingConnection, setIsTestingConnection] = useState(false);
     const [isLearningStyle, setIsLearningStyle] = useState(false);
@@ -46,8 +109,13 @@ export default function AISettingsPage() {
         isActive: false
     });
 
+    // The provider key is never returned by the API (DEV-048); a stored key is
+    // represented by `hasApiKey`. Spending actions are enabled by either a stored
+    // key or a transient one the admin just typed.
+    const canSpend = Boolean(settings?.hasApiKey || formData.apiKey);
+
     const [isAddingSchedule, setIsAddingSchedule] = useState(false);
-    const [editingScheduleId, setEditingScheduleId] = useState<Id<"aiSchedule"> | null>(null);
+    const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
     const [scheduleFormData, setScheduleFormData] = useState({
         daysOfWeek: [1] as number[],
         time: "09:00",
@@ -73,13 +141,13 @@ export default function AISettingsPage() {
 
     useEffect(() => {
         if (settings) {
-            setFormData({
+            setFormData(prev => ({
+                ...prev,
                 provider: settings.provider,
-                apiKey: settings.apiKey || "",
                 model: settings.model,
                 promptTemplate: settings.promptTemplate || "",
                 isActive: settings.isActive
-            });
+            }));
         }
     }, [settings]);
 
@@ -88,6 +156,7 @@ export default function AISettingsPage() {
         setIsSubmitting(true);
         try {
             await updateSettings(formData);
+            await reloadSettings();
             toast.success("AI Configuration saved");
         } catch {
             toast.error("Failed to save settings");
@@ -97,15 +166,14 @@ export default function AISettingsPage() {
     };
 
     const handleLearnStyle = async () => {
-        if (!formData.apiKey) {
-            toast.error("API Key required to analyze style");
+        if (!canSpend) {
+            toast.error("AI provider key required to analyze style");
             return;
         }
         setIsLearningStyle(true);
         try {
             const style = await learnStyleAction({
                 provider: formData.provider,
-                apiKey: formData.apiKey,
                 model: formData.model
             });
             setFormData(prev => ({ ...prev, promptTemplate: style }));
@@ -118,8 +186,8 @@ export default function AISettingsPage() {
     };
 
     const handleShuffleTopics = async (clearFirst = false) => {
-        if (!formData.apiKey) {
-            toast.error("API Key required to shuffle topics");
+        if (!canSpend) {
+            toast.error("AI provider key required to shuffle topics");
             return;
         }
         setIsShuffling(true);
@@ -129,16 +197,16 @@ export default function AISettingsPage() {
             }
             const suggestions = await shuffleTopicsAction({
                 provider: formData.provider,
-                apiKey: formData.apiKey,
                 model: formData.model
             });
             for (const s of suggestions) {
-                const cat = categories?.find((c: Doc<"categories">) => c.name === s.categoryName);
+                const cat = categories?.find((c: CategoryListItem) => c.name === s.categoryName);
                 await addResearchTopic({
                     topic: s.topic,
-                    categoryId: cat?._id
+                    categoryId: cat?.id
                 });
             }
+            await reloadTopics();
             toast.success(clearFirst ? "Strategy refreshed with new topics!" : "Added new research topics!");
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Failed to shuffle topics");
@@ -155,13 +223,14 @@ export default function AISettingsPage() {
         });
     };
 
-    const handleDeleteSchedule = (id: Id<"aiSchedule">) => {
+    const handleDeleteSchedule = (id: string) => {
         toast("Delete this schedule?", {
             action: {
                 label: "Confirm",
                 onClick: async () => {
                     try {
                         await deleteSchedule({ id });
+                        await reloadSchedule();
                         toast.success("Schedule deleted");
                     } catch {
                         toast.error("Failed to delete schedule");
@@ -177,6 +246,7 @@ export default function AISettingsPage() {
                 ...scheduleFormData,
                 id: editingScheduleId || undefined
             });
+            await reloadSchedule();
             toast.success(editingScheduleId ? "Schedule updated" : "Schedule created");
             setIsAddingSchedule(false);
             setEditingScheduleId(null);
@@ -221,24 +291,10 @@ export default function AISettingsPage() {
                             </span>
                         </div>
                     )}
-                    <button
-                        onClick={async () => {
-                            setIsRunningJobs(true);
-                            try {
-                                await processScheduleAction();
-                                toast.success("Schedule check completed");
-                            } catch {
-                                toast.error("Failed to run schedule check");
-                            } finally {
-                                setIsRunningJobs(false);
-                            }
-                        }}
-                        disabled={isRunningJobs || !!settings?.isWriting}
-                        className="px-4 py-2 bg-zinc-100 dark:bg-background-800 text-zinc-600 dark:text-zinc-400 rounded-xl border border-zinc-200 dark:border-zinc-700 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all flex items-center gap-2 disabled:opacity-50"
-                    >
-                        {isRunningJobs ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                        Run Full Check
-                    </button>
+                    {/* "Run Full Check" removed (DEV-063): its Convex action was an
+                        unauthenticated billed trigger; the Nest port is the internal
+                        POST /internal/ai/process-schedule-check, which the BFF must
+                        not expose to the browser. */}
                     <button
                         form="ai-config-form"
                         disabled={isSubmitting}
@@ -307,15 +363,15 @@ export default function AISettingsPage() {
                                         <button
                                             type="button"
                                             onClick={async () => {
-                                                if (!formData.apiKey) {
-                                                    toast.error("Please enter an API key first");
+                                                if (!canSpend) {
+                                                    toast.error("Please enter or save an API key first");
                                                     return;
                                                 }
                                                 setIsFetchingModels(true);
                                                 try {
                                                     const models = await fetchModelsAction({
                                                         provider: formData.provider,
-                                                        apiKey: formData.apiKey
+                                                        apiKey: formData.apiKey || undefined
                                                     });
                                                     setAvailableModels(models);
                                                     toast.success(`Fetched ${models.length} models`);
@@ -325,7 +381,7 @@ export default function AISettingsPage() {
                                                     setIsFetchingModels(false);
                                                 }
                                             }}
-                                            disabled={isFetchingModels || !formData.apiKey}
+                                            disabled={isFetchingModels || !canSpend}
                                             className="text-[9px] font-black uppercase text-primary hover:underline flex items-center gap-1 disabled:opacity-50"
                                         >
                                             {isFetchingModels ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
@@ -357,15 +413,15 @@ export default function AISettingsPage() {
                                 <button
                                     type="button"
                                     onClick={async () => {
-                                        if (!formData.apiKey || !formData.model) {
-                                            toast.error("API Key and Model are required to test");
+                                        if (!canSpend || !formData.model) {
+                                            toast.error("An API key and a model are required to test");
                                             return;
                                         }
                                         setIsTestingConnection(true);
                                         try {
                                             const result = await testConnectionAction({
                                                 provider: formData.provider,
-                                                apiKey: formData.apiKey,
+                                                apiKey: formData.apiKey || undefined,
                                                 model: formData.model
                                             });
                                             if (result.success) {
@@ -379,7 +435,7 @@ export default function AISettingsPage() {
                                             setIsTestingConnection(false);
                                         }
                                     }}
-                                    disabled={isTestingConnection || !formData.apiKey || !formData.model}
+                                    disabled={isTestingConnection || !canSpend || !formData.model}
                                     className="w-full py-3 px-4 bg-zinc-50 dark:bg-background-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     {isTestingConnection ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
@@ -416,7 +472,7 @@ export default function AISettingsPage() {
                                 <button
                                     type="button"
                                     onClick={handleLearnStyle}
-                                    disabled={isLearningStyle || !formData.apiKey}
+                                    disabled={isLearningStyle || !canSpend}
                                     className="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-purple-100 transition-all flex items-center gap-2 disabled:opacity-50"
                                 >
                                     {isLearningStyle ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
@@ -443,7 +499,7 @@ export default function AISettingsPage() {
                             </div>
                             <button
                                 onClick={() => handleShuffleTopics(true)}
-                                disabled={isShuffling || !formData.apiKey}
+                                disabled={isShuffling || !canSpend}
                                 className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 disabled:opacity-50"
                                 title="Full Refresh: Clear and generate new strategic topics"
                             >
@@ -464,13 +520,14 @@ export default function AISettingsPage() {
                                         />
                                     </div>
                                     <button
-                                        onClick={() => {
+                                        onClick={async () => {
                                             if (newResearchTopic.trim()) {
-                                                addResearchTopic({
+                                                await addResearchTopic({
                                                     topic: newResearchTopic.trim(),
-                                                    categoryId: (selectedCategoryId as Id<"categories">) || undefined
+                                                    categoryId: selectedCategoryId || undefined
                                                 });
                                                 setNewResearchTopic("");
+                                                await reloadTopics();
                                             }
                                         }}
                                         className="w-12 h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl"
@@ -486,17 +543,17 @@ export default function AISettingsPage() {
                                         className="bg-gray-50/50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none dark:text-gray-400 appearance-none cursor-pointer hover:bg-white dark:hover:bg-gray-900 transition-colors"
                                     >
                                         <option value="">UNCATEGORIZED</option>
-                                        {categories?.map((c: Doc<"categories">) => (
-                                            <option key={c._id} value={c._id}>{c.name}</option>
+                                        {categories?.map((c: CategoryListItem) => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
                                     </select>
                                 </div>
                             </div>
                             <div className="divide-y divide-gray-50 dark:divide-gray-900 max-h-[450px] overflow-y-auto custom-scrollbar">
-                                {researchTopics?.map((topic: Doc<"researchTopics">) => (
+                                {researchTopics?.map((topic: AiResearchTopic) => (
                                     <motion.div
                                         layout
-                                        key={topic._id}
+                                        key={topic.id}
                                         className="p-6 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-all group"
                                     >
                                         <div className="flex-1 pr-6 space-y-2">
@@ -512,7 +569,7 @@ export default function AISettingsPage() {
                                                 </div>
                                                 {topic.categoryId && categories && (
                                                     <span className="text-[9px] font-black text-blue-600 dark:text-blue-400/60 uppercase tracking-[0.1em]">
-                                                        {categories.find((c: Doc<"categories">) => c._id === topic.categoryId)?.name}
+                                                        {categories.find((c: CategoryListItem) => c.id === topic.categoryId)?.name}
                                                     </span>
                                                 )}
                                             </div>
@@ -526,7 +583,7 @@ export default function AISettingsPage() {
                                                 <Sparkles size={16} />
                                             </button>
                                             <button
-                                                onClick={() => deleteResearchTopic({ id: topic._id })}
+                                                onClick={() => deleteResearchTopic({ id: topic.id })}
                                                 className="w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-800 text-zinc-400 hover:text-red-500 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:scale-110"
                                                 title="Remove Signal"
                                             >
@@ -649,10 +706,10 @@ export default function AISettingsPage() {
                             </AnimatePresence>
 
                             <div className="grid gap-6">
-                                {schedule?.map((item: Doc<"aiSchedule">) => (
+                                {schedule?.map((item: AiSchedule) => (
                                     <motion.div
                                         layout
-                                        key={item._id}
+                                        key={item.id}
                                         className="bg-white/50 dark:bg-gray-950/40 backdrop-blur-xl p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800/50 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all duration-500"
                                     >
                                         <div className="flex items-center gap-6">
@@ -680,14 +737,14 @@ export default function AISettingsPage() {
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <button
-                                                onClick={() => handleDeleteSchedule(item._id)}
+                                                onClick={() => handleDeleteSchedule(item.id)}
                                                 className="p-3 text-zinc-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-90"
                                             >
                                                 <Trash2 size={18} />
                                             </button>
                                             <button
                                                 onClick={() => {
-                                                    setEditingScheduleId(item._id);
+                                                    setEditingScheduleId(item.id);
                                                     setScheduleFormData({
                                                         daysOfWeek: item.daysOfWeek || [],
                                                         time: item.time,

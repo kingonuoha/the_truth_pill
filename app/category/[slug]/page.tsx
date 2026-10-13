@@ -1,5 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
+import { nest } from "@/lib/api";
 import { Navbar } from "@/components/navbar";
 import { FilteredBlogGrid } from "@/components/filtered-blog-grid";
 import Image from "next/image";
@@ -16,7 +15,7 @@ interface CategoryPageProps {
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
     const { slug } = await params;
-    const category = await fetchQuery(api.categories.getBySlug, { slug });
+    const category = await nest.categoryBySlug(slug);
 
     if (!category) {
         return {
@@ -46,7 +45,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
     const { slug } = await params;
-    const category = await fetchQuery(api.categories.getBySlug, { slug });
+    const category = await nest.categoryBySlug(slug);
 
     if (!category) {
         notFound();
@@ -109,7 +108,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                         <div className="w-12 h-1 bg-sky-blue rounded-full" />
                         <h2 className="text-2xl md:text-3xl font-serif font-bold">Insights into {category.name}</h2>
                     </div>
-                    <FilteredBlogGrid categoryId={category._id} />
+                    <FilteredBlogGrid categoryId={category.id} />
                 </div>
             </section>
         </main>

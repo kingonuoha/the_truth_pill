@@ -1,7 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useEffect, useState } from "react";
 import {
     Mail,
     Clock,
@@ -17,18 +16,41 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Id, Doc } from "@/convex/_generated/dataModel";
-import { useState } from "react";
+import { bffFetch } from "@/lib/bff-client";
+import type { EmailLog } from "@/lib/content-types";
 
 export default function EmailLogsPage() {
-    const emails = useQuery(api.emails.getEmailLogs, { limit: 100 });
-    const retryEmail = useMutation(api.emails.retryEmail);
-    const deleteEmail = useMutation(api.emails.deleteEmail);
+    const [emails, setEmails] = useState<EmailLog[] | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const handleRetry = async (id: Id<"emailQueue">) => {
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await bffFetch<EmailLog[]>("/api/admin/emails?limit=100");
+                if (!cancelled) setEmails(data);
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) setEmails([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const reload = async () => {
         try {
-            await retryEmail({ id });
+            setEmails(await bffFetch<EmailLog[]>("/api/admin/emails?limit=100"));
+        } catch {
+            // Keep the current list on a transient reload failure.
+        }
+    };
+
+    const handleRetry = async (id: string) => {
+        try {
+            await bffFetch("/api/admin/emails/retry", { method: "POST", body: { id } });
+            await reload();
             toast.success("Email queued for retry");
         } catch (err) {
             console.error(err);
@@ -36,13 +58,14 @@ export default function EmailLogsPage() {
         }
     };
 
-    const handleDelete = async (id: Id<"emailQueue">) => {
+    const handleDelete = async (id: string) => {
         toast("Expunge this transmission log?", {
             action: {
                 label: "Confirm",
                 onClick: async () => {
                     try {
-                        await deleteEmail({ id });
+                        await bffFetch(`/api/admin/emails?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+                        await reload();
                         toast.success("Log entry deleted");
                     } catch (err) {
                         console.error(err);
@@ -53,7 +76,7 @@ export default function EmailLogsPage() {
         });
     };
 
-    const filteredEmails = emails?.filter((email: Doc<"emailQueue">) =>
+    const filteredEmails = emails?.filter((email) =>
         email.recipient.toLowerCase().includes(searchQuery.toLowerCase()) ||
         email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
         email.templateName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -72,9 +95,9 @@ export default function EmailLogsPage() {
 
     const stats = {
         total: emails.length,
-        sent: emails.filter((e: Doc<"emailQueue">) => e.status === "sent").length,
-        failed: emails.filter((e: Doc<"emailQueue">) => e.status === "failed").length,
-        pending: emails.filter((e: Doc<"emailQueue">) => e.status === "pending" || e.status === "sending").length,
+        sent: emails.filter((e: EmailLog) => e.status === "sent").length,
+        failed: emails.filter((e: EmailLog) => e.status === "failed").length,
+        pending: emails.filter((e: EmailLog) => e.status === "pending" || e.status === "sending").length,
     };
 
     return (
@@ -148,8 +171,8 @@ export default function EmailLogsPage() {
                                 </td>
                             </tr>
                         ) : (
-                            filteredEmails?.map((email: Doc<"emailQueue">) => (
-                                <tr key={email._id} className="hover:bg-gray-50/50 transition-all duration-300 group">
+                            filteredEmails?.map((email: EmailLog) => (
+                                <tr key={email.id} className="hover:bg-gray-50/50 transition-all duration-300 group">
                                     <td className="px-8 py-5">
                                         <div className="flex flex-col">
                                             <span className="font-serif font-black text-gray-950 leading-tight group-hover:text-blue-600 transition-colors">{email.recipient}</span>
@@ -198,7 +221,7 @@ export default function EmailLogsPage() {
                                     <td className="px-8 py-5">
                                         <div className="text-xs font-medium text-gray-500 flex items-center gap-2">
                                             <Clock size={16} className="text-gray-300" />
-                                            {format(email.sentAt || email.scheduledFor, "MMM d, HH:mm")}
+                                            {format(new Date(email.sentAt || email.scheduledFor), "MMM d, HH:mm")}
                                         </div>
                                     </td>
                                     <td className="px-8 py-5 text-right">
@@ -206,7 +229,7 @@ export default function EmailLogsPage() {
                                             {email.status === "failed" && (
                                                 <button
                                                     className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-blue-100 shadow-sm active:scale-90"
-                                                    onClick={() => handleRetry(email._id)}
+                                                    onClick={() => handleRetry(email.id)}
                                                     title="Retry"
                                                 >
                                                     <RefreshCcw size={16} />
@@ -214,7 +237,7 @@ export default function EmailLogsPage() {
                                             )}
                                             <button
                                                 className="w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-300 hover:bg-red-500 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm active:scale-90"
-                                                onClick={() => handleDelete(email._id)}
+                                                onClick={() => handleDelete(email.id)}
                                                 title="Delete"
                                             >
                                                 <Trash2 size={16} />

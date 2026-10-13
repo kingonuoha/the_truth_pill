@@ -1,57 +1,43 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useConvex } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "../convex/_generated/dataModel";
 import Link from "next/link";
 import Image from "next/image";
 import { Loader2, ArrowRight } from "lucide-react";
+import { bffFetch } from "@/lib/bff-client";
+import type { ArticleListItem, PaginatedArticles } from "@/lib/content-types";
 
 interface RelatedArticlesProps {
-    categoryId: Id<"categories">;
-    excludeId: Id<"articles">;
+    categoryId: string;
+    excludeId: string;
     lean?: boolean;
 }
 
-type RelatedArticle = {
-    _id: Id<"articles">;
-    title: string;
-    slug: string;
-    excerpt?: string;
-    coverImage?: string;
-    publishedAt?: number;
-    authorName?: string;
-    authorImage?: string;
-    categoryName?: string;
-    viewCount?: number;
-};
-
 export function RelatedArticles({ categoryId, excludeId, lean = false }: RelatedArticlesProps) {
-    const convex = useConvex();
-    const [relatedArticles, setRelatedArticles] = useState<RelatedArticle[] | undefined>(undefined);
+    const [relatedArticles, setRelatedArticles] = useState<ArticleListItem[] | undefined>(undefined);
 
-    // One-shot, non-reactive fetch (no subscription). Resolves the category
-    // first, then the articles for that category.
+    // One-shot, non-reactive read: published, non-archived articles in the same
+    // category, minus the current article.
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            const category = await convex.query(api.categories.getById, { id: categoryId });
-            if (cancelled) return;
-            if (!category) {
-                setRelatedArticles([]);
-                return;
+            try {
+                const qs = new URLSearchParams({
+                    categoryId,
+                    page: "1",
+                    pageSize: "10",
+                });
+                const result = await bffFetch<PaginatedArticles>(`/api/articles?${qs.toString()}`);
+                if (!cancelled) setRelatedArticles(result.items);
+            } catch (error) {
+                console.error("Failed to load related articles:", error);
+                if (!cancelled) setRelatedArticles([]);
             }
-            const articles = (await convex.query(api.articles.getByCategory, {
-                categorySlug: category.slug,
-                limit: 10,
-            })) as RelatedArticle[];
-            if (!cancelled) setRelatedArticles(articles);
         })();
         return () => {
             cancelled = true;
         };
-    }, [convex, categoryId]);
+    }, [categoryId]);
 
     if (relatedArticles === undefined) {
         return (
@@ -62,7 +48,7 @@ export function RelatedArticles({ categoryId, excludeId, lean = false }: Related
     }
 
     const filteredArticles = relatedArticles
-        .filter(a => a._id !== excludeId)
+        .filter(a => a.id !== excludeId)
         .slice(0, lean ? 5 : 3);
 
     if (filteredArticles.length === 0) {
@@ -74,7 +60,7 @@ export function RelatedArticles({ categoryId, excludeId, lean = false }: Related
             <div className="flex flex-col gap-6">
                 {filteredArticles.map((article) => (
                     <Link
-                        key={article._id}
+                        key={article.id}
                         href={`/${article.slug}`}
                         className="group flex gap-4 items-start"
                     >
@@ -108,7 +94,7 @@ export function RelatedArticles({ categoryId, excludeId, lean = false }: Related
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {filteredArticles.map((article) => (
                 <Link
-                    key={article._id}
+                    key={article.id}
                     href={`/${article.slug}`}
                     className="group"
                 >

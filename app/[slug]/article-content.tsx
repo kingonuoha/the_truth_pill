@@ -5,8 +5,6 @@ import Image from "next/image";
 import { Navbar } from "@/components/navbar";
 import { Calendar, User, Clock, ChevronRight, ChevronUp, Eye } from "lucide-react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import Link from "next/link";
 import { EngagementToolbar } from "@/components/engagement-toolbar";
 import { TableOfContents } from "@/components/table-of-contents";
@@ -14,8 +12,10 @@ import { RelatedArticles } from "@/components/related-articles";
 import { Newsletter } from "@/components/newsletter";
 import { AdSlot } from "@/components/ad-slot";
 import { getAvatarUrl, getVisitorId } from "@/lib/utils";
-import { Doc } from "@/convex/_generated/dataModel";
 import dynamic from "next/dynamic";
+import { useSse } from "@/lib/sse";
+import { trackArticleView, trackHeartbeat } from "@/app/actions/analytics";
+import type { ArticleCounters, ArticleDetail } from "@/lib/content-types";
 
 const CommentsSection = dynamic(() => import("@/components/comments-section").then(mod => mod.CommentsSection), {
     loading: () => <div className="h-40 bg-zinc-50 rounded-3xl animate-pulse" />,
@@ -24,44 +24,44 @@ const CommentsSection = dynamic(() => import("@/components/comments-section").th
 
 import { getCloudinaryUrl } from "@/lib/utils";
 
-type ArticleWithExtras = Doc<"articles"> & {
-    authorName: string;
-    authorImage?: string;
-    categoryName: string;
-    categorySlug?: string;
-};
+export function ArticleContent({ initialArticle, slug }: { initialArticle: ArticleDetail; slug: string }) {
+    const article = initialArticle;
 
-export function ArticleContent({ initialArticle, slug }: { initialArticle: ArticleWithExtras; slug: string }) {
-    // We can still use useQuery to get live updates if status changes, but initialArticle provides SSR content
-    const article = useQuery(api.articles.getBySlug, { slug }) || initialArticle;
+    // Live counters come from the SSE `article:{id}` topic, which carries
+    // identifiers + counters only — never the document (DEV-055/DEV-007).
+    const [counters, setCounters] = useState({
+        viewCount: article.viewCount,
+        uniqueViewCount: article.uniqueViewCount,
+        actualReadingTime: article.actualReadingTime ?? 0,
+    });
 
-    const logView = useMutation(api.analytics.logArticleView);
-    const logHeartbeat = useMutation(api.analytics.logHeartbeat);
+    useSse({
+        topics: [`article:${article.id}`],
+        onFrame: (frame) => {
+            if (frame.type !== "article.counters") return;
+            const data = frame.data as ArticleCounters;
+            setCounters((prev) => ({
+                viewCount: data.viewCount ?? prev.viewCount,
+                uniqueViewCount: data.uniqueViewCount ?? prev.uniqueViewCount,
+                actualReadingTime: data.actualReadingTime ?? prev.actualReadingTime,
+            }));
+        },
+    });
 
     useEffect(() => {
-        if (article?._id) {
-            const visitorId = getVisitorId();
+        const visitorId = getVisitorId();
 
-            // Initial view log
-            logView({
-                articleId: article._id,
-                visitorId
-            }).catch(console.error);
+        // Initial view log, then a 30s heartbeat while the tab is visible.
+        trackArticleView({ articleId: article.id, visitorId }).catch(console.error);
 
-            // Heartbeat every 30 seconds
-            const interval = setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    logHeartbeat({
-                        articleId: article._id,
-                        visitorId,
-                        seconds: 30
-                    }).catch(console.error);
-                }
-            }, 30000);
+        const interval = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                trackHeartbeat({ articleId: article.id, visitorId, seconds: 30 }).catch(console.error);
+            }
+        }, 30000);
 
-            return () => clearInterval(interval);
-        }
-    }, [article?._id, logView, logHeartbeat]);
+        return () => clearInterval(interval);
+    }, [article.id]);
 
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [showScrollTop, setShowScrollTop] = useState(false);
@@ -258,7 +258,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                             </div>
                             <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 bg-white/50 dark:bg-card/50 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 dark:border-white/10 shadow-sm">
                                 <Eye size={14} className="text-blue-500" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">{article.viewCount || 0} Total Views</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">{counters.viewCount} Total Views</span>
                             </div>
                         </div>
                     </motion.div>
@@ -271,7 +271,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                     {/* Left Sidebar - Engagement */}
                     <aside className="hidden lg:block w-20 relative">
                         <div className="sticky top-32">
-                            <EngagementToolbar articleId={article._id} slug={article.slug} vertical={true} />
+                            <EngagementToolbar articleId={article.id} slug={article.slug} vertical={true} />
                         </div>
                     </aside>
 
@@ -341,7 +341,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
 
                         {/* Mobile/Tablet Engagement Bar */}
                         <div className="lg:hidden mt-16 mb-8">
-                            <EngagementToolbar articleId={article._id} slug={article.slug} />
+                            <EngagementToolbar articleId={article.id} slug={article.slug} />
                         </div>
 
                         {/* Newsletter Subscription */}
@@ -351,7 +351,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
 
                         {/* Comments Section */}
                         <div className="mt-24">
-                            <CommentsSection articleId={article._id} />
+                            <CommentsSection articleId={article.id} />
                         </div>
                     </div>
 
@@ -363,7 +363,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
 
                             <div className="flex flex-col gap-6">
                                 {article.categoryId && (
-                                    <RelatedArticles categoryId={article.categoryId} excludeId={article._id} lean />
+                                    <RelatedArticles categoryId={article.categoryId} excludeId={article.id} lean />
                                 )}
                             </div>
                         </div>
@@ -376,7 +376,7 @@ export function ArticleContent({ initialArticle, slug }: { initialArticle: Artic
                 <div className="max-w-3xl mx-auto">
                     <h2 className="text-2xl font-serif font-bold mb-8 text-zinc-900 dark:text-white">Related Insights</h2>
                     {article.categoryId && (
-                        <RelatedArticles categoryId={article.categoryId} excludeId={article._id} />
+                        <RelatedArticles categoryId={article.categoryId} excludeId={article.id} />
                     )}
                 </div>
             </div>

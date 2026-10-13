@@ -1,9 +1,9 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { useState, useEffect } from "react";
+import { bffFetch } from "@/lib/bff-client";
+import type { SiteSettings } from "@/lib/content-types";
 import {
     Moon,
     Sun,
@@ -42,8 +42,7 @@ const TikTokIcon = ({ size, className }: { size: number, className?: string }) =
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    const settings = useQuery(api.site_settings.getSiteSettings);
-    const updateSettings = useMutation(api.site_settings.updateSiteSettings);
+    const [settings, setSettings] = useState<SiteSettings | null | undefined>(undefined);
 
     // Form state
     const [form, setForm] = useState({
@@ -67,6 +66,22 @@ export default function SettingsPage() {
 
     useEffect(() => {
         setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await bffFetch<SiteSettings>("/api/site-settings");
+                if (!cancelled) setSettings(data);
+            } catch (error) {
+                console.error(error);
+                if (!cancelled) setSettings(null);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     useEffect(() => {
@@ -96,7 +111,7 @@ export default function SettingsPage() {
         e.preventDefault();
         setIsSaving(true);
         try {
-            await updateSettings(form);
+            await bffFetch("/api/admin/site-settings", { method: "PATCH", body: form });
             toast.success("Settings updated successfully", {
                 description: "Changes are now live across the platform."
             });

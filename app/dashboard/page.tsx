@@ -1,8 +1,5 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Doc } from "@/convex/_generated/dataModel";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,31 +15,43 @@ import { Navbar } from "@/components/navbar";
 import { toast } from "sonner";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { bffFetch } from "@/lib/bff-client";
+import type { ArticleDetail, SelfFull } from "@/lib/content-types";
 import { sendOtpAction, verifyAndChangePasswordAction } from "@/app/actions/auth";
 
 
-interface JoinedArticle extends Doc<"articles"> {
-    categoryName: string;
-    authorName?: string;
-    authorImage?: string;
-}
-
 export default function UserDashboard() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const [activeTab, setActiveTab] = useState<"overview" | "bookmarks" | "settings">("overview");
     const [isUpdating, setIsUpdating] = useState(false);
+    const [user, setUser] = useState<SelfFull | null | undefined>(undefined);
+    const [bookmarkedArticles, setBookmarkedArticles] = useState<ArticleDetail[] | undefined>(undefined);
 
-    // Data fetching
-    const user = useQuery(api.users.getMeFullSecure, {
-        email: session?.user?.email ?? ""
-    });
-    const bookmarkedArticles = useQuery(api.articles.getBookmarkedArticles, {
-        email: session?.user?.email ?? ""
-    });
-
-    // Mutations
-    const updateProfile = useMutation(api.users.updateProfile);
-    const deleteAccount = useMutation(api.users.deleteAccount);
+    useEffect(() => {
+        if (status !== "authenticated") return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const [me, bookmarks] = await Promise.all([
+                    bffFetch<SelfFull>("/api/me/full"),
+                    bffFetch<ArticleDetail[]>("/api/articles/bookmarked"),
+                ]);
+                if (!cancelled) {
+                    setUser(me);
+                    setBookmarkedArticles(bookmarks);
+                }
+            } catch (error) {
+                console.error("Failed to load dashboard:", error);
+                if (!cancelled) {
+                    setUser(null);
+                    setBookmarkedArticles([]);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [status]);
 
     const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -51,7 +60,9 @@ export default function UserDashboard() {
         const name = formData.get("name") as string;
 
         try {
-            await updateProfile({ name });
+            await bffFetch("/api/me", { method: "PATCH", body: { name } });
+            const me = await bffFetch<SelfFull>("/api/me/full");
+            setUser(me);
             toast.success("Profile updated successfully");
         } catch {
             toast.error("Failed to update profile");
@@ -66,7 +77,7 @@ export default function UserDashboard() {
                 label: "Confirm Deletion",
                 onClick: async () => {
                     try {
-                        await deleteAccount();
+                        await bffFetch("/api/me", { method: "DELETE" });
                         toast.success("Account deleted");
                         signOut({ callbackUrl: "/" });
                     } catch {
@@ -240,9 +251,9 @@ export default function UserDashboard() {
 
                                             {bookmarkedArticles && bookmarkedArticles.length > 0 ? (
                                                 <div className="space-y-4">
-                                                    {bookmarkedArticles.slice(0, 3).map((article: JoinedArticle) => (
+                                                    {bookmarkedArticles.slice(0, 3).map((article: ArticleDetail) => (
                                                         <Link
-                                                            key={article._id}
+                                                            key={article.id}
                                                             href={`/${article.slug}`}
                                                             className="flex items-center gap-6 p-5 rounded-xl border border-gray-50 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-all duration-300 group"
                                                         >
@@ -293,9 +304,9 @@ export default function UserDashboard() {
 
                                         <div className="grid gap-6">
                                             {bookmarkedArticles && bookmarkedArticles.length > 0 ? (
-                                                bookmarkedArticles.map((article: JoinedArticle) => (
+                                                bookmarkedArticles.map((article: ArticleDetail) => (
                                                     <div
-                                                        key={article._id}
+                                                        key={article.id}
                                                         className="group bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all flex flex-col md:flex-row gap-8"
                                                     >
                                                         <div className="relative w-full md:w-56 h-36 rounded-xl overflow-hidden shrink-0 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">

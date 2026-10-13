@@ -1,12 +1,11 @@
 "use client";
 
 import { BlogGrid } from "./blog-grid";
-import { Id } from "../convex/_generated/dataModel";
 import { usePillars } from "./categories-provider";
 import Link from "next/link";
 
 interface FilteredBlogGridProps {
-    categoryId: Id<"categories">;
+    categoryId: string;
     pillar?: string;
 }
 
@@ -21,7 +20,7 @@ export function FilteredBlogGrid({ categoryId, pillar }: FilteredBlogGridProps) 
                     <div className="flex flex-wrap gap-2">
                         {pillars.map((p) => (
                             <Link
-                                key={p._id}
+                                key={p.id}
                                 href={`/pillars/${p.slug}`}
                                 className="px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-900 dark:hover:bg-white hover:text-white dark:hover:text-zinc-900 border border-transparent hover:border-zinc-900 dark:hover:border-white"
                             >

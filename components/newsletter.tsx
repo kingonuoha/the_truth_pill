@@ -3,14 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Mail, ArrowRight, Loader2 } from "lucide-react";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
+import { bffFetch } from "@/lib/bff-client";
 
 export function Newsletter() {
     const [email, setEmail] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const subscribe = useMutation(api.users.subscribeToNewsletter);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,7 +16,10 @@ export function Newsletter() {
 
         setIsSubmitting(true);
         try {
-            const result = (await subscribe({ email })) as { status: string };
+            const result = await bffFetch<{ status: string }>("/api/newsletter/subscribe", {
+                method: "POST",
+                body: { email },
+            });
             setEmail("");
 
             if (result.status === "invited") {

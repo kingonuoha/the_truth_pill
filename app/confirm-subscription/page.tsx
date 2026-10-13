@@ -2,8 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { bffFetch } from "@/lib/bff-client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle, Sparkles } from "lucide-react";
@@ -13,7 +12,6 @@ import { motion } from "framer-motion";
 function ConfirmSubscriptionContent() {
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
-    const confirm = useMutation(api.users.confirmNewsletter);
     const [status, setStatus] = useState<"loading" | "success" | "error" | "no-token">("loading");
 
     useEffect(() => {
@@ -23,7 +21,10 @@ function ConfirmSubscriptionContent() {
                 return;
             }
             try {
-                const result = await confirm({ token });
+                const result = await bffFetch<{ success: boolean }>("/api/newsletter/confirm", {
+                    method: "POST",
+                    body: { token },
+                });
                 if (result.success) {
                     setStatus("success");
                 } else {
@@ -36,7 +37,7 @@ function ConfirmSubscriptionContent() {
         };
 
         performConfirmation();
-    }, [token, confirm]);
+    }, [token]);
 
     return (
         <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4 relative overflow-hidden text-center">
