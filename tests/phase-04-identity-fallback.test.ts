@@ -37,10 +37,38 @@ test("DEV-032 / roles-db.spec: no authorization on a token/session role claim", 
   assert.doesNotMatch(MIDDLEWARE_SOURCE, /userRole/);
   assert.doesNotMatch(MIDDLEWARE_SOURCE, /\.role\b/);
   assert.match(MIDDLEWARE_SOURCE, /redirect/);
-  // auth.ts no longer fetches the role from Convex on every JWT callback.
-  assert.doesNotMatch(AUTH_SOURCE, /token\.role/);
+
+  // auth.ts must not *derive* the role: no Convex lookup, no DB read, and no
+  // awaited/networked role resolution anywhere in the callbacks. The only ways
+  // the claim may be written are the two display assignments below, both routed
+  // through `toSessionRole`, which fails closed (tests/session-role.test.ts).
+  //
+  // ⚠️ The two `assert.match` lines replace an earlier blanket
+  // `doesNotMatch(AUTH_SOURCE, /token\.role/)`. That blanket assertion also
+  // forbade *carrying* the role, which this file's own doctrine permits
+  // ("the role may be carried for display") and which the navigation shell
+  // requires: with no claim at all, `session.user.role` was `undefined` for
+  // every user, so an admin was rendered the member shell and had no route into
+  // `/admin`. The invariant being pinned is that the role is display-only and
+  // single-sourced, not that the string `token.role` is absent.
   assert.doesNotMatch(AUTH_SOURCE, /dbUser\.role/);
   assert.doesNotMatch(AUTH_SOURCE, /users\.currentUser/);
+  // No Convex import (the prose may still name it as the thing we left behind).
+  assert.doesNotMatch(AUTH_SOURCE, /from\s+["'][^"']*convex/);
+  assert.doesNotMatch(AUTH_SOURCE, /role\s*=\s*await\b/);
+  assert.match(AUTH_SOURCE, /token\.role = toSessionRole\(user\.role\)/);
+  assert.match(AUTH_SOURCE, /session\.user\.role = toSessionRole\(token\.role\)/);
+});
+
+test("DEV-032: the ADR-017 bearer carries no role claim", () => {
+  // The authoritative web→API credential must not encode authority. Nest's
+  // RolesGuard reads `users.role` for the verified `sub` instead, so a stale or
+  // forged session claim has no path to an admin operation.
+  const tokenSource = readFileSync(
+    new URL("../lib/api-token.ts", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(tokenSource, /\broles?\s*:/);
 });
 
 test("DEV-032: the ADR-017 API token is minted server-side from a non-public secret", () => {

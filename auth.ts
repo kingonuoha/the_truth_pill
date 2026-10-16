@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import authConfig from "./auth.config";
+import { toSessionRole } from "./lib/auth-role";
 import { nestApiBaseUrl } from "./lib/api-token";
 
 /**
@@ -117,15 +118,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // server-side token mint. NextAuth stores the user id on `token.sub`; the
     // role is deliberately NOT read from a claim for authorization (DEV-032) —
     // the API resolves it from the DB.
+    //
+    // ⚠️ The role *is* copied onto the token, but only so the navigation shell
+    // can tell an admin from a member. Nest re-reads `users.role` on every
+    // request, so a stale claim grants nothing. Before this was written the
+    // claim was never populated, so `session.user.role` was `undefined` and
+    // every admin was rendered the member shell — no link into `/admin`, and
+    // therefore no way to reach the admin sidebar or the editor. See
+    // `lib/auth-role.ts`.
     async jwt({ token, user }) {
       if (user?.id) {
         token.sub = user.id;
+      }
+      // `user` is only present on the sign-in pass; the value then lives in the
+      // JWT cookie for the life of the session.
+      if (user) {
+        token.role = toSessionRole(user.role);
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = typeof token.sub === "string" ? token.sub : "";
+        session.user.role = toSessionRole(token.role);
       }
       return session;
     },
