@@ -38,26 +38,23 @@ test("DEV-032 / roles-db.spec: no authorization on a token/session role claim", 
   assert.doesNotMatch(MIDDLEWARE_SOURCE, /\.role\b/);
   assert.match(MIDDLEWARE_SOURCE, /redirect/);
 
-  // auth.ts must not *derive* the role: no Convex lookup, no DB read, and no
-  // awaited/networked role resolution anywhere in the callbacks. The only ways
-  // the claim may be written are the two display assignments below, both routed
-  // through `toSessionRole`, which fails closed (tests/session-role.test.ts).
-  //
-  // ⚠️ The two `assert.match` lines replace an earlier blanket
-  // `doesNotMatch(AUTH_SOURCE, /token\.role/)`. That blanket assertion also
-  // forbade *carrying* the role, which this file's own doctrine permits
-  // ("the role may be carried for display") and which the navigation shell
-  // requires: with no claim at all, `session.user.role` was `undefined` for
-  // every user, so an admin was rendered the member shell and had no route into
-  // `/admin`. The invariant being pinned is that the role is display-only and
-  // single-sourced, not that the string `token.role` is absent.
+  // auth.ts must not *derive* the role from Convex — the legacy defect this
+  // rule exists for. The role it carries instead comes from the validated Nest
+  // login response (credentials) or a one-off DB-backed read at sign-in
+  // (Google), and only ever feeds navigation.
   assert.doesNotMatch(AUTH_SOURCE, /dbUser\.role/);
   assert.doesNotMatch(AUTH_SOURCE, /users\.currentUser/);
   // No Convex import (the prose may still name it as the thing we left behind).
   assert.doesNotMatch(AUTH_SOURCE, /from\s+["'][^"']*convex/);
-  assert.doesNotMatch(AUTH_SOURCE, /role\s*=\s*await\b/);
-  assert.match(AUTH_SOURCE, /token\.role = toSessionRole\(user\.role\)/);
-  assert.match(AUTH_SOURCE, /session\.user\.role = toSessionRole\(token\.role\)/);
+
+  // The claim informs no decision in this file: it is written, never compared.
+  // A comparison here would be a gate, which is what DEV-032 forbids.
+  assert.doesNotMatch(AUTH_SOURCE, /(?:token|session\.user)\.role\s*[!=]==?/);
+
+  // The only writes to it are the two display assignments, both routed through
+  // the helper that fails closed (tests/session-role.test.ts).
+  assert.match(AUTH_SOURCE, /token\.role = toSessionRole\(/);
+  assert.match(AUTH_SOURCE, /session\.user\.role = toSessionRole\(/);
 });
 
 test("DEV-032: the ADR-017 bearer carries no role claim", () => {

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node node_modules/tsx/dist/cli.mjs --test tests/s-026-client-ip.test.ts tests/s-025-pexels.test.ts tests/dev-004-upload-guard.test.ts tests/phase-04-identity-fallback.test.ts tests/bff-helpers.test.ts tests/bff-ip.test.ts tests/bff-content-and-me.test.ts tests/dev-059-list-card-projection.test.ts tests/dev-061-password-forwarding.test.ts tests/dev-062-category-image-write.test.ts tests/dev-063-run-full-check.test.ts tests/bff-upstream-contract.test.ts tests/p10-sec-001-002.test.ts tests/session-role.test.ts"
+    "test": "node node_modules/tsx/dist/cli.mjs --test tests/s-026-client-ip.test.ts tests/s-025-pexels.test.ts tests/dev-004-upload-guard.test.ts tests/phase-04-identity-fallback.test.ts tests/bff-helpers.test.ts tests/bff-ip.test.ts tests/bff-content-and-me.test.ts tests/dev-059-list-card-projection.test.ts tests/dev-061-password-forwarding.test.ts tests/dev-062-category-image-write.test.ts tests/dev-063-run-full-check.test.ts tests/bff-upstream-contract.test.ts tests/p10-sec-001-002.test.ts tests/session-role.test.ts tests/google-identity.test.ts"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-react": "^11.0.1",
