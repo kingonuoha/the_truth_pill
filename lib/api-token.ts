@@ -68,5 +68,14 @@ export function mintApiToken(sub: string): MintedApiToken {
 /** The server-only base URL of the Nest API. */
 export function nestApiBaseUrl(): string {
   const raw = process.env.NEST_API_URL ?? "http://localhost:3001";
+  // The calls made through this base carry site-wide credentials: the ADR-017
+  // bearer, and `x-internal-secret`, which mints a password-reset token for any
+  // address. Plain HTTP to a non-loopback host would put both on the wire, so a
+  // non-TLS remote is refused rather than trusted.
+  const url = new URL(raw);
+  const loopback = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  if (url.protocol !== "https:" && !loopback) {
+    throw new Error("NEST_API_URL must use https for a non-loopback host");
+  }
   return raw.replace(/\/+$/, "");
 }

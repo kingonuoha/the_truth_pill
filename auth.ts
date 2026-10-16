@@ -61,15 +61,22 @@ async function resolveDisplayRole(sub: string): Promise<SessionRole> {
     const response = await fetch(`${nestApiBaseUrl()}/api/v1/users/me`, {
       headers: { authorization: `Bearer ${token}` },
     });
-    if (!response.ok) return "user";
+    if (!response.ok) {
+      // Argument-free on purpose: the only thing worth recording is that the
+      // lookup failed. No subject, and never a credential.
+      console.warn("[auth] display role lookup failed");
+      return "user";
+    }
     let payload: unknown;
     try {
       payload = await response.json();
     } catch {
+      console.warn("[auth] display role lookup returned an unreadable body");
       return "user";
     }
     return toSessionRole(isRecord(payload) ? payload.role : undefined);
   } catch {
+    console.warn("[auth] display role lookup failed");
     return "user";
   }
 }

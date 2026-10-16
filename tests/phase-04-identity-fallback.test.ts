@@ -55,6 +55,46 @@ test("DEV-032 / roles-db.spec: no authorization on a token/session role claim", 
   // the helper that fails closed (tests/session-role.test.ts).
   assert.match(AUTH_SOURCE, /token\.role = toSessionRole\(/);
   assert.match(AUTH_SOURCE, /session\.user\.role = toSessionRole\(/);
+
+  // ⚠️ The comparison ban above is NOT sufficient on its own, and neither was
+  // the `doesNotMatch(/token\.role/)` it replaced. Measured against `auth.ts` as
+  // committed, a comparison-shaped ban misses every one of these reintroductions
+  // of the DEV-032 defect:
+  //
+  //   if (token.role)                  // truthiness is not a comparison
+  //   token?.role === "admin"          // optional chaining breaks the `.`
+  //   const r = token.role;            // read is not a comparison
+  //   ["admin"].includes(token.role)   // no comparison operator at all
+  //   token["role"] === "admin"        // computed access
+  //   token.role.trim() === "admin"    // call before the comparison
+  //   session.user.role = "admin"      // a second, unconditional write
+  //
+  // So the invariant is not "the claim is never compared" but "the claim has
+  // exactly three mentions, all of them the sanctioned display path". Any
+  // further mention is a new consumer, which is the thing DEV-032 forbids.
+  // Pinning the count also catches the most likely future regression: someone
+  // restoring the deleted Convex lookup because "the role has to come from
+  // somewhere".
+  const CLAIM_REF =
+    /\btoken\b\??\.role\b|\bsession\.user\.role\b|\btoken\s*\[\s*["']role["']\s*\]/g;
+
+  /**
+   * Comments are prose — they may name the claim while explaining it (as the
+   * block you are reading does). Only code is asserted.
+   */
+  function stripComments(source: string): string {
+    return source
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+  }
+
+  assert.deepEqual(
+    (stripComments(AUTH_SOURCE).match(CLAIM_REF) ?? [])
+      .map((ref) => ref.replace(/\s+/g, ""))
+      .sort(),
+    ["session.user.role", "token.role", "token.role"],
+    "auth.ts may mention the role claim only at its two display sites",
+  );
 });
 
 test("DEV-032: the ADR-017 bearer carries no role claim", () => {
