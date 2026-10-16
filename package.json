@@ -19,7 +19,7 @@
     "@types/nodemailer": "^7.0.9",
     "@types/nprogress": "^0.2.3",
     "bcryptjs": "^3.0.3",
-    "ckeditor5": "^47.7.5",
+    "ckeditor5": "47.6.2",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
